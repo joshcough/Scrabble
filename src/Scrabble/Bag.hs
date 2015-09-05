@@ -1,6 +1,6 @@
 module Scrabble.Bag where
 
-import Data.Map
+import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
 import Scrabble.Types
 import System.Random.Shuffle
@@ -9,6 +9,9 @@ type Bag = [Letter]
 
 newBag :: IO Bag
 newBag = newShuffledBag
+
+isBagEmpty :: Bag -> Bool
+isBagEmpty = null
 
 newShuffledBag :: IO Bag
 newShuffledBag = shuffleM orderedBag
@@ -22,7 +25,7 @@ distribution = [
   ('U',4),('V',2),('W',2),('X',1),('Y',2),('Z',1), (' ', 2)]
 
 distributionMap :: Map Letter Int
-distributionMap = fromList distribution
+distributionMap = Map.fromList distribution
 
 orderedBag :: Bag
 orderedBag = concat $ fmap (\(l,n) -> replicate n l) distribution where
@@ -36,7 +39,7 @@ points = [
   ('U',1),('V',4), ('W',4),('X',8),('Y',4),('Z',10), (' ', 0)]
 
 pointsMap :: Map Letter Points
-pointsMap = fromList points
+pointsMap = Map.fromList points
 
 distributionWithPoints :: Map Letter (Int,Points)
 distributionWithPoints = Map.intersectionWith (,) distributionMap pointsMap
