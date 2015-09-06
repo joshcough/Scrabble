@@ -6,12 +6,11 @@ import Data.Maybe (fromMaybe)
 import Prelude hiding (Word)
 import Scrabble.Types
 
-data Bonus  = W3 | W2 | L3 | L2 | Star | NoBonus
-data Square = Square (Maybe Letter) Bonus
+data Bonus  = W3 | W2 | L3 | L2 | Star | NoBonus deriving Eq
+data Square = Square (Maybe Letter) Bonus deriving Eq
 type Row    = [Square]
 type Col    = [Square]
-data Board  = Board [Row]
-data Orientation = Horizontal | Vertical
+data Board  = Board [Row] deriving Eq
 
 instance Show Bonus where
   show = showBonus
@@ -43,11 +42,8 @@ showBoard printBonuses (Board board) = top ++ showRows ++ bottom where
   bottom        = line '-'
   line        c = replicate 46 c ++ "\n"
 
-printBoard :: Board -> IO ()
-printBoard = putStrLn . showBoard True
-
-printBoardClean :: Board -> IO ()
-printBoardClean = putStrLn . showBoard False
+printBoard :: Bool -> Board -> IO ()
+printBoard b = putStrLn . showBoard b
 
 newBoard :: Board
 newBoard = Board $ fmap (fmap f) [

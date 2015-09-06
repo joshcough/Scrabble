@@ -1,0 +1,42 @@
+
+ScrabbleExp :=
+  (search SearchExp) |                         -- search the dictionary 
+  (place String Orientation Pos BlankDef...) | -- place a word
+  skip                                         -- skip your turn
+  help                                         -- show help text
+  showBoard                                    -- show the board with the bonuses
+  showBoardClean                               -- show the board without the bonuses
+
+BlankDef := Char     -- blank def says what character to use for any _ in your word
+Orientation := V | H -- Vertical or Horizontal
+Pos := (Int Int)     -- (x y)
+
+SearchExp := 
+  (matchAll  SearchExp...) | -- true if all sub-expressions are true 
+  (matchAny  SearchExp...) | -- true if any sub-expressions are true
+  (matchNone SearchExp...) | -- true if none of the sub-expressions are true
+  PrimSearchExp
+
+PrimSearchExp := 
+  (startsWith Pattern) | -- true if the word starts with the pattern
+  (endsWith   Pattern) | -- true if the word ends with the pattern
+  (charAt Char Int)    | -- true if the word has the given character at the given position
+  (noneOf X)           | -- true of the word has none of the given characters
+  (anyOf  X)           | -- true if the word has any of the given characters
+  (allOf  X)           | -- true if the word has all of the given characters
+  (looksLike Pattern)  | -- true if the word "looks like" the given pattern (more docs later)
+  (regex  Regex)         -- true if the word matches the regular expression
+
+X := Char... | MY_TRAY
+Char   := a ... z | A ... Z -- no single quotes needed
+Int    := 0 ... 14          -- scrabble words can only be 15 chars long 
+String := (Char|_)...       -- no double quotes needed  
+Regex  := "some regex"      -- any regex
+
+Examples:
+
+(search (matchAll (containsAny xyz) (pos b 4) (endsWith g)))
+(search (looksLike ori_nta_e))
+(place  pos~tiv_ty V (6,8) i)  -- use ~ to use a letter already on the board, _ for the blank tile.
+
+

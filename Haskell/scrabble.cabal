@@ -25,8 +25,17 @@ library
     Scrabble.Board
     Scrabble.Search
     Scrabble.Types
+    Scrabble.Commands.AST
+    Scrabble.Commands.SExpr
+    --Scrabble.Commands.Parser
   other-modules:
   build-depends:
     base >= 4.6 && < 5
-   ,containers >= 0.5.6.2
+   ,bytestring     >= 0.10.4.0
+   ,containers     >= 0.5.6.2
+   ,parsers        >= 0.12.1.1
    ,random-shuffle >= 0.0.4
+   ,semigroups     >= 0.8.3.1   && < 1
+   ,trifecta       >= 1.5.1
+   ,unordered-containers >= 0.2.5.0
+   ,utf8-string    >= 0.3.6 && < 0.4
