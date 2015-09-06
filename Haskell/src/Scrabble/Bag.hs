@@ -1,9 +1,12 @@
 module Scrabble.Bag where
 
+import qualified Data.Char as Char
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
+import Data.Maybe (fromJust)
 import Scrabble.Types
 import System.Random.Shuffle
+import Prelude hiding (Word)
 
 type Bag = [Letter]
 
@@ -46,3 +49,7 @@ distributionWithPoints = Map.intersectionWith (,) distributionMap pointsMap
 
 totalPoints :: Int
 totalPoints = sum $ Map.map (uncurry (*)) distributionWithPoints
+
+simpleWordPoints :: Word -> Points
+simpleWordPoints = sum . fmap (\l -> fromJust $ Map.lookup (Char.toUpper l) pointsMap)
+

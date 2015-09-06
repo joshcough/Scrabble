@@ -71,3 +71,4 @@ endsWith l w = head (reverse w) == l
 
 startsWith :: Letter -> Search1
 startsWith l w = head w == l
+

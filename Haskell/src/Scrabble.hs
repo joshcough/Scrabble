@@ -9,6 +9,7 @@ import Scrabble.Bag
 import Scrabble.Board
 import Scrabble.Search
 import Scrabble.Types
+import Prelude hiding (Word)
 
 type Name  = String
 type Score = Int
@@ -54,4 +55,6 @@ aiTurn :: Player -> Game -> Game
 aiTurn ai@(AI name tray score) g = error "todo"
 aiTurn p g = error "impossible"
 
+cheatWithPoints :: Search1 -> IO [(Word, Points)]
+cheatWithPoints search = fmap (\w -> (w,simpleWordPoints w)) <$> cheat search
 
