@@ -40,6 +40,9 @@ any = combine False or
 all :: [Search1] -> Search1
 all = combine True and
 
+matchAll = Scrabble.Search.all
+matchAny = Scrabble.Search.any
+
 lows :: String -> String
 lows = List.sort . fmap toLower
 
@@ -63,3 +66,8 @@ containsNone t = not . containsAny t
 containsLetterAtPos :: Letter -> Int -> Search1
 containsLetterAtPos l n w = if n >= length w then False else w !! n == l
 
+endsWith :: Letter -> Search1
+endsWith l w = head (reverse w) == l
+
+startsWith :: Letter -> Search1
+startsWith l w = head w == l
