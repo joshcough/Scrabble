@@ -8,7 +8,7 @@ import qualified Data.List as List
 import Debug.Trace
 
 dictionary :: IO [String]
-dictionary = lines <$> readFile "dict/en.txt"
+dictionary = lines <$> readFile "../dict/en.txt"
 
 type Search1 = Word -> Bool
 
