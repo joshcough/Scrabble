@@ -1,6 +1,7 @@
 module Scrabble.Search where
 
 import Data.Char (toLower, toUpper)
+import Data.List (delete)
 import System.Random.Shuffle
 import Prelude hiding (Word, or, and, all)
 import Scrabble.Types
@@ -51,20 +52,23 @@ lows :: String -> String
 lows = List.sort . fmap toLower
 
 -- TODO: be careful with what this means...
--- if there are dups in the input, does the word also need dups?
-containsAll :: Tray -> Search1
-containsAll = contains' List.all
+-- if there are dups in arg1, there must also be dups in arg2
+-- are all the chars in s1 also in s2?
+containsAll :: String -> Search1
+containsAll s1 s2 = fst $ foldl f (True, s2) s1 where
+  f :: (Bool, String) -> Char -> (Bool, String)
+  f (b,s) c = if elem c s then (b, delete c s) else (False,s)
 
-containsAny :: Tray -> Search1
+containsAny :: String -> Search1
 containsAny = contains' List.any
 
-contains' :: ((Char -> Bool) -> [Char] -> Bool) -> Tray -> Search1
+contains' :: ((Char -> Bool) -> [Char] -> Bool) -> String -> Search1
 contains' f t w = f (\c -> elem c w') (lows t) where w' = lows w
 
-containsOnly :: Tray -> Search1
+containsOnly :: String -> Search1
 containsOnly t w = lows t == lows w
 
-containsNone :: Tray -> Search1
+containsNone :: String -> Search1
 containsNone t = not . containsAny t
 
 containsLetterAtPos :: Letter -> Int -> Search1

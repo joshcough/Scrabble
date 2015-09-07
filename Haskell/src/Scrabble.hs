@@ -7,6 +7,9 @@ module Scrabble (
  ,module Scrabble.Types
 ) where
 
+import Data.Char (toUpper)
+import Data.List (delete,groupBy)
+import Data.Maybe (catMaybes)
 import Scrabble.Bag
 import Scrabble.Board
 import Scrabble.Commands.AST
@@ -15,16 +18,17 @@ import Scrabble.Search
 import Scrabble.Types
 import Prelude hiding (Word)
 
-type Name  = String
-type Score = Int
-type Dict  = [Word]
+type Name = String
 
 data PlayerType = Human | AI deriving (Eq, Show)
 data Player = Player {
   playerType  :: PlayerType,
   playerName  :: Name,
   playerTray  :: Tray,
-  playerScore :: Score } deriving (Eq, Show)
+  playerScore :: Score } deriving Eq
+
+instance Show Player where
+  show (Player _ n t s) = concat ["[", n, " tray: ", show t, " score: ", show s, "]"]
 
 newPlayer :: (Name, PlayerType) -> Player
 newPlayer (name, typ) = Player typ name [] 0
@@ -47,6 +51,9 @@ data Game = Game {
   gameBag     :: Bag,
   gameDict    :: Dict } deriving (Eq, Show)
 
+nextPlayer :: Game -> Player
+nextPlayer = head . gamePlayers
+
 newGame :: [(Name, PlayerType)] -> IO Game
 newGame ps = do
   bag  <- newBag
@@ -65,38 +72,41 @@ start :: [(Name, PlayerType)] -> IO ()
 start players = newGame players >>= gameLoop
 
 gameLoop :: Game -> IO ()
-gameLoop g = gameLoop' (cycle $ gamePlayers g) g where
-  gameLoop' _ g | isGameOver g = putStrLn ("Game Over!\n" ++ show g)
-  gameLoop' (p:ps) g = singleTurn p g >>= gameLoop' ps
+gameLoop g | isGameOver g = putStrLn ("Game Over!\n" ++ show g)
+gameLoop g = singleTurn g >>= gameLoop
 
-singleTurn :: Player -> Game -> IO Game
-singleTurn p | isHuman p = humanTurn p
-singleTurn ai = return . aiTurn ai
+singleTurn :: Game -> IO Game
+singleTurn g =
+  if isHuman (nextPlayer g) then humanTurn g else return (aiTurn g)
 
-humanTurn :: Player -> Game -> IO Game
-humanTurn p g = do
+humanTurn :: Game -> IO Game
+humanTurn g = do
   printBoard True (gameBoard g)
-  putStrLn $ "Turn for: " ++ show p
+  putStrLn $ "Turn for: " ++ show (nextPlayer g)
   putStrLn "Enter command (or type help)"
   command <- getLine
-  interpCommandString p g command
+  interpCommandString g command
 
-interpCommandString :: Player -> Game -> String -> IO Game
-interpCommandString p g command =
+interpCommandString :: Game -> String -> IO Game
+interpCommandString g command =
   either
-    (\err -> putStrLn err >> humanTurn p g)
-    (\res -> interpCommandRes p g res)
-    (fromString command >>= interpretExp (gameBoard g) (playerTray p) (gameDict g))
+    (\err -> putStrLn err >> humanTurn g)
+    (\res -> interpCommandRes g res)
+    (fromString command >>= interpretExp (gameBoard g) (playerTray (nextPlayer g)) (gameDict g))
 
-interpCommandRes :: Player -> Game -> CommandResult -> IO Game
-interpCommandRes h g@(Game ps bd bg d) (MoveResult (Move p r b)) = return $ Game ps b bg d
-interpCommandRes p g (QueryResult words) = putStrLn (show words) >> singleTurn p g
-interpCommandRes p g ShowHelp            = putStrLn "help unimplemented" >> singleTurn p g
-interpCommandRes h g NextPlayer          = return g
-interpCommandRes p g (PrintBoard b)      = printBoard b (gameBoard g) >> singleTurn p g
+interpCommandRes :: Game -> CommandResult -> IO Game
+interpCommandRes g@(Game (p:ps) bd bag d) (MoveResult (Move points remaining updatedBoard)) =
+  return $ Game (ps++[updatedPlayer]) updatedBoard updatedBag d where
+    updatedPlayer = Player (playerType p) (playerName p) updatedTray (playerScore p + points)
+    updatedTray   = take (7 - length remaining) bag ++ remaining
+    updatedBag    = drop (7 - length remaining) bag
+interpCommandRes g (QueryResult words) = putStrLn (show words) >> singleTurn g
+interpCommandRes g ShowHelp            = putStrLn "help unimplemented" >> singleTurn g
+interpCommandRes g NextPlayer          = return g
+interpCommandRes g (PrintBoard b)      = printBoard b (gameBoard g) >> singleTurn g
 
-aiTurn :: Player -> Game -> Game
-aiTurn p g = error "todo: aiTurn"
+aiTurn :: Game -> Game
+aiTurn g = error "todo: aiTurn"
 
 lookupWithPoints :: Search1 -> Dict -> [(Word, Points)]
 lookupWithPoints search dict = fmap (\w -> (w,simpleWordPoints w)) (runSearch1 search dict)
@@ -128,8 +138,13 @@ interpretPlacement ::
   Position    ->
   Maybe Word  ->
   Either String Move
-interpretPlacement b t pat o pos word =
-  -- just doing the simplest thing possible for now
-  return $ Move 0 t (placeWord (x pos, y pos) o pat b)
+interpretPlacement b tray pat o pos word =
+  if   patternLetters `containsAll` trayLetters
+  then return $ Move score trayRemainder newBoard
+  else Left "missing letters" where
+    (newBoard, score) = placeWord (x pos, y pos) o pat b
+    trayLetters       = fmap letter tray
+    patternLetters    = filter (\c -> c /= '@') . fmap (toUpper.letter) . catMaybes $ tiles pat
+    trayRemainder     = fmap fromLetter $ foldl (flip delete) trayLetters patternLetters
 
 
