@@ -15,8 +15,7 @@ import Scrabble.Bag
 import Scrabble.Board
 import Scrabble.Commands.AST
 import Scrabble.Commands.SExpr
-import Scrabble.Search ()
-import qualified Scrabble.Search as Search
+import Scrabble.Search
 import Scrabble.Types
 import Prelude hiding (Word)
 
@@ -64,7 +63,7 @@ nextPlayer = head . gamePlayers
 newGame :: [(Name, PlayerType)] -> IO Game
 newGame ps = do
   bag  <- newBag
-  dict <- Search.dictionary
+  dict <- dictionary
   let (players,bag') = fillTrays (fmap newPlayer ps) bag
   return $ Game players newBoard bag' dict
 
@@ -115,8 +114,8 @@ interpCommandRes g (PrintBoard b)      = printListBoard b (gameBoard g) >> singl
 aiTurn :: Game -> Game
 aiTurn g = error "todo: aiTurn"
 
-lookupWithPoints :: Search.Search1 -> Dict -> [(Word, Points)]
-lookupWithPoints search dict = fmap (\w -> (w,simpleWordPoints w)) (Search.runSearch1 search dict)
+lookupWithPoints :: Search1 -> Dict -> [(Word, Points)]
+lookupWithPoints search dict = fmap (\w -> (w,simpleWordPoints w)) (runSearch1 search dict)
 
 data Move = Move { pointsScored :: Points, remaining :: Tray, boardAfterMove :: ListBoard }
 data CommandResult =
@@ -140,14 +139,17 @@ interpretPut :: ListBoard -> Tray -> PutWord -> Either String Move
 interpretPut b tray pw = if valid then return move else Left errMsg where
   move              = Move score trayRemainder newBoard
   errMsg            = "error: tray missing input letters"
-  valid             = Search.containsAll putLetters trayLetters
+  valid             = containsAll putLetters trayLetters
   (newBoard, score) = putWord b pw
   trayLetters       = fmap letter tray
   putLetters        = filter (\c -> c /= '@') . (fmap (toUpper . letter)) . catMaybes $ (tiles._putWordTiles) pw
   trayRemainder     = fmap fromLetter $ foldl (flip delete) trayLetters putLetters
 
 quickPut :: [(String, Orientation, (Int, Int))] -> (ListBoard,[Score])
-quickPut words = foldl f (newBoard, []) putWords where
+quickPut words = quickPut' words newBoard
+
+quickPut' :: [(String, Orientation, (Int, Int))] -> ListBoard -> (ListBoard,[Score])
+quickPut' words b = foldl f (b, []) putWords where
   f (b,scores) w = (b',scores++[score]) where (b',score) = putWord b w
   putWords :: [PutWord]
   putWords =  (\(s,o,p) -> toPutWord s o p) <$> words

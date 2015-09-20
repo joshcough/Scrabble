@@ -147,25 +147,8 @@ afterByOrientation = catOrientation rightOf below
 taken :: Square -> Bool
 taken = Maybe.isJust . tile
 
-{- a tile on a square could start two words (horizontal and vertical)
-   or just one of those, or neither. return which ones it starts, if any
--}
-getWordsStartedBySquare :: (Foldable b, Board b) => Square -> b (b Square) -> [[Square]]
-getWordsStartedBySquare (Square (Just _) _ p) b = Maybe.catMaybes [vWord,hWord] where
-  {- what makes something the start of a word?
-     * if it has nothing above it, and something below it
-     * if it has nothing left of it, but something right of it.
-  -}
-  positions :: [Position]
-  positions@[posAboveP, posBelowP, posLeftOfP, posRightOfP]  = [aboveP p, belowP p, leftOfP p, rightOfP p]
-  squares :: [Maybe Square]
-  squares@  [sqrAboveP, sqrBelowP, sqrLeftOfP, sqrRightOfP]  = elemAt b <$> positions
-  sqrsEmpty :: [Bool]
-  sqrsEmpty@[emptyAbove,emptyBelow,emptyLeftOf,emptyRightOf] = (maybe False (not . taken)) <$> squares
-
-  hWord = if emptyLeftOf && not emptyRightOf then getWordAt b p Horizontal else Nothing
-  vWord = if emptyAbove  && not emptyBelow   then getWordAt b p Vertical   else Nothing
-getWordsStartedBySquare _ _ = []
+getWordsTouchingSquare :: (Foldable b, Board b) => Square -> b (b Square) -> [[Square]]
+getWordsTouchingSquare s b = Maybe.catMaybes [mh,mv] where (mh,mv) = getWordsAt b (pos s)
 
 {- get the word at the giving position, by orientation, if one exists -}
 listBoardGetWordAt :: Pos p => ListBoard -> p -> Orientation -> Maybe [Square]
@@ -175,7 +158,7 @@ listBoardGetWordAt b p o = tile <$> here >>= f where
   afterHere  = taker $ afterByOrientation o b p
   taker      = takeWhile taken
   word       = beforeHere ++ maybe [] (:[]) here ++ afterHere
-  f _        = if length word > 0 then Just word else Nothing
+  f _        = if length word > 1 then Just word else Nothing
 
 {- place a single tile, without worrying about scoring -}
 putTileOnListBoard :: Pos p => [[Square]] -> p -> Tile -> [[Square]]
@@ -229,13 +212,13 @@ calculateScore ::
   ListBoard -> -- the board (with those tiles on it)
   Score
 calculateScore squaresPlayedThisTurn nextBoard = turnScore where
-  wordsPlayedThisTurn :: [[Square]]
-  wordsPlayedThisTurn = concat $ f <$> squaresPlayedThisTurn where
-    f s = getWordsStartedBySquare s nextBoard
+  wordsPlayedThisTurn :: Set [Square]
+  wordsPlayedThisTurn = Set.fromList . concat $ f <$> squaresPlayedThisTurn where
+    f s = getWordsTouchingSquare s nextBoard
   squaresSet :: Set Square
   squaresSet = Set.fromList squaresPlayedThisTurn
   turnScore :: Score
-  turnScore = foldl f 0 (trace ("wordsPlayedThisTurn: " ++ show wordsPlayedThisTurn) wordsPlayedThisTurn) where
+  turnScore = foldl f 0 (trace ("wordsPlayedThisTurn: " ++ show wordsPlayedThisTurn) (Set.toList wordsPlayedThisTurn)) where
     f acc w = scoreWord w squaresSet + acc
 
 {- calculate the score for a single word -}
