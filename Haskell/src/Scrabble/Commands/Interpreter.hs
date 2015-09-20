@@ -20,30 +20,21 @@ lookupWithPoints search dict = fmap (\w -> (w,simpleWordPoints w)) (runSearch1 s
 
 data Move = Move { pointsScored :: Points, remaining :: Tray, boardAfterMove :: ListBoard }
 data CommandResult =
- MoveResult Move              |
+ MoveResult Game              |
  QueryResult [(Word, Points)] |
  ShowHelp                     |
  PrintScores [(Name,Score)]   |
- NextPlayer                   |
+ NextPlayer Game              |
  PrintBoard Bool ListBoard
 
--- TODO: this should probably be Either String Game
-interpMove :: Game -> Move -> Game
-interpMove g@(Game (p:ps) bd bag d) (Move points remaining updatedBoard) =
-  Game (ps++[updatedPlayer]) updatedBoard updatedBag d where
-    updatedPlayer = Player (playerType p) (playerName p) updatedTray (playerScore p + points)
-    updatedTray   = take (7 - length remaining) bag ++ remaining
-    updatedBag    = drop (7 - length remaining) bag
-
 interpretExp :: Game -> ScrabbleExp -> Either String CommandResult
-interpretExp _ Skip            = return NextPlayer
+interpretExp g Skip            = return . NextPlayer $ turnOver g
 interpretExp _ Help            = return ShowHelp
 interpretExp g ShowScores      = return . PrintScores $ getScores g
 interpretExp g (ShowBoard b)   = return $ PrintBoard b (gameBoard g)
 interpretExp g (Search search) = QueryResult <$> interpretSearch search (gameDict g)
-interpretExp g (Place pw)      = MoveResult  <$> interpretPut b t pw where
-  b = gameBoard g
-  t = playerTray (currentPlayer g)
+interpretExp g (Place pw)      = MoveResult  <$> g' where
+  g' = interpMove g <$> interpretPut (gameBoard g) (playerTray (currentPlayer g)) pw
 
 getScores :: Game -> [(Name, Score)]
 getScores g = getNameAndScore <$> gamePlayers g
@@ -61,3 +52,10 @@ interpretPut b tray pw = if valid then return move else Left errMsg where
   putLetters        = filter (\c -> c /= '@') . (fmap (toUpper . letter)) . catMaybes $ (tiles._putWordTiles) pw
   trayRemainder     = fmap fromLetter $ foldl (flip delete) trayLetters putLetters
 
+-- TODO: this should probably be Either String Game
+interpMove :: Game -> Move -> Game
+interpMove g@(Game (p:ps) bd bag d) (Move points remaining updatedBoard) =
+  Game (ps++[updatedPlayer]) updatedBoard updatedBag d where
+    updatedPlayer = Player (playerType p) (playerName p) updatedTray (playerScore p + points)
+    updatedTray   = take (7 - length remaining) bag ++ remaining
+    updatedBag    = drop (7 - length remaining) bag

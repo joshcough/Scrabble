@@ -47,12 +47,12 @@ instance FromSExpr ScrabbleExp where
       Place <$> (PutWord <$> g w b   <*> fromSExpr o <*> fromSExpr p)
     f (List [AtomSym "place", AtomSym w, o, p]) =
       Place <$> (PutWord <$> g w ""  <*> fromSExpr o <*> fromSExpr p)
-    f (AtomSym "skip")           = return Skip
-    f (AtomSym "help")           = return Help
-    f (AtomSym "showBoard")      = return (ShowBoard True)
-    f (AtomSym "showBoardClean") = return (ShowBoard False)
-    f (AtomSym "showScores")     = return ShowScores
-    f bad = parseError_ "bad command" bad
+    f (AtomSym "skip")        = return Skip
+    f (AtomSym "help")        = return Help
+    f (AtomSym "board")       = return (ShowBoard True)
+    f (AtomSym "board-clean") = return (ShowBoard False)
+    f (AtomSym "scores")      = return ShowScores
+    f bad                     = parseError_ "bad command" bad
     -- TODO: check if input chars are bad
     -- a lot of error handling isn't happening here
     -- this code is really bad

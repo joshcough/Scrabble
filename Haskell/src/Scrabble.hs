@@ -50,10 +50,10 @@ aiTurn :: Game -> Game
 aiTurn g = error "todo: aiTurn"
 
 interpCommandRes :: Game -> CommandResult -> IO Game
-interpCommandRes g (MoveResult m)      = return $ interpMove g m
+interpCommandRes _ (MoveResult g)      = return g
 interpCommandRes g (QueryResult words) = putStrLn (show words) >> return g
 interpCommandRes g ShowHelp            = putStrLn "help unimplemented" >> return g
-interpCommandRes g NextPlayer          = return g
+interpCommandRes _ (NextPlayer g)      = return g
 interpCommandRes g (PrintScores scrs)  = putStrLn (show scrs) >> return g
 interpCommandRes g (PrintBoard b brd)  = printListBoard b brd >> return g
 

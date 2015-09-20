@@ -56,12 +56,15 @@ instance Show Game where
 currentPlayer :: Game -> Player
 currentPlayer = head . gamePlayers
 
+turnOver :: Game -> Game
+turnOver (Game (p:ps) bd bg d) = Game (ps++[p]) bd bg d
+
 newGame :: [(Name, PlayerType)] -> IO Game
 newGame ps = do
   bag  <- newBag
   dict <- dictionary
   let (players,bag') = fillTrays (fmap newPlayer ps) bag
-  return $ Game players newBoard bag' dict
+  return $ Game (reverse players) newBoard bag' dict
 
 fillTrays :: [Player] -> Bag -> ([Player], Bag)
 fillTrays ps bag = foldl f ([], bag) ps where
