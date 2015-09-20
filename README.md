@@ -37,6 +37,16 @@ And then jump up on the repl:
     ----------------------------------------------
     *Scrabble> s
 
+### Play the game
+
+Start a new game:
+
+    *Scrabble> start [("Josh", Human), ("Stephen", Human), ("Andrew", Human)]
+
+Place the word 'rest' vertically at position (7,7). You can only place things in your tray.
+
+    (place REST V (7 7))
+
 ### Test the search engine:
 
     *Scrabble> cheat (matchAll [containsAny "z", containsLetterAtPos 'w' 4])
