@@ -47,10 +47,41 @@ Place the word 'rest' vertically at position (7,7). You can only place things in
 
     (place REST V (7 7))
 
-### Test the search engine:
+### Test the search engine
 
     *Scrabble> cheat (matchAll [containsAny "z", containsLetterAtPos 'w' 4])
     ["buzzwig","buzzwigs","buzzword","buzzwords","unbowdlerized","zugzwang","zugzwanged","zugzwanging","zugzwangs"]
 
     *Scrabble> cheat (matchAll [containsAny "x", containsLetterAtPos 'b' 4, endsWith 'g'])
     ["exhibiting","exorbitating","extubating","kickboxing","soapboxing"]
+
+### What's here
+
+```
+$ tree .
+.
+├── scrabble.cabal
+└── src
+    ├── Scrabble
+    │   ├── Bag.hs
+    │   ├── Board.hs
+    │   ├── Commands
+    │   │   ├── AST.hs
+    │   │   ├── Interpreter.hs
+    │   │   └── SExpr.hs
+    │   ├── Game.hs
+    │   ├── Search.hs
+    │   └── Types.hs
+    └── Scrabble.hs
+```
+
+* Scrabble.hs        - the main entry point
+* Scrabble/Bag.hs    - code for the bag and tiles
+* Scrabble/Board.hs  - code for the board and placing tiles on it
+* Scrabble/Game.hs   - code for managing game state
+* Scrabble/Search.hs - code for searching the dictionary
+* Scrabble/Types.hs  - basic types needed for all of Scrabble.
+* Scrabble/Commands/AST.hs         - AST for player input (and parsing)
+* Scrabble/Commands/Interpreter.hs - interpreter for player input
+* Scrabble/Commands/SExpr.hs       - generic sexpr parser
+
