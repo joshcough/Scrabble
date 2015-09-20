@@ -13,8 +13,27 @@ And then jump up on the repl:
 
 ### Place some words on the board:
 
-    *Scrabble> let (b,s) = quickPut [("HELL", Vertical, (7,7)), ("HAS", Horizontal, (5,6)), ("AH", Horizontal, (5,7))]
+-- The first expression has type: (b,s) :: (ListBoard, Score)
+
+    *Scrabble> let (b,s) = quickPut [("HELL", Vertical, (7,7)), ("HAS", Horizontal, (5,6)), ("AS", Horizontal, (5,7))]
     *Scrabble> printListBoard True b
+    ______________________________________________
+    |3W|  |  |2L|  |  |  |3W|  |  |  |2L|  |  |3W|
+    |  |2W|  |  |  |3L|  |  |  |3L|  |  |  |2W|  |
+    |  |  |2W|  |  |  |2L|  |2L|  |  |  |2W|  |  |
+    |2L|  |  |2W|  |  |  |2L|  |  |  |2W|  |  |2L|
+    |  |  |  |  |2W|  |  |  |  |  |2W|  |  |  |  |
+    |  |3L|  |  |  |3L|  |  |  |3L|  |  |  |3L|  |
+    |  |  |2L|  |  | H| A| S|2L|  |  |  |2L|  |  |
+    |3W|  |  |2L|  | A| S| H|  |  |  |2L|  |  |3W|
+    |  |  |2L|  |  |  |2L| E|2L|  |  |  |2L|  |  |
+    |  |3L|  |  |  |3L|  | L|  |3L|  |  |  |3L|  |
+    |  |  |  |  |2W|  |  | L|  |  |2W|  |  |  |  |
+    |2L|  |  |2W|  |  |  |2L|  |  |  |2W|  |  |2L|
+    |  |  |2W|  |  |  |2L|  |2L|  |  |  |2W|  |  |
+    |  |2W|  |  |  |3L|  |  |  |3L|  |  |  |2W|  |
+    |3W|  |  |2L|  |  |  |3W|  |  |  |2L|  |  |3W|
+    ----------------------------------------------
     *Scrabble> s
 
 ### Test the search engine:
