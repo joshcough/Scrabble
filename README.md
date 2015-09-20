@@ -1,14 +1,23 @@
 # Scrabble
 
-## Place some words on the board:
+### Getting started
+
+First things first, install all the dependencies:
 
     $ cd Haskell
+    $ cabal install --only-dependencies
+
+And then jump up on the repl:
+
     $ cabal repl
+
+### Place some words on the board:
+
     *Scrabble> let (b,s) = quickPut [("HELL", Vertical, (7,7)), ("HAS", Horizontal, (5,6)), ("AH", Horizontal, (5,7))]
     *Scrabble> printListBoard True b
     *Scrabble> s
 
-## Test the search engine:
+### Test the search engine:
 
     *Scrabble> cheat (matchAll [containsAny "z", containsLetterAtPos 'w' 4])
     ["buzzwig","buzzwigs","buzzword","buzzwords","unbowdlerized","zugzwang","zugzwanged","zugzwanging","zugzwangs"]
