@@ -13,8 +13,7 @@ import Scrabble.Types
 import Prelude hiding (Word)
 
 interpCommandString :: Game -> String -> Either String CommandResult
-interpCommandString g command =
-  fromString command >>= interpretExp (gameBoard g) (playerTray (nextPlayer g)) (gameDict g)
+interpCommandString g command = fromString command >>= interpretExp g
 
 lookupWithPoints :: Search1 -> Dict -> [(Word, Points)]
 lookupWithPoints search dict = fmap (\w -> (w,simpleWordPoints w)) (runSearch1 search dict)
@@ -24,8 +23,9 @@ data CommandResult =
  MoveResult Move              |
  QueryResult [(Word, Points)] |
  ShowHelp                     |
+ PrintScores [(Name,Score)]   |
  NextPlayer                   |
- PrintBoard Bool
+ PrintBoard Bool ListBoard
 
 -- TODO: this should probably be Either String Game
 interpMove :: Game -> Move -> Game
@@ -35,12 +35,18 @@ interpMove g@(Game (p:ps) bd bag d) (Move points remaining updatedBoard) =
     updatedTray   = take (7 - length remaining) bag ++ remaining
     updatedBag    = drop (7 - length remaining) bag
 
-interpretExp :: ListBoard -> Tray -> Dict -> ScrabbleExp -> Either String CommandResult
-interpretExp _ _ _ Skip = return NextPlayer
-interpretExp _ _ _ Help = return ShowHelp
-interpretExp _ _ _ (ShowBoard b)      = return $ PrintBoard b
-interpretExp _ _ dict (Search search) = QueryResult <$> interpretSearch search dict
-interpretExp b t _ (Place pw) = MoveResult <$> interpretPut b t pw
+interpretExp :: Game -> ScrabbleExp -> Either String CommandResult
+interpretExp _ Skip            = return NextPlayer
+interpretExp _ Help            = return ShowHelp
+interpretExp g ShowScores      = return . PrintScores $ getScores g
+interpretExp g (ShowBoard b)   = return $ PrintBoard b (gameBoard g)
+interpretExp g (Search search) = QueryResult <$> interpretSearch search (gameDict g)
+interpretExp g (Place pw)      = MoveResult  <$> interpretPut b t pw where
+  b = gameBoard g
+  t = playerTray (currentPlayer g)
+
+getScores :: Game -> [(Name, Score)]
+getScores g = getNameAndScore <$> gamePlayers g
 
 interpretSearch :: SearchExp -> Dict -> Either String [(Word, Points)]
 interpretSearch search dict = lookupWithPoints <$> toSearch1 search <*> pure dict

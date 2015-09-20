@@ -17,7 +17,8 @@ data ScrabbleExp =
   Place  PutWord   |
   Skip             |
   Help             |
-  ShowBoard Bool
+  ShowBoard Bool   |
+  ShowScores
   deriving (Show)
 
 data SearchExp =
@@ -50,6 +51,7 @@ instance FromSExpr ScrabbleExp where
     f (AtomSym "help")           = return Help
     f (AtomSym "showBoard")      = return (ShowBoard True)
     f (AtomSym "showBoardClean") = return (ShowBoard False)
+    f (AtomSym "showScores")     = return ShowScores
     f bad = parseError_ "bad command" bad
     -- TODO: check if input chars are bad
     -- a lot of error handling isn't happening here

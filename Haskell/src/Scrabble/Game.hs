@@ -27,6 +27,9 @@ instance Show Player where
 newPlayer :: (Name, PlayerType) -> Player
 newPlayer (name, typ) = Player typ name [] 0
 
+getNameAndScore :: Player -> (Name, Score)
+getNameAndScore (Player _ n _ s) = (n, s)
+
 setTray :: Player -> Tray -> Player
 setTray (Player tp n _ s) tr = Player tp n tr s
 
@@ -50,8 +53,8 @@ instance Show Game where
     intersperse ", " ["Game {", show ps, brd', show bag, "}"] where
       brd' = displayBoard brd
 
-nextPlayer :: Game -> Player
-nextPlayer = head . gamePlayers
+currentPlayer :: Game -> Player
+currentPlayer = head . gamePlayers
 
 newGame :: [(Name, PlayerType)] -> IO Game
 newGame ps = do
