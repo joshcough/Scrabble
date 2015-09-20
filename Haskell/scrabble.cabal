@@ -23,9 +23,11 @@ library
     Scrabble
     Scrabble.Bag
     Scrabble.Board
+    Scrabble.Game
     Scrabble.Search
     Scrabble.Types
     Scrabble.Commands.AST
+    Scrabble.Commands.Interpreter
     Scrabble.Commands.SExpr
     --Scrabble.Commands.Parser
   other-modules:

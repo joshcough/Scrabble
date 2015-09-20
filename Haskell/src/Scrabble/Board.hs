@@ -247,3 +247,16 @@ scoreWord word playedSquares = base * wordMultiplier where
   letterBonus t L2 = 2 * score t
   letterBonus t _  = score t
 
+{- put some words on a brand new board -}
+quickPut :: [(String, Orientation, (Int, Int))] -> (ListBoard,[Score])
+quickPut words = quickPut' words newBoard
+
+{- put some words onto an existing board -}
+quickPut' :: [(String, Orientation, (Int, Int))] -> ListBoard -> (ListBoard,[Score])
+quickPut' words b = foldl f (b, []) putWords where
+  f (b,scores) w = (b',scores++[score]) where (b',score) = putWord b w
+  putWords :: [PutWord]
+  putWords =  (\(s,o,p) -> toPutWord s o p) <$> words
+  toPutWord :: String -> Orientation -> (Int, Int) -> PutWord
+  toPutWord w o (x,y) = PutWord (PutTiles tiles) o (Position x y) where
+    tiles = f <$> w where f = Just . PutLetterTile . mkTile
