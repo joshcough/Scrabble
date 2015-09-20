@@ -9,6 +9,7 @@ import Data.List (intercalate)
 import Data.Maybe (Maybe)
 import qualified Data.Maybe as Maybe
 import Data.Set (Set)
+import Debug.Trace
 import qualified Data.Set as Set
 import Prelude hiding (Word)
 import Scrabble.Bag
@@ -32,15 +33,15 @@ class Vec m where
   after  :: Int -> m a -> m a
 
 class Matrix m where
-  elemAt  :: Pos p => (m (m a)) -> p -> a
-  row     :: m (m a) -> Int -> m a
-  col     :: m (m a) -> Int -> m a
+  elemAt  :: Pos p => (m (m a)) -> p -> Maybe a
+  row     :: m (m a) -> Int -> Maybe (m a)
+  col     :: m (m a) -> Int -> Maybe (m a)
   rows    :: m (m a) -> m (m a)
   cols    :: m (m a) -> m (m a)
-  above   :: Pos p => m (m a) -> p -> (m a)
-  below   :: Pos p => m (m a) -> p -> (m a)
-  leftOf  :: Pos p => m (m a) -> p -> (m a)
-  rightOf :: Pos p => m (m a) -> p -> (m a)
+  above   :: Pos p => m (m a) -> p -> m a
+  below   :: Pos p => m (m a) -> p -> m a
+  leftOf  :: Pos p => m (m a) -> p -> m a
+  rightOf :: Pos p => m (m a) -> p -> m a
 
 class Matrix b => Board b where
   putTile      :: Pos p => b (b Square) -> p -> Tile -> b (b Square)
@@ -57,15 +58,18 @@ instance Vec [] where
   after  = drop . (+1)
 
 instance Matrix [] where
-  elemAt  m p = m !! y !! x where (x,y) = coors p
-  row     m y = m !! y
-  col     m x = fmap (!!x) m
+  elemAt  m p | x >= 0 && y >= 0 = Just (m !! y !! x) where (x,y) = coors p
+  elemAt  _ _ = Nothing
+  row     m y | y >= 0 = Just $ m !! y
+  row     _ _ = Nothing
+  col     m x | x >= 0 = Just $ fmap (!!x) m
+  col     _ _ = Nothing
   rows    m   = m
-  cols    m   = fmap (col m) [0..14]
-  above   m p = before (y p) $ col m (x p)
-  below   m p = after  (y p) $ col m (x p)
-  leftOf  m p = before (x p) $ row m (y p)
-  rightOf m p = after  (x p) $ row m (y p)
+  cols    m   = Maybe.catMaybes $ fmap (col m) [0..14]
+  above   m p = Maybe.fromMaybe [] $ before (y p) <$> col m (x p)
+  below   m p = Maybe.fromMaybe [] $ after  (y p) <$> col m (x p)
+  leftOf  m p = Maybe.fromMaybe [] $ before (x p) <$> row m (y p)
+  rightOf m p = Maybe.fromMaybe [] $ after  (x p) <$> row m (y p)
 
 instance Board [] where
   putTile b p t              = putTileOnListBoard b p t
@@ -147,21 +151,30 @@ taken = Maybe.isJust . tile
    or just one of those, or neither. return which ones it starts, if any
 -}
 getWordsStartedBySquare :: (Foldable b, Board b) => Square -> b (b Square) -> [[Square]]
-getWordsStartedBySquare (Square (Just _) _ p) b = Maybe.catMaybes [v,h] where
-  isStartOfWord :: Orientation -> Maybe [Square]
-  isStartOfWord o = if (null $ beforeByOrientation o b p) then getWordAt b p o else Nothing
-  v = isStartOfWord Vertical
-  h = isStartOfWord Horizontal
+getWordsStartedBySquare (Square (Just _) _ p) b = Maybe.catMaybes [vWord,hWord] where
+  {- what makes something the start of a word?
+     * if it has nothing above it, and something below it
+     * if it has nothing left of it, but something right of it.
+  -}
+  positions :: [Position]
+  positions@[posAboveP, posBelowP, posLeftOfP, posRightOfP]  = [aboveP p, belowP p, leftOfP p, rightOfP p]
+  squares :: [Maybe Square]
+  squares@  [sqrAboveP, sqrBelowP, sqrLeftOfP, sqrRightOfP]  = elemAt b <$> positions
+  sqrsEmpty :: [Bool]
+  sqrsEmpty@[emptyAbove,emptyBelow,emptyLeftOf,emptyRightOf] = (maybe False (not . taken)) <$> squares
+
+  hWord = if emptyLeftOf && not emptyRightOf then getWordAt b p Horizontal else Nothing
+  vWord = if emptyAbove  && not emptyBelow   then getWordAt b p Vertical   else Nothing
 getWordsStartedBySquare _ _ = []
 
 {- get the word at the giving position, by orientation, if one exists -}
 listBoardGetWordAt :: Pos p => ListBoard -> p -> Orientation -> Maybe [Square]
-listBoardGetWordAt b p o = tile here >>= f where
+listBoardGetWordAt b p o = tile <$> here >>= f where
   here       = elemAt b p
   beforeHere = reverse . taker . reverse $ beforeByOrientation o b p
   afterHere  = taker $ afterByOrientation o b p
   taker      = takeWhile taken
-  word       = beforeHere ++ [here] ++ afterHere
+  word       = beforeHere ++ maybe [] (:[]) here ++ afterHere
   f _        = if length word > 0 then Just word else Nothing
 
 {- place a single tile, without worrying about scoring -}
@@ -178,7 +191,7 @@ putWordOnListBoard p w o b = either error (const (nextBoard, turnScore)) runChec
   turnScore = calculateScore squaresPlayedThisTurn nextBoard
 
   squaresInMainWord   :: [Square]
-  squaresInMainWord   = take (length $ tiles w) (elemAt b p : afterByOrientation o b p)
+  squaresInMainWord   = take (length $ tiles w) (Maybe.fromJust (elemAt b p) : afterByOrientation o b p)
   squaresAndTiles     :: [(Square,Maybe PutTile)]
   squaresAndTiles     = zip squaresInMainWord (tiles w)
   squaresPlayedThisTurn :: [Square]
@@ -222,7 +235,7 @@ calculateScore squaresPlayedThisTurn nextBoard = turnScore where
   squaresSet :: Set Square
   squaresSet = Set.fromList squaresPlayedThisTurn
   turnScore :: Score
-  turnScore = foldl f 0 wordsPlayedThisTurn where
+  turnScore = foldl f 0 (trace ("wordsPlayedThisTurn: " ++ show wordsPlayedThisTurn) wordsPlayedThisTurn) where
     f acc w = scoreWord w squaresSet + acc
 
 {- calculate the score for a single word -}

@@ -146,3 +146,12 @@ interpretPut b tray pw = if valid then return move else Left errMsg where
   putLetters        = filter (\c -> c /= '@') . (fmap (toUpper . letter)) . catMaybes $ (tiles._putWordTiles) pw
   trayRemainder     = fmap fromLetter $ foldl (flip delete) trayLetters putLetters
 
+quickPut :: [(String, Orientation, (Int, Int))] -> (ListBoard,[Score])
+quickPut words = foldl f (newBoard, []) putWords where
+  f (b,scores) w = (b',scores++[score]) where (b',score) = putWord b w
+  putWords :: [PutWord]
+  putWords =  (\(s,o,p) -> toPutWord s o p) <$> words
+  toPutWord :: String -> Orientation -> (Int, Int) -> PutWord
+  toPutWord w o (x,y) = PutWord (PutTiles tiles) o (Position x y) where
+    tiles = f <$> w where f = Just . PutLetterTile . mkTile
+
