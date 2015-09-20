@@ -15,7 +15,10 @@ And then jump up on the repl:
 
 -- The first expression has type: (b,s) :: (ListBoard, Score)
 
-    *Scrabble> let (b,s) = quickPut [("HELL", Vertical, (7,7)), ("HAS", Horizontal, (5,6)), ("AS", Horizontal, (5,7))]
+    *Scrabble> let hell = ("HELL", Vertical, (7,7))
+    *Scrabble> let has  = ("HAS", Horizontal, (5,6))
+    *Scrabble> let as   = ("AS",  Horizontal, (5,7))
+    *Scrabble> let (b,s) = quickPut [hell, has, as]
     *Scrabble> printListBoard True b
     ______________________________________________
     |3W|  |  |2L|  |  |  |3W|  |  |  |2L|  |  |3W|
