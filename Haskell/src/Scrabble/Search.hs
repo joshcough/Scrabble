@@ -1,6 +1,6 @@
 module Scrabble.Search where
 
-import Data.Char (toLower, toUpper)
+import Data.Char (toUpper)
 import Data.List (delete)
 import System.Random.Shuffle
 import Prelude hiding (Word, or, and, all)
@@ -48,25 +48,28 @@ matchAll  = Scrabble.Search.all
 matchAny  = Scrabble.Search.any
 matchNone = Scrabble.Search.none
 
-lows :: String -> String
-lows = List.sort . fmap toLower
+ups :: String -> String
+ups = List.sort . fmap toUpper
 
--- TODO: be careful with what this means...
--- if there are dups in arg1, there must also be dups in arg2
--- are all the chars in s1 also in s2?
+{- Search for _all_ of the letters in the first string (s1).
+   If a letter appears more than once in s1, it must
+   appear more than once in s2.
+   More accurately:
+     If a letter appears n times in s1,
+     it must appear n' times in s2 where n' >= n
+ -}
 containsAll :: String -> Search1
-containsAll s1 s2 = fst $ foldl f (True, s2) s1 where
-  f :: (Bool, String) -> Char -> (Bool, String)
+containsAll s1 s2 = fst $ foldl f (True, ups s2) (ups s1) where
   f (b,s) c = if elem c s then (b, delete c s) else (False,s)
 
 containsAny :: String -> Search1
-containsAny = contains' List.any
+containsAny = contains' List.any . ups
 
 contains' :: ((Char -> Bool) -> [Char] -> Bool) -> String -> Search1
-contains' f t w = f (\c -> elem c w') (lows t) where w' = lows w
+contains' f t w = f (\c -> elem c w') (ups t) where w' = ups w
 
 containsOnly :: String -> Search1
-containsOnly t w = lows t == lows w
+containsOnly t w = ups t == ups w
 
 containsNone :: String -> Search1
 containsNone t = not . containsAny t

@@ -1,6 +1,9 @@
 module Scrabble.Commands.AST where
 
 import Data.Char (toUpper)
+import Data.Map.Strict (Map)
+import qualified Data.Map.Strict as Map
+import Data.Maybe (catMaybes)
 import Scrabble.Bag
 import Scrabble.Search
 import Scrabble.Types
@@ -9,12 +12,9 @@ import Prelude hiding (Word)
 
 type Regex = String
 
--- if you used any _ tiles, you have to specify the word.
-data Placement = Placement Pattern Orientation Position (Maybe Word) deriving Show
-
 data ScrabbleExp =
   Search SearchExp |
-  Place Placement  |
+  Place  PutWord   |
   Skip             |
   Help             |
   ShowBoard Bool
@@ -28,29 +28,38 @@ data SearchExp =
   deriving (Show)
 
 data PrimSearchExp =
-  StartsWith Pattern  |
-  EndsWith   Pattern  |
+  StartsWith String   |
+  EndsWith   String   |
   LetterAt Letter Int |
   NoneOf [Letter]     |
   AnyOf  [Letter]     |
   AllOf  [Letter]     |
   Only   [Letter]     |
-  LooksLike Pattern   |
+  LooksLike String    |
   Regex Regex
   deriving (Show)
 
 instance FromSExpr ScrabbleExp where
   fromSExpr = f where
     f (List [AtomSym "search", s]) = Search <$> fromSExpr s
-    f (List [AtomSym "place", s, o, p, AtomSym b]) =
-      Place <$> (Placement <$> fromSExpr s <*> fromSExpr o <*> fromSExpr p <*> pure (Just b))
-    f (List [AtomSym "place", s, o, p]) =
-      Place <$> (Placement <$> fromSExpr s <*> fromSExpr o <*> fromSExpr p <*> pure Nothing)
+    f (List [AtomSym "place", AtomSym w, o, p, AtomSym b]) =
+      Place <$> (PutWord <$> g w b   <*> fromSExpr o <*> fromSExpr p)
+    f (List [AtomSym "place", AtomSym w, o, p]) =
+      Place <$> (PutWord <$> g w ""  <*> fromSExpr o <*> fromSExpr p)
     f (AtomSym "skip")           = return Skip
     f (AtomSym "help")           = return Help
     f (AtomSym "showBoard")      = return (ShowBoard True)
     f (AtomSym "showBoardClean") = return (ShowBoard False)
     f bad = parseError_ "bad command" bad
+    -- TODO: check if input chars are bad
+    -- a lot of error handling isn't happening here
+    -- this code is really bad
+    g :: String -> String -> Either String PutTiles
+    g w b = return . PutTiles . reverse . fst $ foldl h ([],b) w where
+      h :: ([Maybe PutTile], [Letter]) -> Letter -> ([Maybe PutTile], [Letter])
+      h (acc,r:rs) c | c == '_' || c == ' ' = (Just (PutBlankTile r) : acc, rs)
+      h (acc,rs)   c | c == '@' = (Nothing : acc, rs)
+      h (acc,rs)   c = (Just (PutLetterTile $ mkTile c) : acc, rs)
 
 instance FromSExpr Position where
   fromSExpr (List [AtomNum x, AtomNum y]) =
@@ -69,25 +78,17 @@ instance FromSExpr SearchExp where
     f (List (AtomSym "matchNone" : rest)) = MatchNone <$> traverse fromSExpr rest
     f other = Prim <$> fromSExpr other
 
+searchKeyWords :: Map String (String -> PrimSearchExp)
+searchKeyWords = Map.fromList [
+  ("startsWith",StartsWith), ("endsWith",EndsWith), ("noneOf",NoneOf), ("anyOf",AnyOf)
+ ,("allOf",AllOf), ("only",Only), ("regex",Regex), ("looksLike",LooksLike) ]
+
 instance FromSExpr PrimSearchExp where
   fromSExpr = f where
-    f (List [AtomSym "startsWith", AtomSym p]) = StartsWith <$> fromString p
-    f (List [AtomSym "endsWith",   AtomSym p]) = EndsWith   <$> fromString p
-    f (List [AtomSym "letterAt",   AtomSym p, AtomNum n]) = return $ LetterAt (head p) (fromIntegral n)
-    f (List [AtomSym "noneOf",     AtomSym p]) = return $ NoneOf p
-    f (List [AtomSym "anyOf",      AtomSym p]) = return $ AnyOf p
-    f (List [AtomSym "allOf",      AtomSym p]) = return $ AllOf p
-    f (List [AtomSym "only",       AtomSym p]) = return $ Only p
-    f (List [AtomSym "lookslike",  AtomSym p]) = LooksLike <$> fromString p
-    f (List [AtomSym "regex",      AtomSym p]) = return $ Regex p
-    f bad = parseError_ "bad search" bad
-
-instance FromSExpr Pattern where
-  fromSExpr (AtomSym p) = Pattern <$> traverse f p where
-    f :: Char -> Either String (Maybe Tile)
-    f '@' = return Nothing
-    f  l  = maybe (Left $ "bad letter: " ++ show l) (return.return) (Tile l <$> lookup (toUpper l) points)
-  fromSExpr bad = parseError_ "bad pattern" bad
+    f   (List [AtomSym "letterAt", AtomSym p, AtomNum n]) = return $ LetterAt (head p) (fromIntegral n)
+    f l@(List [AtomSym kw, AtomSym s]) = maybe (bad l) (\g -> return $ g s) (Map.lookup kw searchKeyWords)
+    f x = bad x
+    bad x = parseError_ "bad search" x
 
 toSearch1 :: SearchExp -> Either String Search1
 toSearch1 (MatchAll  searches) = matchAll  <$> traverse toSearch1 searches

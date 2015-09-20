@@ -8,13 +8,15 @@ module Scrabble (
 ) where
 
 import Data.Char (toUpper)
-import Data.List (delete,groupBy)
+import Data.List (delete,groupBy,intersperse)
 import Data.Maybe (catMaybes)
+import Debug.Trace
 import Scrabble.Bag
 import Scrabble.Board
 import Scrabble.Commands.AST
 import Scrabble.Commands.SExpr
-import Scrabble.Search
+import Scrabble.Search ()
+import qualified Scrabble.Search as Search
 import Scrabble.Types
 import Prelude hiding (Word)
 
@@ -47,9 +49,14 @@ isHuman p = playerType p == Human
 
 data Game = Game {
   gamePlayers :: [Player],
-  gameBoard   :: Board,
+  gameBoard   :: ListBoard,
   gameBag     :: Bag,
-  gameDict    :: Dict } deriving (Eq, Show)
+  gameDict    :: Dict } deriving Eq
+
+instance Show Game where
+  show (Game ps brd bag dict) = concat $
+    intersperse ", " ["Game {", show ps, brd', show bag, "}"] where
+      brd' = displayBoard brd
 
 nextPlayer :: Game -> Player
 nextPlayer = head . gamePlayers
@@ -57,7 +64,7 @@ nextPlayer = head . gamePlayers
 newGame :: [(Name, PlayerType)] -> IO Game
 newGame ps = do
   bag  <- newBag
-  dict <- dictionary
+  dict <- Search.dictionary
   let (players,bag') = fillTrays (fmap newPlayer ps) bag
   return $ Game players newBoard bag' dict
 
@@ -81,7 +88,7 @@ singleTurn g =
 
 humanTurn :: Game -> IO Game
 humanTurn g = do
-  printBoard True (gameBoard g)
+  printListBoard True (gameBoard g)
   putStrLn $ "Turn for: " ++ show (nextPlayer g)
   putStrLn "Enter command (or type help)"
   command <- getLine
@@ -103,15 +110,15 @@ interpCommandRes g@(Game (p:ps) bd bag d) (MoveResult (Move points remaining upd
 interpCommandRes g (QueryResult words) = putStrLn (show words) >> singleTurn g
 interpCommandRes g ShowHelp            = putStrLn "help unimplemented" >> singleTurn g
 interpCommandRes g NextPlayer          = return g
-interpCommandRes g (PrintBoard b)      = printBoard b (gameBoard g) >> singleTurn g
+interpCommandRes g (PrintBoard b)      = printListBoard b (gameBoard g) >> singleTurn g
 
 aiTurn :: Game -> Game
 aiTurn g = error "todo: aiTurn"
 
-lookupWithPoints :: Search1 -> Dict -> [(Word, Points)]
-lookupWithPoints search dict = fmap (\w -> (w,simpleWordPoints w)) (runSearch1 search dict)
+lookupWithPoints :: Search.Search1 -> Dict -> [(Word, Points)]
+lookupWithPoints search dict = fmap (\w -> (w,simpleWordPoints w)) (Search.runSearch1 search dict)
 
-data Move = Move { pointsScored :: Points, remaining :: Tray, boardAfterMove :: Board }
+data Move = Move { pointsScored :: Points, remaining :: Tray, boardAfterMove :: ListBoard }
 data CommandResult =
  MoveResult Move              |
  QueryResult [(Word, Points)] |
@@ -119,32 +126,23 @@ data CommandResult =
  NextPlayer                   |
  PrintBoard Bool
 
-interpretExp :: Board -> Tray -> Dict -> ScrabbleExp -> Either String CommandResult
+interpretExp :: ListBoard -> Tray -> Dict -> ScrabbleExp -> Either String CommandResult
 interpretExp _ _ _ Skip = return NextPlayer
 interpretExp _ _ _ Help = return ShowHelp
 interpretExp _ _ _ (ShowBoard b)      = return $ PrintBoard b
 interpretExp _ _ dict (Search search) = QueryResult <$> interpretSearch search dict
-interpretExp b t _ (Place (Placement pattern o pos word)) =
-  MoveResult <$> interpretPlacement b t pattern o pos word
+interpretExp b t _ (Place pw) = MoveResult <$> interpretPut b t pw
 
 interpretSearch :: SearchExp -> Dict -> Either String [(Word, Points)]
 interpretSearch search dict = lookupWithPoints <$> toSearch1 search <*> pure dict
 
-interpretPlacement ::
-  Board       ->
-  Tray        ->
-  Pattern     ->
-  Orientation ->
-  Position    ->
-  Maybe Word  ->
-  Either String Move
-interpretPlacement b tray pat o pos word =
-  if   patternLetters `containsAll` trayLetters
-  then return $ Move score trayRemainder newBoard
-  else Left "missing letters" where
-    (newBoard, score) = placeWord (x pos, y pos) o pat b
-    trayLetters       = fmap letter tray
-    patternLetters    = filter (\c -> c /= '@') . fmap (toUpper.letter) . catMaybes $ tiles pat
-    trayRemainder     = fmap fromLetter $ foldl (flip delete) trayLetters patternLetters
-
+interpretPut :: ListBoard -> Tray -> PutWord -> Either String Move
+interpretPut b tray pw = if valid then return move else Left errMsg where
+  move              = Move score trayRemainder newBoard
+  errMsg            = "error: tray missing input letters"
+  valid             = Search.containsAll putLetters trayLetters
+  (newBoard, score) = putWord b pw
+  trayLetters       = fmap letter tray
+  putLetters        = filter (\c -> c /= '@') . (fmap (toUpper . letter)) . catMaybes $ (tiles._putWordTiles) pw
+  trayRemainder     = fmap fromLetter $ foldl (flip delete) trayLetters putLetters
 

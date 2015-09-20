@@ -1,50 +1,85 @@
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+
 module Scrabble.Board where
 
 import Data.Char (toUpper)
+import Data.Either (isRight)
 import Data.List (intercalate)
-import Data.Maybe (fromMaybe,isJust)
+import Data.Maybe (Maybe)
+import qualified Data.Maybe as Maybe
+import Data.Set (Set)
+import qualified Data.Set as Set
 import Prelude hiding (Word)
+import Scrabble.Bag
 import Scrabble.Types
 
-data Bonus  = W3 | W2 | L3 | L2 | Star | NoBonus deriving Eq
+data Bonus  = W3 | W2 | L3 | L2 | Star | NoBonus deriving (Eq,Ord)
 
 data Square = Square {
   tile  :: Maybe Tile,
   bonus :: Bonus,
   pos   :: Position
-} deriving Eq
+} deriving (Eq,Ord)
 
-type Row    = [Square]
-type Col    = [Square]
-data Board  = Board [Row] deriving Eq
+instance Show Square where
+  show = showSquare True
+
+type ListBoard  = [[Square]]
+
+class Vec m where
+  before :: Int -> m a -> m a
+  after  :: Int -> m a -> m a
+
+class Matrix m where
+  elemAt  :: Pos p => (m (m a)) -> p -> a
+  row     :: m (m a) -> Int -> m a
+  col     :: m (m a) -> Int -> m a
+  rows    :: m (m a) -> m (m a)
+  cols    :: m (m a) -> m (m a)
+  above   :: Pos p => m (m a) -> p -> (m a)
+  below   :: Pos p => m (m a) -> p -> (m a)
+  leftOf  :: Pos p => m (m a) -> p -> (m a)
+  rightOf :: Pos p => m (m a) -> p -> (m a)
+
+class Matrix b => Board b where
+  putTile      :: Pos p => b (b Square) -> p -> Tile -> b (b Square)
+  putWord      :: b (b Square) -> PutWord -> (b (b Square), Score)
+  displayBoard :: b (b Square) -> String
+  -- returns Nothing if no tile on the square
+  getWordAt    :: Pos p => b (b Square) -> p -> Orientation -> Maybe [Square]
+
+getWordsAt :: (Pos p, Board b) => b (b Square) -> p -> (Maybe [Square], Maybe [Square])
+getWordsAt b p = (getWordAt b p Horizontal, getWordAt b p Vertical)
+
+instance Vec [] where
+  before = take
+  after  = drop . (+1)
+
+instance Matrix [] where
+  elemAt  m p = m !! y !! x where (x,y) = coors p
+  row     m y = m !! y
+  col     m x = fmap (!!x) m
+  rows    m   = m
+  cols    m   = fmap (col m) [0..14]
+  above   m p = before (y p) $ col m (x p)
+  below   m p = after  (y p) $ col m (x p)
+  leftOf  m p = before (x p) $ row m (y p)
+  rightOf m p = after  (x p) $ row m (y p)
+
+instance Board [] where
+  putTile b p t              = putTileOnListBoard b p t
+  putWord b (PutWord ts o p) = putWordOnListBoard p ts o b
+  displayBoard               = showListBoard True
+  getWordAt                  = listBoardGetWordAt
 
 instance Show Bonus where
-  show = showBonus
-
-showBonus :: Bonus -> String
-showBonus W3 = "3W"
-showBonus W2 = "2W"
-showBonus L3 = "3L"
-showBonus L2 = "2L"
-showBonus Star    = " *"
-showBonus NoBonus = "  "
-
-letterScore :: Tile -> Bonus -> Score
-letterScore t L3 = 3 * (score t)
-letterScore t L2 = 2 * (score t)
-letterScore t _  = score t
-
-wordBonus :: Bonus -> Score -> Score
-wordBonus W3 s = s * 3
-wordBonus W2 s = s * 2
-wordBonus _  s = s
-
---instance Show Square where
---  show = showSquare True
-
-isTaken :: Square -> Bool
-isTaken (Square (Just _) _ _) = True
-isTaken _ = False
+  show W3 = "3W"
+  show W2 = "2W"
+  show L3 = "3L"
+  show L2 = "2L"
+  show Star    = " *"
+  show NoBonus = "  "
 
 showSquare :: Bool -> Square -> String
 showSquare printBonus (Square mt b p) =
@@ -53,11 +88,8 @@ showSquare printBonus (Square mt b p) =
 debugSquare :: Square -> String
 debugSquare (Square mt b p) = concat ["Square {tile:", show mt, ", bonus:", show b, ", pos:", show p]
 
-instance Show Board where
-  show = showBoard True
-
-showBoard :: Bool -> Board -> String
-showBoard printBonuses (Board board) = top ++ showRows ++ bottom where
+showListBoard :: Bool -> ListBoard -> String
+showListBoard printBonuses board = top ++ showRows ++ bottom where
   showRows      = intercalate "\n" (fmap showRow board) ++ "\n"
   showRow     r = "|" ++ concat (fmap showSquare' r)
   showSquare' s = showSquare printBonuses s ++ "|"
@@ -65,14 +97,13 @@ showBoard printBonuses (Board board) = top ++ showRows ++ bottom where
   bottom        = line '-'
   line        c = replicate 46 c ++ "\n"
 
-printBoard :: Bool -> Board -> IO ()
-printBoard b = putStrLn . showBoard b
+printListBoard :: Bool -> ListBoard -> IO ()
+printListBoard b = putStrLn . showListBoard b
 
-newBoard :: Board
-newBoard = Board $ fmap (fmap f) boardBonuses where
-  f (b,pos) = Square Nothing b pos
+newBoard :: ListBoard
+newBoard = fmap (fmap f) boardBonuses where f (pos,b) = Square Nothing b pos
 
-boardBonuses :: [[(Bonus,Position)]]
+boardBonuses :: [[(Position, Bonus)]]
 boardBonuses = indexify [
   [W3,  o,  o, L2,  o,  o,  o, W3,  o,  o,  o, L2,  o,  o, W3],
   [ o, W2,  o,  o,  o, L3,  o,  o,  o, L3,  o,  o,  o, W2,  o],
@@ -92,79 +123,100 @@ boardBonuses = indexify [
  where
    o = NoBonus
    s = Star
-   indexify :: [[a]] -> [[(a, Position)]]
-   indexify as = fmap f (zip as [0..]) where
-     f (l,y)   = fmap g (zip  l [0..]) where
-       g (a,x) = (a, Position x y)
 
-{-
-placeLetter :: (Int, Int) -> Tile -> Board -> Board
-placeLetter (x,_) _ _ | x > 14 = error $ "x index out of bounds: " ++ show x
-placeLetter (_,y) _ _ | y > 14 = error $ "y index out of bounds: " ++ show y
-placeLetter (x,y) newLetter b = replaceRow y newRow b where
-  newRow = mapNth x (\s -> placeTileInSquare s newLetter) (getRow b y)
--}
+indexify :: [[a]] -> [[(Position, a)]]
+indexify as  = fmap f (zip [0..] as) where
+   f (y,l)   = fmap g (zip [0..] l ) where
+     g (x,a) = (Position x y, a)
 
-placeWord :: (Int, Int) -> Orientation -> Pattern -> Board -> (Board, Score)
-placeWord (x,_) Horizontal w _ | (x + length (tiles w)) > 15 = error $ "word too long: " ++ show (x, w)
-placeWord (_,y) Vertical   w _ | (y + length (tiles w)) > 15 = error $ "word too long: " ++ show (y, w)
-placeWord (x,y) Horizontal w b = (replaceRow y newRow b, score) where
-  (newRow,score) = placeWordInRow x (getRow b y) w
-placeWord (x,y) Vertical   w b = (replaceCol x newRow b, score) where
-  (newRow,score) = placeWordInCol y (getCol b x) w
+beforeByOrientation :: (Pos p, Matrix m) => Orientation -> m (m a) -> p -> m a
+beforeByOrientation = catOrientation leftOf above
+afterByOrientation :: (Pos p, Matrix m) => Orientation -> m (m a) -> p -> m a
+afterByOrientation = catOrientation rightOf below
 
-getRow :: Board -> Int -> Row
-getRow (Board rows) n = rows !! n
+taken :: Square -> Bool
+taken = Maybe.isJust . tile
 
-getCol :: Board -> Int -> Col
-getCol (Board rows) n = fmap (!! n) rows
+getWordsStartedBySquare :: (Foldable b, Board b) => Square -> b (b Square) -> [[Square]]
+getWordsStartedBySquare (Square (Just _) _ p) b = Maybe.catMaybes [v,h] where
+  isStartOfWord :: Orientation -> Maybe [Square]
+  isStartOfWord o = if (null $ beforeByOrientation o b p) then getWordAt b p o else Nothing
+  v = isStartOfWord Vertical
+  h = isStartOfWord Horizontal
+getWordsStartedBySquare _ _ = []
 
-placeWordInRow :: Int -> Row -> Pattern -> (Row, Score)
-placeWordInRow = placeWordInList
-placeWordInCol :: Int -> Col -> Pattern -> (Col, Score)
-placeWordInCol = placeWordInList
+listBoardGetWordAt :: Pos p => ListBoard -> p -> Orientation -> Maybe [Square]
+listBoardGetWordAt b p o = tile here >>= f where
+  here       = elemAt b p
+  beforeHere = reverse . taker . reverse $ beforeByOrientation o b p
+  afterHere  = taker $ afterByOrientation o b p
+  taker      = takeWhile taken
+  word       = beforeHere ++ [here] ++ afterHere
+  f _        = if length word > 0 then Just word else Nothing
 
-placeWordInList :: Int -> [Square] -> Pattern -> (Row, Score)
-placeWordInList pos row pat = (newRow, wordScore) where
-  (xs,ys)    = splitAt pos row
-  ysStart    = take (length $ tiles pat) ys
-  ysEnd      = drop (length $ tiles pat) ys
-  newSquares = fmap (uncurry placeTileInSquare) (zip ysStart $ tiles pat)
-  newRow     = xs ++ newSquares ++ ysEnd
-  wordScore  = getScore $ zip (tiles pat) newSquares
+putTileOnListBoard :: Pos p => [[Square]] -> p -> Tile -> [[Square]]
+putTileOnListBoard b p t = mapNth newRow (y p) b where
+  newRow = mapNth (\(Square _ b p) -> Square (Just t) b p) (x p)
 
-getScore ::  [(Maybe Tile, Square)] -> Int
-getScore placements = foldl (flip wordBonus) lScore wordBonuses where
-  lScore = sum . fmap lScore1 $ placements where
-    lScore1 (Nothing, (Square (Just t) b _)) = score t
-    lScore1 (Just t,  (Square _ b _))        = score t
-  wordBonuses :: [Bonus]
-  wordBonuses = fmap (\(_,s) -> bonus s) (filter (\(m,s) -> isJust m) placements)
+mapNth :: (a -> a) -> Int -> [a] -> [a]
+mapNth f i as = xs ++ [f $ head ys] ++ drop 1 ys where (xs,ys) = splitAt i as
 
-placeTileInSquare :: Square -> Maybe Tile -> Square
--- if it is taken, and we are trying to put a tile there, bad.
-placeTileInSquare s (Just _) | isTaken s = error $ "Square unavailable: " ++ debugSquare s
--- if it isn't taken, and we want to put a tile in, good.
-placeTileInSquare (Square Nothing b p) (Just t) = Square (Just t) b p
--- if aren't trying to put anything in there, thats ok..
-placeTileInSquare s Nothing  = s
+putWordOnListBoard :: Pos p => p -> PutTiles -> Orientation -> ListBoard -> (ListBoard, Score)
+putWordOnListBoard p w o b = either error (const (newBoard, turnScore)) check where
+  squaresInMainWord   :: [Square]
+  squaresInMainWord   = take (length $ tiles w) (elemAt b p : afterByOrientation o b p)
+  squaresAndTiles     :: [(Square,Maybe PutTile)]
+  squaresAndTiles     = zip squaresInMainWord (tiles w)
+  squaresPlayedThisTurn :: [Square]
+  squaresPlayedThisTurn = f <$> filter (Maybe.isJust . snd) squaresAndTiles where
+    f (Square _ b p, (Just (PutLetterTile t))) = Square (Just t) b p
+    f (Square _ b p, (Just (PutBlankTile l)))  = Square (Just $ mkTile l) b p
+  newBoard :: ListBoard
+  newBoard = foldl f b squaresPlayedThisTurn where
+    f acc (Square t _ p) = putTile acc p $ Maybe.fromJust t
+  wordsPlayedThisTurn :: [[Square]]
+  wordsPlayedThisTurn = concat $ (\s -> getWordsStartedBySquare s newBoard) <$> squaresPlayedThisTurn
+  squaresSet :: Set Square
+  squaresSet = Set.fromList squaresPlayedThisTurn
+  turnScore :: Score
+  turnScore = foldl f 0 wordsPlayedThisTurn where
+    f acc w = scoreWord w squaresSet + acc
+  -- checks if everything out the put is good
+  check :: Either String ()
+  check = tooLong x >> tooLong y >> checkPuts >> return () where
+    {- checkPuts returns true if
+         * all the letters were put down on empty squares
+         * a tile was placed in all the empty tiles in the word
+     -}
+    checkPuts :: Either String ()
+    checkPuts = traverse (uncurry checkPut) squaresAndTiles >> return ()
+    tooLong f  = if f p + (length . tiles) w > 15 then Left tooLongErr else Right ()
+    tooLongErr = "word too long: " ++ show (w, (x p, y p))
 
-replaceRow :: Int -> Row -> Board -> Board
-replaceRow n newRow (Board b) = Board $ replaceNth n newRow b
+  checkPut :: Square -> Maybe PutTile -> Either String ()
+  checkPut (Square (Just t) _ p) (Just _) = Left $ "square taken: " ++ show t ++ ", " ++ show p
+  checkPut (Square Nothing  _ p) Nothing  = Left $ "empty square at: " ++ show (x p, y p)
+  checkPut _ _ = Right ()
 
-replaceCol :: Int -> Col -> Board -> Board
-replaceCol n newCol (Board rows) =
-  Board $ fmap replaceLetterInRow (zip newCol rows) where
-    replaceLetterInRow (l,r) = replaceNth n l r
+debugSquareList :: [Square] -> String
+debugSquareList ss = show $ debugSquare <$> ss
 
-replaceNth :: Int -> a -> [a] -> [a]
-replaceNth n newVal = mapNth n (const newVal)
+scoreWord :: [Square] -> Set Square -> Score
+scoreWord word playedSquares = base * wordBonuses where
+  base = foldl (\s l -> scoreLetter l playedSquares + s) 0 word
+  wordBonuses = foldl f 1 $ filter (\s -> Set.member s playedSquares) word where
+    f acc (Square _ W3 _) = acc * 3
+    f acc (Square _ W2 _) = acc * 2
+    f acc _               = acc * 1
 
-mapNth :: Int -> (a -> a) -> [a] -> [a]
-mapNth n f as = xs ++ [f y] ++ ys where (xs,y:ys) = splitAt n as
+  scoreLetter :: Square -> Set Square -> Score
+  scoreLetter s@(Square (Just t) bonus _) playedSquares =
+    if Set.member s playedSquares
+    then letterBonus t bonus
+    else score t
 
--- Might want to use this later...
-replaceNthIfAvailable :: Show a => Int -> a -> [Maybe a] -> [Maybe a]
-replaceNthIfAvailable n newVal row = case row !! n of
-  Just n' -> error $ show ("position taken", n, newVal, row)
-  Nothing -> replaceNth n (Just newVal) row
+  letterBonus :: Tile -> Bonus -> Score
+  letterBonus t L3 = 3 * score t
+  letterBonus t L2 = 2 * score t
+  letterBonus t _  = score t
+
