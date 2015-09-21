@@ -9,10 +9,6 @@ module Scrabble (
  ,module Scrabble.Types
 ) where
 
-import Data.Char (toUpper)
-import Data.List (delete,groupBy,intersperse)
-import Data.Maybe (catMaybes)
-import Debug.Trace
 import Scrabble.Bag
 import Scrabble.Board
 import Scrabble.Commands.AST
@@ -21,7 +17,6 @@ import Scrabble.Commands.SExpr
 import Scrabble.Game
 import Scrabble.Search
 import Scrabble.Types
-import Prelude hiding (Word)
 
 start :: [(Name, PlayerType)] -> IO ()
 start players = newGame players >>= gameLoop

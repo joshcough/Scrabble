@@ -6,8 +6,6 @@ import Data.Maybe (catMaybes)
 import Debug.Trace
 import Scrabble.Bag
 import Scrabble.Board
-import Scrabble.Commands.AST
-import Scrabble.Commands.SExpr
 import Scrabble.Search
 import Scrabble.Types
 import Prelude hiding (Word)
