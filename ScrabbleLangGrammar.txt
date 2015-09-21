@@ -4,8 +4,9 @@ ScrabbleExp :=
   (place String Orientation Pos BlankDef...) | -- place a word
   skip                                         -- skip your turn
   help                                         -- show help text
-  showBoard                                    -- show the board with the bonuses
-  showBoardClean                               -- show the board without the bonuses
+  board                                        -- show the board with the bonuses
+  boardClean                                   -- show the board without the bonuses
+  scores				       -- show the scoreboard
 
 BlankDef := Char     -- blank def says what character to use for any _ in your word
 Orientation := V | H -- Vertical or Horizontal
