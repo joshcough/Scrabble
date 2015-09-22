@@ -236,7 +236,7 @@ scoreWord word playedSquares = base * wordMultiplier where
     if Set.member s playedSquares then letterBonus t bonus else score t
 
   {- determine the word multipliers for this word (based on using any 2W or 3W tiles -}
-  wordMultiplier = foldl f 1 $ filter (\s -> Set.member s playedSquares) word where
+  wordMultiplier = foldl' f 1 $ filter (\s -> Set.member s playedSquares) word where
     f acc (Square _ W3 _) = acc * 3
     f acc (Square _ W2 _) = acc * 2
     f acc _               = acc * 1
@@ -253,7 +253,7 @@ quickPut words = quickPut' words newBoard
 
 {- put some words onto an existing board -}
 quickPut' :: [(String, Orientation, (Int, Int))] -> ListBoard -> (ListBoard,[Score])
-quickPut' words b = foldl f (b, []) putWords where
+quickPut' words b = foldl' f (b, []) putWords where
   f (b,scores) w = (b',scores++[score]) where (b',score) = putWord b w
   putWords :: [PutWord]
   putWords =  (\(s,o,p) -> toPutWord s o p) <$> words
