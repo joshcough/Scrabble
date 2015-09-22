@@ -27,13 +27,13 @@ and :: Search1 -> Search1 -> Search1
 and s1 s2 w = s1 w && s2 w
 
 any' :: [Search1] -> Search1
-any' = foldl or (const False)
+any' = foldr or (const False)
 
 all' :: [Search1] -> Search1
-all' = foldl and (const True)
+all' = foldr and (const True)
 
 combine :: Bool -> (Search1 -> Search1 -> Search1) -> [Search1] -> Search1
-combine b f = foldl f (const b)
+combine b f = foldr f (const b)
 
 any :: [Search1] -> Search1
 any = combine False or
