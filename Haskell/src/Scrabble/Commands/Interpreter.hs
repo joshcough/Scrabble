@@ -50,7 +50,7 @@ interpretPut b tray pw = if valid then return move else Left errMsg where
   (newBoard, score) = putWord b pw
   trayLetters       = fmap letter tray
   putLetters        = filter (\c -> c /= '@') . (fmap (toUpper . letter)) . catMaybes $ (tiles._putWordTiles) pw
-  trayRemainder     = fmap fromLetter $ foldl (flip delete) trayLetters putLetters
+  trayRemainder     = fmap fromLetter $ foldl' (flip delete) trayLetters putLetters
 
 -- TODO: this should probably be Either String Game
 interpMove :: Game -> Move -> Game

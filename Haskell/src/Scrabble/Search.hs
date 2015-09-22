@@ -59,7 +59,7 @@ ups = List.sort . fmap toUpper
      it must appear n' times in s2 where n' >= n
  -}
 containsAll :: String -> Search1
-containsAll s1 s2 = fst $ foldl f (True, ups s2) (ups s1) where
+containsAll s1 s2 = fst $ foldl' f (True, ups s2) (ups s1) where
   f (b,s) c = if elem c s then (b, delete c s) else (False,s)
 
 containsAny :: String -> Search1
