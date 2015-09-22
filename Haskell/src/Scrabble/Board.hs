@@ -32,17 +32,6 @@ class Vec m where
   before :: Int -> m a -> m a
   after  :: Int -> m a -> m a
 
-class Matrix m where
-  elemAt  :: Pos p => (m (m a)) -> p -> Maybe a
-  row     :: m (m a) -> Int -> Maybe (m a)
-  col     :: m (m a) -> Int -> Maybe (m a)
-  rows    :: m (m a) -> m (m a)
-  cols    :: m (m a) -> m (m a)
-  above   :: Pos p => m (m a) -> p -> m a
-  below   :: Pos p => m (m a) -> p -> m a
-  leftOf  :: Pos p => m (m a) -> p -> m a
-  rightOf :: Pos p => m (m a) -> p -> m a
-
 class Matrix b => Board b where
   putTile      :: Pos p => b (b Square) -> p -> Tile -> b (b Square)
   putWord      :: b (b Square) -> PutWord -> (b (b Square), Score)
@@ -56,20 +45,6 @@ getWordsAt b p = (getWordAt b p Horizontal, getWordAt b p Vertical)
 instance Vec [] where
   before = take
   after  = drop . (+1)
-
-instance Matrix [] where
-  elemAt  m p | x >= 0 && y >= 0 = Just (m !! y !! x) where (x,y) = coors p
-  elemAt  _ _ = Nothing
-  row     m y | y >= 0 = Just $ m !! y
-  row     _ _ = Nothing
-  col     m x | x >= 0 = Just $ fmap (!!x) m
-  col     _ _ = Nothing
-  rows    m   = m
-  cols    m   = Maybe.catMaybes $ fmap (col m) [0..14]
-  above   m p = Maybe.fromMaybe [] $ before (y p) <$> col m (x p)
-  below   m p = Maybe.fromMaybe [] $ after  (y p) <$> col m (x p)
-  leftOf  m p = Maybe.fromMaybe [] $ before (x p) <$> row m (y p)
-  rightOf m p = Maybe.fromMaybe [] $ after  (x p) <$> row m (y p)
 
 instance Board [] where
   putTile b p t              = putTileOnListBoard b p t
