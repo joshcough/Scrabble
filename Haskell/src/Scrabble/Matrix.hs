@@ -6,7 +6,7 @@
 module Scrabble.Matrix
   ( Matrix(..)
   , ListMatrix
-  , LM
+  , pattern LM
   , Vec(..)
   ) where
 
@@ -51,9 +51,8 @@ instance Matrix [] ListMatrix where
   col     (LM m) x | x >= 0 = Just $ fmap (!!x) m
   col     _ _ = Nothing
   rows    m   = m
-  cols    m   = Maybe.catMaybes $ fmap (col m) [0..14]
+  cols    m   = LM (Maybe.catMaybes $ fmap (col m) [0..14])
   above   m p = Maybe.fromMaybe [] $ before (y p) <$> col m (x p)
   below   m p = Maybe.fromMaybe [] $ after  (y p) <$> col m (x p)
   leftOf  m p = Maybe.fromMaybe [] $ before (x p) <$> row m (y p)
   rightOf m p = Maybe.fromMaybe [] $ after  (x p) <$> row m (y p)
-
