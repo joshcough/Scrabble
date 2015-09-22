@@ -28,10 +28,6 @@ instance Show Square where
 
 type ListBoard  = [[Square]]
 
-class Vec m where
-  before :: Int -> m a -> m a
-  after  :: Int -> m a -> m a
-
 class Matrix b => Board b where
   putTile      :: Pos p => b (b Square) -> p -> Tile -> b (b Square)
   putWord      :: b (b Square) -> PutWord -> (b (b Square), Score)
@@ -41,10 +37,6 @@ class Matrix b => Board b where
 
 getWordsAt :: (Pos p, Board b) => b (b Square) -> p -> (Maybe [Square], Maybe [Square])
 getWordsAt b p = (getWordAt b p Horizontal, getWordAt b p Vertical)
-
-instance Vec [] where
-  before = take
-  after  = drop . (+1)
 
 instance Board [] where
   putTile b p t              = putTileOnListBoard b p t

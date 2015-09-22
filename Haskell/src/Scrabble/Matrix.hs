@@ -1,14 +1,26 @@
-{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE PatternSynonyms #-}
+{-# LANGUAGE TypeSynonymInstances #-}
 module Scrabble.Matrix
   ( Matrix(..)
   , ListMatrix
   , LM
+  , Vec(..)
   ) where
 
-import Data.Functor.Compose
+import Data.Functor.Compose (Compose(..))
+import Data.Maybe (Maybe)
+import qualified Data.Maybe as Maybe
+import Scrabble.Types (Pos(..))
 
+class Vec m where
+  before :: Int -> m a -> m a
+  after  :: Int -> m a -> m a
+
+-- | A generic matrix type 'm', whose rows are represented by the
+-- generic 'r'.
 class Matrix r m | m -> r where
   elemAt  :: Pos p => (m a) -> p -> Maybe a
   row     :: m a -> Int -> Maybe (r a)
@@ -20,12 +32,16 @@ class Matrix r m | m -> r where
   leftOf  :: Pos p => m a -> p -> r a
   rightOf :: Pos p => m a -> p -> r a
 
--- | The composition of two lists forms a "matrix".
+-- | '[[a]]' is an 'a' "matrix".
 type ListMatrix = Compose [] []
 
 -- | A shorthand for getting the list-of-list out of a 'ListMatrix',
 -- and putting one back in.
 pattern LM a = Compose a
+
+instance Vec [] where
+  before = take
+  after  = drop . (+1)
 
 instance Matrix [] ListMatrix where
   elemAt  (LM m) p | x >= 0 && y >= 0 = Just (m !! y !! x) where (x,y) = coors p
