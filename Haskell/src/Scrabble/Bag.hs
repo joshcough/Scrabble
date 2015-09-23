@@ -3,7 +3,7 @@ module Scrabble.Bag where
 import qualified Data.Char as Char
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
-import Data.Maybe (fromJust)
+import Data.Maybe (fromMaybe)
 import Scrabble.Types
 import System.Random.Shuffle
 import Prelude hiding (Word)
@@ -34,7 +34,7 @@ orderedBag :: Bag
 orderedBag = concat $ fmap (\(l,n) -> fmap mkTile $ replicate n l) distribution
 
 mkTile :: Letter -> Tile
-mkTile l = Tile l (fromJust $ lookup l points)
+mkTile l = Tile l (fromMaybe (error $ l : "is an invalid letter") $ lookup l points)
 
 fromLetter :: Letter -> Tile
 fromLetter = mkTile
@@ -57,5 +57,6 @@ totalPoints :: Int
 totalPoints = sum $ Map.map (uncurry (*)) distributionWithPoints
 
 simpleWordPoints :: Word -> Points
-simpleWordPoints = sum . fmap (\l -> fromJust $ Map.lookup (Char.toUpper l) pointsMap)
+simpleWordPoints = sum . fmap (\l ->
+  fromMaybe (error "simple word points") $ Map.lookup (Char.toUpper l) pointsMap)
 

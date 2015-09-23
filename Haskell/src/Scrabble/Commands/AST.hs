@@ -43,25 +43,20 @@ data PrimSearchExp =
 instance FromSExpr ScrabbleExp where
   fromSExpr = f where
     f (List [AtomSym "search", s]) = Search <$> fromSExpr s
-    f (List [AtomSym "place", AtomSym w, o, p, AtomSym b]) =
-      Place <$> (PutWord <$> g w b   <*> fromSExpr o <*> fromSExpr p)
-    f (List [AtomSym "place", AtomSym w, o, p]) =
-      Place <$> (PutWord <$> g w ""  <*> fromSExpr o <*> fromSExpr p)
+    f (List [AtomSym "place", AtomSym w, o, p, AtomSym b]) = do
+      o' <- fromSExpr o
+      p' <- fromSExpr p
+      Place <$> makePutWord w o' p' b
+    f (List [AtomSym "place", AtomSym w, o, p]) = do
+      o' <- fromSExpr o
+      p' <- fromSExpr p
+      Place <$> makePutWord w o' p' ""
     f (AtomSym "skip")        = return Skip
     f (AtomSym "help")        = return Help
     f (AtomSym "board")       = return (ShowBoard True)
     f (AtomSym "board-clean") = return (ShowBoard False)
     f (AtomSym "scores")      = return ShowScores
     f bad                     = parseError_ "bad command" bad
-    -- TODO: check if input chars are bad
-    -- a lot of error handling isn't happening here
-    -- this code is really bad
-    g :: String -> String -> Either String PutTiles
-    g w b = return . PutTiles . reverse . fst $ foldl h ([],b) w where
-      h :: ([Maybe PutTile], [Letter]) -> Letter -> ([Maybe PutTile], [Letter])
-      h (acc,r:rs) c | c == '_' || c == ' ' = (Just (PutBlankTile r) : acc, rs)
-      h (acc,rs)   c | c == '@' = (Nothing : acc, rs)
-      h (acc,rs)   c = (Just (PutLetterTile $ mkTile c) : acc, rs)
 
 instance FromSExpr Position where
   fromSExpr (List [AtomNum x, AtomNum y]) =
@@ -109,3 +104,23 @@ primToSearch1 (Only     ls)    = return $ containsOnly ls
 primToSearch1 (LooksLike pat)  = return . looksLike $ show pat
 primToSearch1 (Regex r)        = return $ regex r
 
+-- TODO: check if input chars are bad
+-- a lot of error handling isn't happening here
+-- this code is really bad
+makePutWord :: String      ->
+               Orientation ->
+               Position    ->
+               [Char]      ->
+               Either String PutWord
+makePutWord w o p blanks = return $ PutWord putTils where
+
+  coordinates :: [(Int,Int)]
+  coordinates = reverse . fst $ foldl f ([],(x p,y p)) w where
+    f (acc,(x,y)) c = ((x,y):acc, adder (x,y))
+    adder = catOrientation (\(x,y) -> (x+1,y)) (\(x,y) -> (x,y+1)) o
+
+  putTils :: [PutTile]
+  putTils = catMaybes $ zipWith f w (zip coordinates [0..]) where
+    f '@' _     = Nothing
+    f '_' (p,i) = Just $ PutLetterTile (mkTile $ blanks !! i) (pos p)
+    f  c  (p,i) = Just $ PutLetterTile (mkTile c) (pos p)

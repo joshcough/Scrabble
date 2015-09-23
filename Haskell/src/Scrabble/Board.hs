@@ -174,7 +174,7 @@ putTileOnListBoard b p t = mapNth newRow (y p) b where
 putWordOnListBoard :: ListBoard -> PutWord -> Either String (ListBoard, Score)
 putWordOnListBoard b pw = do
   squares <- squaresPlayedThisTurn
-  let b' = nextBoard squares
+  let b' = nextBoard $ zip squares (tiles pw)
   runChecks (zipSquaresAndTiles squares) b b'
   return (b', turnScore squares b') where
 
@@ -189,9 +189,11 @@ putWordOnListBoard b pw = do
   zipSquaresAndTiles :: [Square] -> [(Square,PutTile,Position)]
   zipSquaresAndTiles sqrs = zipWith (\s t -> (s, t, pos t)) sqrs (tiles pw)
 
-  nextBoard :: [Square] -> ListBoard
+  nextBoard :: [(Square,PutTile)] -> ListBoard
   nextBoard sqrs = foldl f b sqrs where
-    f acc (Square t _ p) = putTile acc p $ Maybe.fromJust t
+    f acc ((Square _ _ p), pt) = putTile acc p (g pt) where
+      g (PutLetterTile t _) = t
+      g (PutBlankTile  l _) = mkTile l
 
 {- checks if everything in a move is good -}
 runChecks ::

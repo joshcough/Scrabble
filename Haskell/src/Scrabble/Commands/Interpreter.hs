@@ -43,14 +43,14 @@ interpretSearch :: SearchExp -> Dict -> Either String [(Word, Points)]
 interpretSearch search dict = lookupWithPoints <$> toSearch1 search <*> pure dict
 
 interpretPut :: ListBoard -> Tray -> PutWord -> Either String Move
-interpretPut b tray pw = if valid then return move else Left errMsg where
-  move              = Move score trayRemainder newBoard
-  errMsg            = "error: tray missing input letters"
-  valid             = containsAll putLetters trayLetters
-  (newBoard, score) = putWord b pw
-  trayLetters       = fmap letter tray
-  putLetters        = filter (\c -> c /= '@') . (fmap (toUpper . letter)) . catMaybes $ (tiles._putWordTiles) pw
-  trayRemainder     = fmap fromLetter $ foldl (flip delete) trayLetters putLetters
+interpretPut b tray pw = if valid then go else Left errMsg where
+  errMsg        = "error: tray missing input letters"
+  valid         = containsAll putLetters trayLetters
+  trayLetters   = fmap letter tray
+  putLetters    = letter <$> tiles pw
+  trayRemainder = fmap fromLetter $ foldl (flip delete) trayLetters putLetters
+  go = do (newBoard, score) <- putWord b pw
+          return $ Move score trayRemainder newBoard
 
 -- TODO: this should probably be Either String Game
 interpMove :: Game -> Move -> Game
