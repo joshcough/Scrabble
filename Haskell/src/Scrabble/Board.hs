@@ -1,5 +1,7 @@
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE TypeSynonymInstances #-}
 
 module Scrabble.Board where
 
@@ -13,6 +15,7 @@ import Debug.Trace
 import qualified Data.Set as Set
 import Prelude hiding (Word)
 import Scrabble.Bag
+import Scrabble.Matrix
 import Scrabble.Types
 
 data Bonus  = W3 | W2 | L3 | L2 | Star | NoBonus deriving (Eq,Ord)
@@ -26,19 +29,19 @@ data Square = Square {
 instance Show Square where
   show = showSquare True
 
-type ListBoard  = [[Square]]
+type ListBoard  = ListMatrix Square
 
 class Matrix b => Board b where
-  putTile      :: Pos p => b (b Square) -> p -> Tile -> b (b Square)
-  putWord      :: b (b Square) -> PutWord -> (b (b Square), Score)
-  displayBoard :: b (b Square) -> String
+  putTile      :: Pos p => b Square -> p -> Tile -> b Square
+  putWord      :: b Square -> PutWord -> (b Square, Score)
+  displayBoard :: b Square -> String
   -- returns Nothing if no tile on the square
-  getWordAt    :: Pos p => b (b Square) -> p -> Orientation -> Maybe [Square]
+  getWordAt    :: Pos p => b Square -> p -> Orientation -> Maybe [Square]
 
-getWordsAt :: (Pos p, Board b) => b (b Square) -> p -> (Maybe [Square], Maybe [Square])
+getWordsAt :: (Pos p, Board b) => b Square -> p -> (Maybe [Square], Maybe [Square])
 getWordsAt b p = (getWordAt b p Horizontal, getWordAt b p Vertical)
 
-instance Board [] where
+instance Board ListMatrix where
   putTile b p t              = putTileOnListBoard b p t
   putWord b (PutWord ts o p) = putWordOnListBoard p ts o b
   displayBoard               = showListBoard True
@@ -63,7 +66,7 @@ debugSquareList :: [Square] -> String
 debugSquareList ss = show $ debugSquare <$> ss
 
 showListBoard :: Bool -> ListBoard -> String
-showListBoard printBonuses board = top ++ showRows ++ bottom where
+showListBoard printBonuses (LM board) = top ++ showRows ++ bottom where
   showRows      = intercalate "\n" (fmap showRow board) ++ "\n"
   showRow     r = "|" ++ concat (fmap showSquare' r)
   showSquare' s = showSquare printBonuses s ++ "|"
@@ -76,7 +79,7 @@ printListBoard b = putStrLn . showListBoard b
 
 {- create a new, empty Scrabble board -}
 newBoard :: ListBoard
-newBoard = fmap (fmap f) boardBonuses where f (pos,b) = Square Nothing b pos
+newBoard = fmap f (LM boardBonuses) where f (pos,b) = Square Nothing b pos
 
 {- a simple representation of an empty Scrabble board -}
 boardBonuses :: [[(Position, Bonus)]]
@@ -105,16 +108,16 @@ boardBonuses = indexify [
        g (x,a) = (Position x y, a)
 
 {- all the tiles 'before' a position in a matrix, vertically or horizontally -}
-beforeByOrientation :: (Pos p, Matrix m) => Orientation -> m (m a) -> p -> m a
+beforeByOrientation :: (Pos p, Matrix m) => Orientation -> m a -> p -> Row m a
 beforeByOrientation = catOrientation leftOf above
-afterByOrientation :: (Pos p, Matrix m) => Orientation -> m (m a) -> p -> m a
+afterByOrientation :: (Pos p, Matrix m) => Orientation -> m a -> p -> Row m a
 {- all the tiles 'after' a position in a matrix, vertically or horizontally -}
 afterByOrientation = catOrientation rightOf below
 
 taken :: Square -> Bool
 taken = Maybe.isJust . tile
 
-getWordsTouchingSquare :: (Foldable b, Board b) => Square -> b (b Square) -> [[Square]]
+getWordsTouchingSquare :: (Foldable b, Board b) => Square -> b Square -> [[Square]]
 getWordsTouchingSquare s b = Maybe.catMaybes [mh,mv] where (mh,mv) = getWordsAt b (pos s)
 
 {- get the word at the giving position, by orientation, if one exists -}
@@ -128,8 +131,8 @@ listBoardGetWordAt b p o = tile <$> here >>= f where
   f _        = if length word > 1 then Just word else Nothing
 
 {- place a single tile, without worrying about scoring -}
-putTileOnListBoard :: Pos p => [[Square]] -> p -> Tile -> [[Square]]
-putTileOnListBoard b p t = mapNth newRow (y p) b where
+putTileOnListBoard :: Pos p => ListBoard -> p -> Tile -> ListBoard
+putTileOnListBoard (LM b) p t = LM (mapNth newRow (y p) b) where
   newRow = mapNth (\(Square _ b p) -> Square (Just t) b p) (x p)
   mapNth :: (a -> a) -> Int -> [a] -> [a]
   mapNth f i as = xs ++ [f $ head ys] ++ drop 1 ys where (xs,ys) = splitAt i as
