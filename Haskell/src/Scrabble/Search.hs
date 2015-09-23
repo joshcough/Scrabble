@@ -1,7 +1,7 @@
 module Scrabble.Search where
 
 import Data.Char (toUpper)
-import Data.List (delete)
+import Data.List (delete, foldl')
 import System.Random.Shuffle
 import Prelude hiding (Word, or, and, all)
 import Scrabble.Types

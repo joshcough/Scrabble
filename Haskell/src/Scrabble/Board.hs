@@ -5,7 +5,7 @@ module Scrabble.Board where
 
 import Data.Char (toUpper)
 import Data.Either (isRight)
-import Data.List (intercalate)
+import Data.List (foldl', intercalate)
 import Data.Maybe (Maybe)
 import qualified Data.Maybe as Maybe
 import Data.Set (Set)
