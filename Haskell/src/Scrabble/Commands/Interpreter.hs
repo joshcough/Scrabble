@@ -1,7 +1,7 @@
 module Scrabble.Commands.Interpreter where
 
 import Data.Char (toUpper)
-import Data.List (delete,groupBy,intersperse)
+import Data.List (delete,foldl',groupBy,intersperse)
 import Data.Maybe (catMaybes)
 import Scrabble.Bag
 import Scrabble.Board
