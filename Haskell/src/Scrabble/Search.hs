@@ -1,7 +1,7 @@
 module Scrabble.Search where
 
 import Data.Char (toUpper)
-import Data.List (delete)
+import Data.List (delete, foldl')
 import System.Random.Shuffle
 import Prelude hiding (Word, or, and, all)
 import Scrabble.Types
@@ -27,13 +27,13 @@ and :: Search1 -> Search1 -> Search1
 and s1 s2 w = s1 w && s2 w
 
 any' :: [Search1] -> Search1
-any' = foldl or (const False)
+any' = foldr or (const False)
 
 all' :: [Search1] -> Search1
-all' = foldl and (const True)
+all' = foldr and (const True)
 
 combine :: Bool -> (Search1 -> Search1 -> Search1) -> [Search1] -> Search1
-combine b f = foldl f (const b)
+combine b f = foldr f (const b)
 
 any :: [Search1] -> Search1
 any = combine False or
@@ -59,7 +59,7 @@ ups = List.sort . fmap toUpper
      it must appear n' times in s2 where n' >= n
  -}
 containsAll :: String -> Search1
-containsAll s1 s2 = fst $ foldl f (True, ups s2) (ups s1) where
+containsAll s1 s2 = fst $ foldl' f (True, ups s2) (ups s1) where
   f (b,s) c = if elem c s then (b, delete c s) else (False,s)
 
 containsAny :: String -> Search1

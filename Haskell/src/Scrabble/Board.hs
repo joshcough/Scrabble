@@ -1,11 +1,13 @@
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE TypeSynonymInstances #-}
 
 module Scrabble.Board where
 
 import Data.Char (toUpper)
 import Data.Either (isRight)
-import Data.List (intercalate)
+import Data.List (foldl', intercalate)
 import Data.Maybe (Maybe)
 import qualified Data.Maybe as Maybe
 import Data.Set (Set)
@@ -13,6 +15,7 @@ import Debug.Trace
 import qualified Data.Set as Set
 import Prelude hiding (Word)
 import Scrabble.Bag
+import Scrabble.Matrix
 import Scrabble.Types
 
 data Bonus  = W3 | W2 | L3 | L2 | Star | NoBonus deriving (Eq,Ord)
@@ -29,52 +32,19 @@ instance HasPosition Square where
 instance Show Square where
   show = showSquare True
 
-type ListBoard  = [[Square]]
-
-class Vec m where
-  before :: Int -> m a -> m a
-  after  :: Int -> m a -> m a
-
-class Matrix m where
-  elemAt  :: Pos p => (m (m a)) -> p -> Maybe a
-  row     :: m (m a) -> Int -> Maybe (m a)
-  col     :: m (m a) -> Int -> Maybe (m a)
-  rows    :: m (m a) -> m (m a)
-  cols    :: m (m a) -> m (m a)
-  above   :: Pos p => m (m a) -> p -> m a
-  below   :: Pos p => m (m a) -> p -> m a
-  leftOf  :: Pos p => m (m a) -> p -> m a
-  rightOf :: Pos p => m (m a) -> p -> m a
+type ListBoard  = ListMatrix Square
 
 class Matrix b => Board b where
-  putTile      :: Pos p => b (b Square) -> p -> Tile -> b (b Square)
-  putWord      :: b (b Square) -> PutWord -> Either String (b (b Square), Score)
-  displayBoard :: b (b Square) -> String
+  putTile      :: Pos p => b Square -> p -> Tile -> b Square
+  putWord      :: b Square -> PutWord -> Either String (b Square, Score)
+  displayBoard :: b Square -> String
   -- returns Nothing if no tile on the square
-  getWordAt    :: Pos p => b (b Square) -> p -> Orientation -> Maybe [Square]
+  getWordAt    :: Pos p => b Square -> p -> Orientation -> Maybe [Square]
 
-getWordsAt :: (Pos p, Board b) => b (b Square) -> p -> (Maybe [Square], Maybe [Square])
+getWordsAt :: (Pos p, Board b) => b Square -> p -> (Maybe [Square], Maybe [Square])
 getWordsAt b p = (getWordAt b p Horizontal, getWordAt b p Vertical)
 
-instance Vec [] where
-  before = take
-  after  = drop . (+1)
-
-instance Matrix [] where
-  elemAt  m p | x >= 0 && y >= 0 = Just (m !! y !! x) where (x,y) = coors p
-  elemAt  _ _ = Nothing
-  row     m y | y >= 0 = Just $ m !! y
-  row     _ _ = Nothing
-  col     m x | x >= 0 = Just $ fmap (!!x) m
-  col     _ _ = Nothing
-  rows    m   = m
-  cols    m   = Maybe.catMaybes $ fmap (col m) [0..14]
-  above   m p = Maybe.fromMaybe [] $ before (y p) <$> col m (x p)
-  below   m p = Maybe.fromMaybe [] $ after  (y p) <$> col m (x p)
-  leftOf  m p = Maybe.fromMaybe [] $ before (x p) <$> row m (y p)
-  rightOf m p = Maybe.fromMaybe [] $ after  (x p) <$> row m (y p)
-
-instance Board [] where
+instance Board ListMatrix where
   putTile b p t  = putTileOnListBoard b p t
   putWord b pw   = putWordOnListBoard b pw
   displayBoard   = showListBoard True
@@ -99,7 +69,7 @@ debugSquareList :: [Square] -> String
 debugSquareList ss = show $ debugSquare <$> ss
 
 showListBoard :: Bool -> ListBoard -> String
-showListBoard printBonuses board = top ++ showRows ++ bottom where
+showListBoard printBonuses (LM board) = top ++ showRows ++ bottom where
   showRows      = intercalate "\n" (fmap showRow board) ++ "\n"
   showRow     r = "|" ++ concat (fmap showSquare' r)
   showSquare' s = showSquare printBonuses s ++ "|"
@@ -112,7 +82,7 @@ printListBoard b = putStrLn . showListBoard b
 
 {- create a new, empty Scrabble board -}
 newBoard :: ListBoard
-newBoard = fmap (fmap f) boardBonuses where f (pos,b) = Square Nothing b pos
+newBoard = fmap f (LM boardBonuses) where f (pos,b) = Square Nothing b pos
 
 {- a simple representation of an empty Scrabble board -}
 boardBonuses :: [[(Position, Bonus)]]
@@ -141,16 +111,16 @@ boardBonuses = indexify [
        g (x,a) = (Position x y, a)
 
 {- all the tiles 'before' a position in a matrix, vertically or horizontally -}
-beforeByOrientation :: (Pos p, Matrix m) => Orientation -> m (m a) -> p -> m a
+beforeByOrientation :: (Pos p, Matrix m) => Orientation -> m a -> p -> Row m a
 beforeByOrientation = catOrientation leftOf above
-afterByOrientation :: (Pos p, Matrix m) => Orientation -> m (m a) -> p -> m a
+afterByOrientation :: (Pos p, Matrix m) => Orientation -> m a -> p -> Row m a
 {- all the tiles 'after' a position in a matrix, vertically or horizontally -}
 afterByOrientation = catOrientation rightOf below
 
 taken :: Square -> Bool
 taken = Maybe.isJust . tile
 
-getWordsTouchingSquare :: (Foldable b, Board b) => Square -> b (b Square) -> [[Square]]
+getWordsTouchingSquare :: (Foldable b, Board b) => Square -> b Square -> [[Square]]
 getWordsTouchingSquare s b = Maybe.catMaybes [mh,mv] where (mh,mv) = getWordsAt b (pos s)
 
 {- get the word at the giving position, by orientation, if one exists -}
@@ -164,8 +134,8 @@ listBoardGetWordAt b p o = tile <$> here >>= f where
   f _        = if length word > 1 then Just word else Nothing
 
 {- place a single tile, without worrying about scoring -}
-putTileOnListBoard :: Pos p => [[Square]] -> p -> Tile -> [[Square]]
-putTileOnListBoard b p t = mapNth newRow (y p) b where
+putTileOnListBoard :: Pos p => ListBoard -> p -> Tile -> ListBoard
+putTileOnListBoard (LM b) p t = LM (mapNth newRow (y p) b) where
   newRow = mapNth (\(Square _ b p) -> Square (Just t) b p) (x p)
   mapNth :: (a -> a) -> Int -> [a] -> [a]
   mapNth f i as = xs ++ [f $ head ys] ++ drop 1 ys where (xs,ys) = splitAt i as
@@ -249,7 +219,7 @@ scoreWord word playedSquares = base * wordMultiplier where
     if Set.member s playedSquares then letterBonus t bonus else score t
 
   {- determine the word multipliers for this word (based on using any 2W or 3W tiles -}
-  wordMultiplier = foldl f 1 $ filter (\s -> Set.member s playedSquares) word where
+  wordMultiplier = foldl' f 1 $ filter (\s -> Set.member s playedSquares) word where
     f acc (Square _ W3 _) = acc * 3
     f acc (Square _ W2 _) = acc * 2
     f acc _               = acc * 1
