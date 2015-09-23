@@ -1,7 +1,6 @@
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE FunctionalDependencies #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE PatternSynonyms #-}
+{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 module Scrabble.Matrix
   ( Matrix(..)
@@ -20,17 +19,18 @@ class Vec m where
   after  :: Int -> m a -> m a
 
 -- | A generic matrix type 'm', whose rows are represented by the
--- generic 'r'.
-class Matrix r m | m -> r where
+-- associated 'Row'.
+class Matrix m where
+  type Row m :: * -> *
   elemAt  :: Pos p => (m a) -> p -> Maybe a
-  row     :: m a -> Int -> Maybe (r a)
-  col     :: m a -> Int -> Maybe (r a)
+  row     :: m a -> Int -> Maybe (Row m a)
+  col     :: m a -> Int -> Maybe (Row m a)
   rows    :: m a -> m a
   cols    :: m a -> m a
-  above   :: Pos p => m a -> p -> r a
-  below   :: Pos p => m a -> p -> r a
-  leftOf  :: Pos p => m a -> p -> r a
-  rightOf :: Pos p => m a -> p -> r a
+  above   :: Pos p => m a -> p -> Row m a
+  below   :: Pos p => m a -> p -> Row m a
+  leftOf  :: Pos p => m a -> p -> Row m a
+  rightOf :: Pos p => m a -> p -> Row m a
 
 -- | '[[a]]' is an 'a' "matrix".
 type ListMatrix = Compose [] []
@@ -43,7 +43,8 @@ instance Vec [] where
   before = take
   after  = drop . (+1)
 
-instance Matrix [] ListMatrix where
+instance Matrix ListMatrix where
+  type Row ListMatrix = []
   elemAt  (LM m) p | x >= 0 && y >= 0 = Just (m !! y !! x) where (x,y) = coors p
   elemAt  _ _ = Nothing
   row     (LM m) y | y >= 0 = Just $ m !! y
