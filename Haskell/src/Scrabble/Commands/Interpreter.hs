@@ -48,7 +48,7 @@ interpretPut b tray pw = if valid then go else Left errMsg where
   valid         = containsAll putLetters trayLetters
   trayLetters   = fmap letter tray
   putLetters    = letter <$> tiles pw
-  trayRemainder = fmap fromLetter $ foldl (flip delete) trayLetters putLetters
+  trayRemainder = fmap fromLetter $ foldl' (flip delete) trayLetters putLetters
   go = do (newBoard, score) <- putWord b pw
           return $ Move score trayRemainder newBoard
 
