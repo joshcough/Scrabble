@@ -31,7 +31,7 @@ distributionMap :: Map Letter Int
 distributionMap = Map.fromList distribution
 
 orderedBag :: Bag
-orderedBag = concat $ fmap (\(l,n) -> fmap mkTile $ replicate n l) distribution where
+orderedBag = concat $ fmap (\(l,n) -> fmap mkTile $ replicate n l) distribution
 
 mkTile :: Letter -> Tile
 mkTile l = Tile l (fromJust $ lookup l points)

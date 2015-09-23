@@ -18,10 +18,13 @@ import Scrabble.Types
 data Bonus  = W3 | W2 | L3 | L2 | Star | NoBonus deriving (Eq,Ord)
 
 data Square = Square {
-  tile  :: Maybe Tile,
-  bonus :: Bonus,
-  pos   :: Position
+  tile      :: Maybe Tile,
+  bonus     :: Bonus,
+  squarePos :: Position
 } deriving (Eq,Ord)
+
+instance HasPosition Square where
+  pos (Square _ _ p) = p
 
 instance Show Square where
   show = showSquare True
@@ -45,7 +48,7 @@ class Matrix m where
 
 class Matrix b => Board b where
   putTile      :: Pos p => b (b Square) -> p -> Tile -> b (b Square)
-  putWord      :: b (b Square) -> PutWord -> (b (b Square), Score)
+  putWord      :: b (b Square) -> PutWord -> Either String (b (b Square), Score)
   displayBoard :: b (b Square) -> String
   -- returns Nothing if no tile on the square
   getWordAt    :: Pos p => b (b Square) -> p -> Orientation -> Maybe [Square]
@@ -72,10 +75,10 @@ instance Matrix [] where
   rightOf m p = Maybe.fromMaybe [] $ after  (x p) <$> row m (y p)
 
 instance Board [] where
-  putTile b p t              = putTileOnListBoard b p t
-  putWord b (PutWord ts o p) = putWordOnListBoard p ts o b
-  displayBoard               = showListBoard True
-  getWordAt                  = listBoardGetWordAt
+  putTile b p t  = putTileOnListBoard b p t
+  putWord b pw   = putWordOnListBoard b pw
+  displayBoard   = showListBoard True
+  getWordAt      = listBoardGetWordAt
 
 instance Show Bonus where
   show W3 = "3W"
@@ -168,43 +171,51 @@ putTileOnListBoard b p t = mapNth newRow (y p) b where
   mapNth f i as = xs ++ [f $ head ys] ++ drop 1 ys where (xs,ys) = splitAt i as
 
 {- lay tiles down on the board. calculate the score of the move -}
-putWordOnListBoard :: Pos p => p -> PutTiles -> Orientation -> ListBoard -> (ListBoard, Score)
-putWordOnListBoard p w o b = either error (const (nextBoard, turnScore)) runChecks where
-  runChecks = check p w squaresAndTiles
-  turnScore = calculateScore squaresPlayedThisTurn nextBoard
+putWordOnListBoard :: ListBoard -> PutWord -> Either String (ListBoard, Score)
+putWordOnListBoard b pw = do
+  squares <- squaresPlayedThisTurn
+  let b' = nextBoard squares
+  runChecks (zipSquaresAndTiles squares) b b'
+  return (b', turnScore squares b') where
 
-  squaresInMainWord   :: [Square]
-  squaresInMainWord   = take (length $ tiles w) (Maybe.fromJust (elemAt b p) : afterByOrientation o b p)
-  squaresAndTiles     :: [(Square,Maybe PutTile)]
-  squaresAndTiles     = zip squaresInMainWord (tiles w)
-  squaresPlayedThisTurn :: [Square]
-  squaresPlayedThisTurn = f <$> filter (Maybe.isJust . snd) squaresAndTiles where
-    f (Square _ b p, (Just (PutLetterTile t))) = Square (Just t) b p
-    f (Square _ b p, (Just (PutBlankTile l)))  = Square (Just $ mkTile l) b p
-  nextBoard :: ListBoard
-  nextBoard = foldl f b squaresPlayedThisTurn where
+  turnScore :: [Square] -> ListBoard -> Int
+  turnScore sqrs brd = calculateScore sqrs brd
+
+  squaresPlayedThisTurn :: Either String [Square]
+  squaresPlayedThisTurn = traverse f (pos <$> tiles pw) where
+    f :: Position -> Either String Square
+    f p = maybe (Left $ "out of bounds: " ++ show p) Right $ elemAt b p
+
+  zipSquaresAndTiles :: [Square] -> [(Square,PutTile,Position)]
+  zipSquaresAndTiles sqrs = zipWith (\s t -> (s, t, pos t)) sqrs (tiles pw)
+
+  nextBoard :: [Square] -> ListBoard
+  nextBoard sqrs = foldl f b sqrs where
     f acc (Square t _ p) = putTile acc p $ Maybe.fromJust t
 
 {- checks if everything in a move is good -}
-check :: Pos p =>
-  p ->        -- the position of the first letter placed by the player
-  PutTiles -> -- the tiles placed (or used) by the plater
-  [(Square,Maybe PutTile)] -> -- the squares on the current board, paired with what the user played
+runChecks ::
+  [(Square,PutTile,Position)] -> -- all the letters put down this turn
+  ListBoard -> -- old board
+  ListBoard -> -- new board
   Either String ()
-check p w squaresAndTiles = tooLong x >> tooLong y >> checkPuts >> return () where
+runChecks squaresAndTiles b b' = checkPuts >> return () where
+  firstPos = pos . (\(_,_,p) -> p) $ head squaresAndTiles
+
+  {- TODO: I think check puts should happen before this,
+           when the PutTiles are created.
+   -}
   {- checkPuts returns true if
        * all the letters were put down on empty squares
        * a tile was placed in all the empty tiles in the word
    -}
   checkPuts :: Either String ()
-  checkPuts = traverse (uncurry checkPut) squaresAndTiles >> return ()
-  tooLong f  = if f p + (length . tiles) w > 15 then Left tooLongErr else Right ()
-  tooLongErr = "word too long: " ++ show (w, (x p, y p))
-
-  checkPut :: Square -> Maybe PutTile -> Either String ()
-  checkPut (Square (Just t) _ p) (Just _) = Left $ "square taken: " ++ show t ++ ", " ++ show p
-  checkPut (Square Nothing  _ p) Nothing  = Left $ "empty square at: " ++ show (x p, y p)
-  checkPut _ _ = Right ()
+  checkPuts = traverse checkPut squaresAndTiles >> return () where
+    -- make sure we haven't put something in a tile thats already taken
+    checkPut :: (Square, PutTile, Position) -> Either String ()
+    checkPut ((Square (Just t) _ _), _, p) =
+      Left $ "square taken: " ++ show t ++ ", " ++ show p
+    checkPut _ = Right ()
 
 {- Calculate the score for ALL words in a turn -}
 calculateScore ::
@@ -248,15 +259,36 @@ scoreWord word playedSquares = base * wordMultiplier where
   letterBonus t _  = score t
 
 {- put some words on a brand new board -}
-quickPut :: [(String, Orientation, (Int, Int))] -> (ListBoard,[Score])
+quickPut :: [(String, Orientation, (Int, Int))] ->
+            Either String (ListBoard,[Score])
 quickPut words = quickPut' words newBoard
 
 {- put some words onto an existing board -}
-quickPut' :: [(String, Orientation, (Int, Int))] -> ListBoard -> (ListBoard,[Score])
-quickPut' words b = foldl f (b, []) putWords where
-  f (b,scores) w = (b',scores++[score]) where (b',score) = putWord b w
+quickPut' :: [(String, Orientation, (Int, Int))] ->
+             ListBoard ->
+             Either String (ListBoard,[Score])
+quickPut' words b = go (b,[]) putWords where
+
+  {- TODO: this is pretty awful
+     I think EitherT over State could clean it up,
+     but not sure if i want to do that.
+  -}
+  go :: (ListBoard, [Score]) -> [PutWord] -> Either String (ListBoard, [Score])
+  go (b,ss) pws = foldl f (Right (b,ss)) pws where
+    f acc pw = do
+      (b,scores) <- acc
+      (b',score) <- putWord b pw
+      return (b',score:scores)
+
   putWords :: [PutWord]
-  putWords =  (\(s,o,p) -> toPutWord s o p) <$> words
-  toPutWord :: String -> Orientation -> (Int, Int) -> PutWord
-  toPutWord w o (x,y) = PutWord (PutTiles tiles) o (Position x y) where
-    tiles = f <$> w where f = Just . PutLetterTile . mkTile
+  putWords =  (\(s,o,p) -> toPutWord s o p) <$> words where
+    toPutWord :: String -> Orientation -> (Int, Int) -> PutWord
+    toPutWord w o (x,y) = PutWord putTils where
+      adder :: (Int, Int) -> (Int, Int)
+      adder = catOrientation (\(x,y) -> (x+1,y)) (\(x,y) -> (x,y+1)) o
+      coordinates :: [(Int,Int)]
+      coordinates = reverse . fst $ foldl f ([],(x,y)) w where
+        f (acc,(x,y)) c = ((x,y):acc, adder (x,y))
+      putTils :: [PutTile]
+      putTils = zipWith f w coordinates where
+        f c xy = PutLetterTile (mkTile c) (pos xy)

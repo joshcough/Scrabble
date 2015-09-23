@@ -2,11 +2,21 @@
 
 module Scrabble.Types where
 
-import Data.Ix
 import Prelude hiding (Word)
+
+type Letter = Char
+type Tray   = [Tile]
+type Word   = String
+type Points = Int
+type Score  = Int
+type Dict   = [Word]
+data Orientation = Horizontal | Vertical deriving (Eq, Show)
 
 class HasLetter a where
   letter :: a -> Letter
+
+class HasPosition a where
+  pos :: a -> Position
 
 data Tile = Tile { _tileLetter :: Letter, score :: Int } deriving (Eq,Ord)
 
@@ -16,7 +26,13 @@ instance HasLetter Tile where
 instance Show Tile where
   show (Tile letter _) = [letter]
 
-data Position = Position { posX :: Int, posY :: Int } deriving (Eq, Show)
+data Position = Position { posX :: Int, posY :: Int } deriving (Eq, Ord, Show)
+
+instance HasPosition Position where
+  pos = id
+
+instance HasPosition (Int, Int) where
+  pos (x,y) = Position x y
 
 class Pos a where
   coors    :: a -> (Int, Int)
@@ -45,29 +61,6 @@ instance Pos Position where
   leftOfP  (Position x y) = Position (x - 1) y
   rightOfP (Position x y) = Position (x + 1) y
 
-asTuple :: Position -> (Int, Int)
-asTuple (Position x y) = (x,y)
-
-fromTuple :: (Int, Int) -> Position
-fromTuple (x,y) = Position x y
-
-instance Ord Position where
-  compare p1 p2 = compare (asTuple p1) (asTuple p2)
-
-instance Ix Position where
-  range   (p1, p2)   = fmap fromTuple $ range (asTuple p1, asTuple p2)
-  index   (p1, p2) p = index   (asTuple p1, asTuple p2) (asTuple p)
-  inRange (p1, p2) p = inRange (asTuple p1, asTuple p2) (asTuple p)
-
-type Letter = Char
-type Tray   = [Tile]
-type Word   = String
-type Points = Int
-type Score  = Int
-type Dict   = [Word]
-
-data Orientation = Horizontal | Vertical deriving (Eq, Show)
-
 catOrientation :: a -> a -> Orientation -> a
 catOrientation l _ Horizontal = l
 catOrientation _ r Vertical   = r
@@ -77,31 +70,24 @@ catOrientation _ r Vertical   = r
    * PutLetterTile means the tile has a letter on it
    * PutBlankTile comes with the Letter that the player intends use.
 -}
-data PutTile = PutLetterTile Tile | PutBlankTile Letter deriving Eq
+data PutTile =
+   PutLetterTile Tile   Position
+ | PutBlankTile  Letter Position
+  deriving Eq
+
+-- TODO: when are these shown? show the position be shown too?
 instance Show PutTile where
-  show (PutLetterTile t) = [letter t]
-  show (PutBlankTile  l) = [l]
+  show (PutLetterTile t _) = [letter t]
+  show (PutBlankTile  l _) = [l]
 
 instance HasLetter PutTile where
-  letter (PutLetterTile t) = letter t
-  letter (PutBlankTile  l) = l
+  letter (PutLetterTile t _) = letter t
+  letter (PutBlankTile  l _) = l
 
-{-
- represents the tiles laid down when placing a tile
-   * (Just t) means some tile was placed
-   * Nothing means that the tile alreaady on the board is to be used
--}
-data PutTiles = PutTiles { tiles :: [Maybe PutTile] }
-
-instance Show PutTiles where
-  show (PutTiles ts) = fmap f ts where
-    f Nothing   = '@'            -- use whatever letter is '@' that position
-    f (Just tp) = head $ show tp -- show the tile being laid down
+instance HasPosition PutTile where
+  pos (PutLetterTile _ p) = p
+  pos (PutBlankTile  _ p) = p
 
 {- A complete representation of placing a word on the board. -}
-data PutWord = PutWord {
-  _putWordTiles       :: PutTiles
- ,_putWordOrientation :: Orientation
- ,_putWordPosition    :: Position
-} deriving Show
+data PutWord = PutWord { tiles :: [PutTile] } deriving Show
 
