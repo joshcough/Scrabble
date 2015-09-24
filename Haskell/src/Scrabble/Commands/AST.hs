@@ -13,13 +13,14 @@ import Prelude hiding (Word)
 
 type Regex = String
 
-data ShowCommand = ShowBoard Bool | ShowScores | ShowHelp deriving Show
+data ShowExp = ShowBoard Bool | ShowScores | ShowHelp
+  deriving Show
 
 data ScrabbleExp =
-  Search SearchExp        |
-  Place  PutWord          |
-  Skip                    |
-  ShowCommand ShowCommand
+  Search  SearchExp |
+  Place   PutWord   |
+  Skip              |
+  ShowExp ShowExp
   deriving (Show)
 
 data SearchExp =
@@ -42,19 +43,21 @@ data PrimSearchExp =
   deriving (Show)
 
 instance FromSExpr ScrabbleExp where
-  fromSExpr = f where
-    f (List [AtomSym "search", s])      = Search <$> fromSExpr s
-    f (List (AtomSym "place" : inputs)) = parsePlace inputs
-    f (List [AtomSym "skip"])           = return Skip
-    f (List (AtomSym "show" : things))  = parseShowThings (showSExpr_ <$> things)
-    f bad                               = parseError_ "bad command" bad
+  fromSExpr exp@(List l) = f l where
+    f [AtomSym "search", s]    = Search <$> fromSExpr s
+    f (AtomSym "place" : info) = parsePlace info
+    f [AtomSym "skip"]         = return Skip
+    f (AtomSym "show"  : exps) = parseShowExps (showSExpr_ <$> exps)
+    f bad                      = parseError_ "bad command" exp
 
-parseShowThings :: [String] -> Either String ScrabbleExp
-parseShowThings ["board"]          = return (ShowCommand $ ShowBoard True)
-parseShowThings ["board", "clean"] = return (ShowCommand $ ShowBoard False)
-parseShowThings ["help"]           = return (ShowCommand $ ShowHelp)
-parseShowThings ["scores"]         = return (ShowCommand $ ShowScores)
-parseShowThings bad                = parseError "bad show command" (show bad)
+parseShowExps :: [String] -> Either String ScrabbleExp
+parseShowExps = p where
+  p ["board"]          = rs $ ShowBoard True
+  p ["board", "clean"] = rs $ ShowBoard False
+  p ["help"]           = rs $ ShowHelp
+  p ["scores"]         = rs $ ShowScores
+  p bad                = parseError "bad show command" (show bad)
+  rs = return . ShowExp
 
 parsePlace :: [SExpr] -> Either String ScrabbleExp
 parsePlace l = parsePlace' l where
@@ -78,39 +81,50 @@ instance FromSExpr Orientation where
 
 instance FromSExpr SearchExp where
   fromSExpr = f where
-    f (List (AtomSym "matchAll"  : rest)) = MatchAll  <$> traverse fromSExpr rest
-    f (List (AtomSym "matchAny"  : rest)) = MatchAny  <$> traverse fromSExpr rest
-    f (List (AtomSym "matchNone" : rest)) = MatchNone <$> traverse fromSExpr rest
+    f (List (AtomSym "matchAll"  : rest)) = MatchAll  <$> t rest
+    f (List (AtomSym "matchAny"  : rest)) = MatchAny  <$> t rest
+    f (List (AtomSym "matchNone" : rest)) = MatchNone <$> t rest
     f other = Prim <$> fromSExpr other
+    t = traverse fromSExpr
 
 searchKeyWords :: Map String (String -> PrimSearchExp)
 searchKeyWords = Map.fromList [
-  ("startsWith",StartsWith), ("endsWith",EndsWith), ("noneOf",NoneOf), ("anyOf",AnyOf)
- ,("allOf",AllOf), ("only",Only), ("regex",Regex), ("looksLike",LooksLike) ]
+  ("startsWith",StartsWith)
+ ,("endsWith"  ,EndsWith)
+ ,("noneOf"    ,NoneOf)
+ ,("anyOf"     ,AnyOf)
+ ,("allOf"     ,AllOf)
+ ,("only"      ,Only)
+ ,("regex"     ,Regex)
+ ,("looksLike" ,LooksLike) ]
 
 instance FromSExpr PrimSearchExp where
-  fromSExpr = f where
-    f   (List [AtomSym "letterAt", AtomSym p, AtomNum n]) = return $ LetterAt (head p) (fromIntegral n)
-    f l@(List [AtomSym kw, AtomSym s]) = maybe (bad l) (\g -> return $ g s) (Map.lookup kw searchKeyWords)
-    f x = bad x
-    bad x = parseError_ "bad search" x
+  fromSExpr exp@(List l) = f l where
+    f [AtomSym "letterAt", AtomSym p, AtomNum n] =
+      return $ LetterAt (head p) (fromIntegral n)
+    f [AtomSym kw, AtomSym s]                    =
+      maybe err (\g -> return $ g s) (Map.lookup kw searchKeyWords)
+    f   _ = err
+    err = parseError_ "bad search" exp
 
 toSearch1 :: SearchExp -> Either String Search1
-toSearch1 (MatchAll  searches) = matchAll  <$> traverse toSearch1 searches
-toSearch1 (MatchAny  searches) = matchAny  <$> traverse toSearch1 searches
-toSearch1 (MatchNone searches) = matchNone <$> traverse toSearch1 searches
-toSearch1 (Prim search)        = primToSearch1 search
+toSearch1 = f where
+  f (MatchAll  searches) = matchAll  <$> t searches
+  f (MatchAny  searches) = matchAny  <$> t searches
+  f (MatchNone searches) = matchNone <$> t searches
+  f (Prim search)        = return $ primToSearch1 search
+  t = traverse toSearch1
 
-primToSearch1 :: PrimSearchExp -> Either String Search1
-primToSearch1 (StartsWith pat) = return . startsWith $ show pat
-primToSearch1 (EndsWith   pat) = return . endsWith   $ show pat
-primToSearch1 (LetterAt l n)   = return $ containsLetterAtPos l n
-primToSearch1 (NoneOf   ls)    = return $ containsNone ls
-primToSearch1 (AnyOf    ls)    = return $ containsAny  ls
-primToSearch1 (AllOf    ls)    = return $ containsAll  ls
-primToSearch1 (Only     ls)    = return $ containsOnly ls
-primToSearch1 (LooksLike pat)  = return . looksLike $ show pat
-primToSearch1 (Regex r)        = return $ regex r
+primToSearch1 :: PrimSearchExp -> Search1
+primToSearch1 (StartsWith pat) = startsWith $ show pat
+primToSearch1 (EndsWith   pat) = endsWith   $ show pat
+primToSearch1 (LetterAt   l n) = containsLetterAtPos l n
+primToSearch1 (NoneOf     ls)  = containsNone ls
+primToSearch1 (AnyOf      ls)  = containsAny  ls
+primToSearch1 (AllOf      ls)  = containsAll  ls
+primToSearch1 (Only       ls)  = containsOnly ls
+primToSearch1 (LooksLike  pat) = looksLike $ show pat
+primToSearch1 (Regex r)        = regex r
 
 -- TODO: check if input chars are bad
 -- a lot of error handling isn't happening here
@@ -122,13 +136,13 @@ makePutWord :: String      ->
                Either String PutWord
 makePutWord w o p blanks = return $ PutWord putTils where
 
-  coordinates :: [(Int,Int)]
-  coordinates = reverse . fst $ foldl f ([],(x p,y p)) w where
-    f (acc,(x,y)) c = ((x,y):acc, adder (x,y))
-    adder = catOrientation (\(x,y) -> (x+1,y)) (\(x,y) -> (x,y+1)) o
+  coords :: [(Int,Int)]
+  coords = reverse . fst $ foldl f ([],coors p) w where
+    f (acc,p) c = (p:acc, catOrientation rightOfP belowP o p)
 
   putTils :: [PutTile]
-  putTils = catMaybes $ zipWith f w (zip coordinates [0..]) where
+  putTils = catMaybes $ zipWith f w (zip coords [0..]) where
     f '@' _     = Nothing
-    f '_' (p,i) = Just $ PutLetterTile (mkTile $ blanks !! i) (pos p)
-    f  c  (p,i) = Just $ PutLetterTile (mkTile c) (pos p)
+    f '_' (p,i) = plt (mkTile $ blanks !! i) (pos p)
+    f  c  (p,i) = plt (mkTile c) (pos p)
+    plt t p     = Just $ PutLetterTile t p

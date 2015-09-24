@@ -41,6 +41,11 @@ humanTurn b g = do
   putStrLn $ "Turn for: " ++ show (currentPlayer g)
   putStrLn "Enter command (or type help)"
   command <- getLine
+  {-
+  this is a little confusing so it's worth a comment
+  first, interpret the command, returning a CommandResult
+
+  -}
   either (\s -> putStrLn s >> humanTurn False g)
          (interpCommandRes g)
          (interpCommandString g command)

@@ -31,9 +31,9 @@ data CommandResult =
 interpretExp :: Game -> ScrabbleExp -> Either String CommandResult
 interpretExp g = f where
   f Skip                        = return . NextPlayer $ turnOver g
-  f (ShowCommand ShowHelp)      = return $ pc   PrintHelp
-  f (ShowCommand (ShowBoard b)) = return . pc $ PrintBoard b (gameBoard g)
-  f (ShowCommand ShowScores)    = return . pc . PrintScores $ getScores g
+  f (ShowExp ShowHelp)      = return $ pc   PrintHelp
+  f (ShowExp (ShowBoard b)) = return . pc $ PrintBoard b (gameBoard g)
+  f (ShowExp ShowScores)    = return . pc . PrintScores $ getScores g
   f (Search search)             =
     pc . QueryResult <$> interpretSearch search (gameDict g)
   f (Place pw)                  = MoveResult  <$> g' where

@@ -32,7 +32,11 @@ any' = foldr or (const False)
 all' :: [Search1] -> Search1
 all' = foldr and (const True)
 
-combine :: Bool -> (Search1 -> Search1 -> Search1) -> [Search1] -> Search1
+combine :: Bool                ->
+           (Search1            ->
+           Search1 -> Search1) ->
+           [Search1]           ->
+           Search1
 combine b f = foldr f (const b)
 
 any :: [Search1] -> Search1
@@ -63,10 +67,9 @@ containsAll s1 s2 = fst $ foldl' f (True, ups s2) (ups s1) where
   f (b,s) c = if elem c s then (b, delete c s) else (False,s)
 
 containsAny :: String -> Search1
-containsAny = contains' List.any . ups
-
-contains' :: ((Char -> Bool) -> [Char] -> Bool) -> String -> Search1
-contains' f t w = f (\c -> elem c w') (ups t) where w' = ups w
+containsAny = contains' List.any . ups where
+  contains' :: ((Char -> Bool) -> [Char] -> Bool) -> String -> Search1
+  contains' f t w = f (\c -> elem c (ups w)) (ups t)
 
 containsOnly :: String -> Search1
 containsOnly t w = ups t == ups w
@@ -75,7 +78,8 @@ containsNone :: String -> Search1
 containsNone t = not . containsAny t
 
 containsLetterAtPos :: Letter -> Int -> Search1
-containsLetterAtPos l n w = if n >= length w then False else w !! n == l
+containsLetterAtPos l n w =
+  if n >= length w then False else w !! n == l
 
 endsWith :: String -> Search1
 endsWith s w = startsWith (reverse s) (reverse w)
