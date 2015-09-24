@@ -19,22 +19,30 @@ lookupWithPoints :: Search1 -> Dict -> [(Word, Points)]
 lookupWithPoints search dict = fmap (\w -> (w,simpleWordPoints w)) (runSearch1 search dict)
 
 data Move = Move { pointsScored :: Points, remaining :: Tray, boardAfterMove :: ListBoard }
+
+data PrintCommand =
+    QueryResult [(Word, Points)]
+  | PrintHelp
+  | PrintBoard Bool ListBoard
+  | PrintScores [(Name,Score)]
+
 data CommandResult =
- MoveResult Game              |
- QueryResult [(Word, Points)] |
- ShowHelp                     |
- PrintScores [(Name,Score)]   |
- NextPlayer Game              |
- PrintBoard Bool ListBoard
+    MoveResult Game
+  | Print PrintCommand
+  | NextPlayer Game
 
 interpretExp :: Game -> ScrabbleExp -> Either String CommandResult
-interpretExp g Skip            = return . NextPlayer $ turnOver g
-interpretExp _ Help            = return ShowHelp
-interpretExp g ShowScores      = return . PrintScores $ getScores g
-interpretExp g (ShowBoard b)   = return $ PrintBoard b (gameBoard g)
-interpretExp g (Search search) = QueryResult <$> interpretSearch search (gameDict g)
-interpretExp g (Place pw)      = MoveResult  <$> g' where
-  g' = interpMove g <$> interpretPut (gameBoard g) (playerTray (currentPlayer g)) pw
+interpretExp g = f where
+  f Skip                        = return . NextPlayer $ turnOver g
+  f (ShowCommand ShowHelp)      = return $ pc   PrintHelp
+  f (ShowCommand (ShowBoard b)) = return . pc $ PrintBoard b (gameBoard g)
+  f (ShowCommand ShowScores)    = return . pc . PrintScores $ getScores g
+  f (Search search)             =
+    pc . QueryResult <$> interpretSearch search (gameDict g)
+  f (Place pw)                  = MoveResult  <$> g' where
+    g' = interpMove g <$> interpretPut (gameBoard g) t pw
+    t  = playerTray $ currentPlayer g
+  pc = Print
 
 getScores :: Game -> [(Name, Score)]
 getScores g = getNameAndScore <$> gamePlayers g

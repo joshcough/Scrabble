@@ -231,15 +231,14 @@ scoreWord word playedSquares = base * wordMultiplier where
   letterBonus t _  = score t
 
 {- put some words on a brand new board -}
-quickPut :: [(String, Orientation, (Int, Int))] ->
-            Either String (ListBoard,[Score])
+quickPut :: [(String, Orientation, (Int, Int))] -> (ListBoard,[Score])
 quickPut words = quickPut' words newBoard
 
 {- put some words onto an existing board -}
 quickPut' :: [(String, Orientation, (Int, Int))] ->
              ListBoard ->
-             Either String (ListBoard,[Score])
-quickPut' words b = go (b,[]) putWords where
+             (ListBoard,[Score])
+quickPut' words b = either error id $ go (b,[]) putWords where
 
   {- TODO: this is pretty awful
      I think EitherT over State could clean it up,

@@ -4,6 +4,7 @@ import Data.Char (toUpper)
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
 import Data.Maybe (catMaybes)
+import Debug.Trace
 import Scrabble.Bag
 import Scrabble.Search
 import Scrabble.Types
@@ -12,13 +13,13 @@ import Prelude hiding (Word)
 
 type Regex = String
 
+data ShowCommand = ShowBoard Bool | ShowScores | ShowHelp deriving Show
+
 data ScrabbleExp =
-  Search SearchExp |
-  Place  PutWord   |
-  Skip             |
-  Help             |
-  ShowBoard Bool   |
-  ShowScores
+  Search SearchExp        |
+  Place  PutWord          |
+  Skip                    |
+  ShowCommand ShowCommand
   deriving (Show)
 
 data SearchExp =
@@ -42,21 +43,28 @@ data PrimSearchExp =
 
 instance FromSExpr ScrabbleExp where
   fromSExpr = f where
-    f (List [AtomSym "search", s]) = Search <$> fromSExpr s
-    f (List [AtomSym "place", AtomSym w, o, p, AtomSym b]) = do
-      o' <- fromSExpr o
-      p' <- fromSExpr p
-      Place <$> makePutWord w o' p' b
-    f (List [AtomSym "place", AtomSym w, o, p]) = do
-      o' <- fromSExpr o
-      p' <- fromSExpr p
-      Place <$> makePutWord w o' p' ""
-    f (AtomSym "skip")        = return Skip
-    f (AtomSym "help")        = return Help
-    f (AtomSym "board")       = return (ShowBoard True)
-    f (AtomSym "board-clean") = return (ShowBoard False)
-    f (AtomSym "scores")      = return ShowScores
-    f bad                     = parseError_ "bad command" bad
+    f (List [AtomSym "search", s])      = Search <$> fromSExpr s
+    f (List (AtomSym "place" : inputs)) = parsePlace inputs
+    f (List [AtomSym "skip"])           = return Skip
+    f (List (AtomSym "show" : things))  = parseShowThings (showSExpr_ <$> things)
+    f bad                               = parseError_ "bad command" bad
+
+parseShowThings :: [String] -> Either String ScrabbleExp
+parseShowThings ["board"]          = return (ShowCommand $ ShowBoard True)
+parseShowThings ["board", "clean"] = return (ShowCommand $ ShowBoard False)
+parseShowThings ["help"]           = return (ShowCommand $ ShowHelp)
+parseShowThings ["scores"]         = return (ShowCommand $ ShowScores)
+parseShowThings bad                = parseError "bad show command" (show bad)
+
+parsePlace :: [SExpr] -> Either String ScrabbleExp
+parsePlace l = parsePlace' l where
+  parsePlace' [AtomSym w, o, p, AtomSym b] = f w o p b
+  parsePlace' [AtomSym w, o, p]            = f w o p ""
+  parsePlace  bad = parseError_ "bad placement" bad
+  f w o p b = do
+    o' <- fromSExpr o
+    p' <- fromSExpr p
+    Place <$> makePutWord w o' p' b
 
 instance FromSExpr Position where
   fromSExpr (List [AtomNum x, AtomNum y]) =

@@ -19,6 +19,7 @@ module Scrabble.Commands.SExpr
   , runParserOrDie
   , showAsList
   , showSExpr
+  , showSExpr_
   , sexprParser
   , sreadWithRest
   , sread
@@ -152,7 +153,7 @@ variable = IdentifierStyle
   , _styleReserved = HashSet.empty
   , _styleHighlight = Highlight.Identifier
   , _styleReservedHighlight = Highlight.ReservedIdentifier
-} where var = digit <|> letter <|> oneOf "@_"
+} where var = digit <|> letter <|> oneOf "!$%&*/:<=>?~_^-+.@"
 
 tokenParser :: (String -> Maybe r) -> Parser r
 tokenParser f = try $ do
