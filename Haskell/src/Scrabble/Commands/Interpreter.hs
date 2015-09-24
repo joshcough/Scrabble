@@ -15,9 +15,6 @@ import Prelude hiding (Word)
 interpCommandString :: Game -> String -> Either String CommandResult
 interpCommandString g command = fromString command >>= interpretExp g
 
-lookupWithPoints :: Search1 -> Dict -> [(Word, Points)]
-lookupWithPoints search dict = fmap (\w -> (w,simpleWordPoints w)) (runSearch1 search dict)
-
 data Move = Move { pointsScored :: Points, remaining :: Tray, boardAfterMove :: ListBoard }
 
 data PrintCommand =
@@ -40,7 +37,7 @@ interpretExp g = f where
   f (Search search)             =
     pc . QueryResult <$> interpretSearch search (gameDict g)
   f (Place pw)                  = MoveResult  <$> g' where
-    g' = interpMove g <$> interpretPut (gameBoard g) t pw
+    g' = applyMove g <$> interpretPut (gameBoard g) t pw
     t  = playerTray $ currentPlayer g
   pc = Print
 
@@ -48,7 +45,10 @@ getScores :: Game -> [(Name, Score)]
 getScores g = getNameAndScore <$> gamePlayers g
 
 interpretSearch :: SearchExp -> Dict -> Either String [(Word, Points)]
-interpretSearch search dict = lookupWithPoints <$> toSearch1 search <*> pure dict
+interpretSearch search dict = lookupWithPoints <$> toSearch1 search where
+  lookupWithPoints :: Search1 -> [(Word, Points)]
+  lookupWithPoints search = fmap f (runSearch1 search dict) where
+    f w = (w,simpleWordPoints w)
 
 interpretPut :: ListBoard -> Tray -> PutWord -> Either String Move
 interpretPut b tray pw = if valid then go else Left errMsg where
@@ -60,10 +60,11 @@ interpretPut b tray pw = if valid then go else Left errMsg where
   go = do (newBoard, score) <- putWord b pw
           return $ Move score trayRemainder newBoard
 
--- TODO: this should probably be Either String Game
-interpMove :: Game -> Move -> Game
-interpMove g@(Game (p:ps) bd bag d) (Move points remaining updatedBoard) =
-  Game (ps++[updatedPlayer]) updatedBoard updatedBag d where
-    updatedPlayer = Player (playerType p) (playerName p) updatedTray (playerScore p + points)
-    updatedTray   = take (7 - length remaining) bag ++ remaining
-    updatedBag    = drop (7 - length remaining) bag
+applyMove :: Game -> Move -> Game
+applyMove g@(Game (p:ps) _ bag d) (Move points remaining updatedBoard) =
+  Game (ps++[player']) updatedBoard bag' d where
+    player'   = Player (playerType p) (playerName p) tray' points'
+    tray'     = take trayLenth bag ++ remaining
+    bag'      = drop trayLenth bag
+    points'   = playerScore p + points
+    trayLenth = 7 - length remaining

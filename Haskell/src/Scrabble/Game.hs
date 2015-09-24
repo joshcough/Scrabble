@@ -20,7 +20,8 @@ data Player = Player {
   playerScore :: Score } deriving Eq
 
 instance Show Player where
-  show (Player _ n t s) = concat ["[", n, " tray: ", show t, " score: ", show s, "]"]
+  show (Player _ n t s) =
+    concat ["[", n, " tray: ", show t, " score: ", show s, "]"]
 
 newPlayer :: (Name, PlayerType) -> Player
 newPlayer (name, typ) = Player typ name [] 0

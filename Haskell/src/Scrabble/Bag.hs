@@ -31,10 +31,12 @@ distributionMap :: Map Letter Int
 distributionMap = Map.fromList distribution
 
 orderedBag :: Bag
-orderedBag = concat $ fmap (\(l,n) -> fmap mkTile $ replicate n l) distribution
+orderedBag = concat $ f <$> distribution where
+  f (l,n) = fmap mkTile $ replicate n l
 
 mkTile :: Letter -> Tile
-mkTile l = Tile l (fromMaybe (error $ l : "is an invalid letter") $ lookup l points)
+mkTile l = Tile l (fromMaybe err $ lookup l points) where
+  err = error $ l : "is an invalid letter"
 
 fromLetter :: Letter -> Tile
 fromLetter = mkTile
@@ -57,6 +59,6 @@ totalPoints :: Int
 totalPoints = sum $ Map.map (uncurry (*)) distributionWithPoints
 
 simpleWordPoints :: Word -> Points
-simpleWordPoints = sum . fmap (\l ->
-  fromMaybe (error "simple word points") $ Map.lookup (Char.toUpper l) pointsMap)
-
+simpleWordPoints = sum . fmap f where
+  f l = fromMaybe err $ Map.lookup (Char.toUpper l) pointsMap
+  err = error "simple word points"
