@@ -13,11 +13,9 @@ import Test.HUnit
 import Data.List
 import ScrabbleTests
 
-main = defaultMain ScrabbleTests.tests
-
 --For a complete example, see: http://bit.ly/1G5MIoq
-mainWithOpts = defaultMainWithOpts tests $ (mempty :: RunnerOptions) {
-  ropt_test_options = Just $ (mempty :: TestOptions) {
-    topt_maximum_generated_tests = Just 500
-  }
+main = defaultMainWithOpts ScrabbleTests.tests $ (mempty :: RunnerOptions) {
+ ropt_test_options = Just $ (mempty :: TestOptions) {
+   topt_maximum_generated_tests = Just 100
+ }
 }

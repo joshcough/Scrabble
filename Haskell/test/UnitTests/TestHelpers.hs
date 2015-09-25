@@ -10,8 +10,8 @@ import Test.QuickCheck
 import Test.QuickCheck.Instances.Char
 import Test.HUnit
 
-p s t = testProperty (s ++ "property") t
-u s t = testCase (s ++ "unit_test") t
+p s t = testProperty (s ++ "property" ) t
+u s t = testCase     (s ++ "unit_test") t
 
 props g ps = testGroup g $ f <$> ps where f (name,prop) = testProperty name prop
 units g us = testGroup g $ f <$> us where f (name,test) = testCase     name test
