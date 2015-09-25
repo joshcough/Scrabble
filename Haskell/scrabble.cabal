@@ -1,4 +1,4 @@
-name:                Scrabble
+name:                scrabble
 version:             0.1.0.0
 synopsis:            A playground for teaching FP with Scrabble.
 description:         A playground for teaching FP with Scrabble.
@@ -44,3 +44,35 @@ library
    ,trifecta       >= 1.5.1
    ,unordered-containers >= 0.2.5.0
    ,utf8-string    >= 0.3.6         && < 0.4
+
+-- `cabal install --enable-tests -f-tests` to disable tests suite
+flag tests
+  manual: True
+  default: True
+
+test-suite tests
+  default-language: Haskell2010
+  type:           exitcode-stdio-1.0
+  main-is:        test/Main.hs
+  hs-source-dirs: . test
+  other-modules:
+    ScrabbleTests
+    UnitTests.TestHelpers
+
+  if !flag(tests)
+    buildable: False
+  else
+    build-depends:
+      base
+     ,checkers                   >= 0.4.3
+     ,directory                  >= 1.2.0.1
+     ,data-default               >= 0.5.3
+     ,filemanip                  >= 0.3.6.2
+     ,HUnit
+     ,QuickCheck                 >= 2.8.1
+     ,quickcheck-instances       >= 0.3.11
+     ,test-framework             >= 0.6
+     ,test-framework-hunit
+     ,test-framework-quickcheck2 >= 0.2
+     ,test-framework-th          >= 0.2.4
+     ,scrabble
