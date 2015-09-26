@@ -26,17 +26,29 @@ instance Show Player where
 newPlayer :: (Name, PlayerType) -> Player
 newPlayer (name, typ) = Player typ name [] 0
 
+human :: Name -> Player
+human name = newPlayer (name, Human)
+
+ai :: Name -> Player
+ai name = newPlayer (name, AI)
+
 getNameAndScore :: Player -> (Name, Score)
 getNameAndScore (Player _ n _ s) = (n, s)
 
 setTray :: Player -> Tray -> Player
-setTray (Player tp n _ s) tr = Player tp n tr s
+setTray p tr = p {playerTray = tr}
 
-fillTray :: Player -> Bag -> (Player, Bag)
-fillTray (Player tp n currentTray s) bag = (p', b') where
-  nrTiles = 7 - length currentTray
-  p'      = Player tp n (currentTray ++ take nrTiles bag) s
-  b'      = drop nrTiles bag
+getTray :: Player -> Tray
+getTray (Player _ _ t _) = t
+
+fillPlayerTray :: Player -> Bag -> (Player, Bag)
+fillPlayerTray p b = (p', b') where
+  (t', b') = fillTray (playerTray p) b
+  p' = p {playerTray = t'}
+
+fillTray :: Tray -> Bag -> (Tray, Bag)
+fillTray t bag = (t ++ take n bag, drop n bag) where
+  n  = 7 - length t
 
 isHuman :: Player -> Bool
 isHuman p = playerType p == Human
@@ -55,19 +67,20 @@ instance Show Game where
 currentPlayer :: Game -> Player
 currentPlayer = head . gamePlayers
 
-turnOver :: Game -> Game
-turnOver (Game (p:ps) bd bg d) = Game (ps++[p]) bd bg d
+nextPlayer :: Game -> Game
+nextPlayer g@(Game (p:ps) _ _ _) = g { gamePlayers = ps++[p] }
 
-newGame :: [(Name, PlayerType)] -> IO Game
+newGame :: [Player] -> IO Game
 newGame ps = do
   bag  <- newBag
   dict <- dictionary
-  let (players,bag') = fillTrays (fmap newPlayer ps) bag
+  let (players,bag') = fillTrays ps bag
   return $ Game (reverse players) newBoard bag' dict
 
 fillTrays :: [Player] -> Bag -> ([Player], Bag)
 fillTrays ps bag = foldl f ([], bag) ps where
-  f (ps,b) p = let (p',b') = fillTray p b in (p':ps,b')
+  f (ps,b) p = (p':ps,b') where
+    (p',b') = fillPlayerTray p b
 
 isGameOver :: Game -> Bool
 isGameOver (Game players _ bag _) = False -- TODO!

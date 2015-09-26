@@ -20,7 +20,7 @@ import Scrabble.Game
 import Scrabble.Search
 import Scrabble.Types
 
-start :: [(Name, PlayerType)] -> IO ()
+start :: [Player] -> IO ()
 start players = do
   g <- newGame players
   printListBoard True (gameBoard g)
@@ -56,9 +56,8 @@ aiTurn g = error "todo: aiTurn"
 help = "help unimplemented"
 
 interpCommandRes :: Game -> CommandResult -> IO Game
-interpCommandRes _ (MoveResult g)              = return g
+interpCommandRes _ (TurnComplete g)            = return g
 interpCommandRes g (Print (QueryResult words)) = putStrLn (show words) >> return g
-interpCommandRes g (Print PrintHelp)           = putStrLn help >> return g
-interpCommandRes _ (NextPlayer g)              = return g
-interpCommandRes g (Print (PrintScores scrs))  = putStrLn (show scrs) >> return g
-interpCommandRes g (Print (PrintBoard b brd))  = printListBoard b brd >> return g
+interpCommandRes g (Print PrintHelp)           = putStrLn help         >> return g
+interpCommandRes g (Print (PrintScores scrs))  = putStrLn (show scrs)  >> return g
+interpCommandRes g (Print (PrintBoard b brd))  = printListBoard b brd  >> return g

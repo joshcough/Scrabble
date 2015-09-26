@@ -34,6 +34,9 @@ orderedBag :: Bag
 orderedBag = concat $ f <$> distribution where
   f (l,n) = fmap mkTile $ replicate n l
 
+countLettersInBag :: Letter -> Bag -> Int
+countLettersInBag l b = length (filter (==l) $ map letter b)
+
 mkTile :: Letter -> Tile
 mkTile l = Tile l (fromMaybe err $ lookup l points) where
   err = error $ l : "is an invalid letter"

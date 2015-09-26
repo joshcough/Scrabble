@@ -41,7 +41,7 @@ And then jump up on the repl:
 
 Start a new game:
 
-    *Scrabble> start [("Josh", Human), ("Stephen", Human), ("Andrew", Human)]
+    *Scrabble> start [human "Josh", human "Stephen", human "Andrew"]
 
 Place the word 'rest' vertically at position (7,7). You can only place things in your tray.
 

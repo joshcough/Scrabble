@@ -28,20 +28,17 @@ data PrintCommand =
   | PrintBoard Bool ListBoard
   | PrintScores [(Name,Score)]
 
-data CommandResult =
-    MoveResult Game
-  | Print PrintCommand
-  | NextPlayer Game
+data CommandResult = TurnComplete Game | Print PrintCommand
 
 interpretExp :: Game -> ScrabbleExp -> Either String CommandResult
 interpretExp g@(Game (p:ps) board bag dict) = f where
-  f Skip                    = return . NextPlayer $ turnOver g
+  f Skip                    = return . TurnComplete $ nextPlayer g
   f (ShowExp ShowHelp)      = rPrint   PrintHelp
   f (ShowExp (ShowBoard b)) = rPrint $ PrintBoard b board
   f (ShowExp ShowScores)    = rPrint . PrintScores $ getScores g
   f (Search search)         =
     Print . QueryResult <$> interpretSearch search dict
-  f (Place pw)              = MoveResult  <$> g' where
+  f (Place pw)              = TurnComplete <$> g' where
     g' = applyMove g <$> interpretPut board (playerTray p) pw
   rPrint = return . Print
 
@@ -69,9 +66,8 @@ interpretPut b tray pw = if valid then go else Left errMsg where
 
 applyMove :: Game -> Move -> Game
 applyMove g@(Game (p:ps) _ bag d) (Move pts tray newBoard) =
-  Game (ps++[player']) newBoard bag' d where
-    player'   = Player (playerType p) (playerName p) tray' points'
-    tray'     = take trayLenth bag ++ tray
-    bag'      = drop trayLenth bag
-    points'   = playerScore p + pts
-    trayLenth = 7 - length tray
+  Game (ps++[p']) newBoard bag' d where
+    (t',bag') = fillTray tray bag
+    newScore  = playerScore p + pts
+    p' = p {playerTray = t', playerScore = newScore}
+
