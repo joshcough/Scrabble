@@ -61,27 +61,36 @@ Place the word 'rest' vertically at position (7,7). You can only place things in
 $ tree .
 .
 ├── scrabble.cabal
-└── src
-    ├── Scrabble
-    │   ├── Bag.hs
-    │   ├── Board.hs
-    │   ├── Commands
-    │   │   ├── AST.hs
-    │   │   ├── Interpreter.hs
-    │   │   └── SExpr.hs
-    │   ├── Game.hs
-    │   ├── Search.hs
-    │   └── Types.hs
-    └── Scrabble.hs
+├── src
+│   ├── Scrabble
+│   │   ├── Bag.hs
+│   │   ├── Board.hs
+│   │   ├── Commands
+│   │   │   ├── AST.hs
+│   │   │   ├── Interpreter.hs
+│   │   │   └── SExpr.hs
+│   │   ├── Game.hs
+│   │   ├── Matrix.hs
+│   │   ├── Search.hs
+│   │   └── Types.hs
+│   └── Scrabble.hs
+└── test
+    ├── Main.hs
+    ├── ScrabbleTests.hs
+    └── UnitTests
+        └── TestHelpers.hs
 ```
+
+Info about code in the main src tree:
 
 * Scrabble.hs        - the main entry point
 * Scrabble/Bag.hs    - code for the bag and tiles
 * Scrabble/Board.hs  - code for the board and placing tiles on it
-* Scrabble/Game.hs   - code for managing game state
-* Scrabble/Search.hs - code for searching the dictionary
-* Scrabble/Types.hs  - basic types needed for all of Scrabble.
 * Scrabble/Commands/AST.hs         - AST for player input (and parsing)
 * Scrabble/Commands/Interpreter.hs - interpreter for player input
 * Scrabble/Commands/SExpr.hs       - generic sexpr parser
+* Scrabble/Matrix.hs - Generic matrix code used to represent the board.
+* Scrabble/Game.hs   - code for managing game state
+* Scrabble/Search.hs - code for searching the dictionary
+* Scrabble/Types.hs  - basic types needed for all of Scrabble.
 
