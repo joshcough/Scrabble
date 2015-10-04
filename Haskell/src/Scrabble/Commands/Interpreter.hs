@@ -12,10 +12,8 @@ import Scrabble.Search
 import Scrabble.Types
 import Prelude hiding (Word)
 
-interpCommandString :: Game ->
-                       String ->
-                       Either String CommandResult
-interpCommandString g cmd = fromString cmd >>= interpretExp g
+interpret :: Game -> String -> Either String CommandResult
+interpret g cmd = fromString cmd >>= interpretExp g
 
 data Move = Move {
   pointsScored :: Points

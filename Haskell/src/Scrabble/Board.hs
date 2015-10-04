@@ -107,8 +107,8 @@ boardBonuses = indexify [
    (*) = Star
    indexify :: [[a]] -> [[(Position, a)]]
    indexify as  = fmap f (zip [0..] as) where
-     f (y,l)   = fmap g (zip [0..] l ) where
-       g (x,a) = (Position x y, a)
+     f (y,l)    = fmap g (zip [0..] l ) where
+       g (x,a)  = (Position x y, a)
 
 {- all the tiles 'before' a position in a matrix, vertically or horizontally -}
 beforeByOrientation :: (Pos p, Matrix m) => Orientation -> m a -> p -> Row m a
@@ -201,7 +201,7 @@ calculateScore squaresPlayedThisTurn nextBoard = turnScore where
   squaresSet :: Set Square
   squaresSet = Set.fromList squaresPlayedThisTurn
   turnScore :: Score
-  turnScore = foldl f 0 (trace ("wordsPlayedThisTurn: " ++ show wordsPlayedThisTurn) (Set.toList wordsPlayedThisTurn)) where
+  turnScore = foldl f 0 (Set.toList wordsPlayedThisTurn) where
     f acc w = scoreWord w squaresSet + acc
 
 {- calculate the score for a single word -}
