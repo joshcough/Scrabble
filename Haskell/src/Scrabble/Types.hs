@@ -1,7 +1,22 @@
 {-# LANGUAGE FlexibleInstances #-}
 
-module Scrabble.Types where
+module Scrabble.Types (
+  module Scrabble.Position,
+  Tray,
+  Word,
+  Points,
+  Score,
+  Dict,
+  Letter,
+  HasLetter(..),
+  Orientation(..),
+  catOrientation,
+  Tile(..),
+  PutTile(..),
+  PutWord(..)
+) where
 
+import Scrabble.Position
 import Prelude hiding (Word)
 
 type Letter = Char
@@ -15,9 +30,6 @@ data Orientation = Horizontal | Vertical deriving (Eq, Show)
 class HasLetter a where
   letter :: a -> Letter
 
-class HasPosition a where
-  pos :: a -> Position
-
 data Tile = Tile { _tileLetter :: Letter, score :: Int } deriving (Eq,Ord)
 
 instance HasLetter Tile where
@@ -25,41 +37,6 @@ instance HasLetter Tile where
 
 instance Show Tile where
   show (Tile letter _) = [letter]
-
-data Position = Position { posX :: Int, posY :: Int } deriving (Eq, Ord, Show)
-
-instance HasPosition Position where
-  pos = id
-
-instance HasPosition (Int, Int) where
-  pos (x,y) = Position x y
-
-class Pos a where
-  coors    :: a -> (Int, Int)
-  x        :: a -> Int
-  y        :: a -> Int
-  aboveP   :: a -> a
-  belowP   :: a -> a
-  leftOfP  :: a -> a
-  rightOfP :: a -> a
-
-instance Pos (Int, Int) where
-  coors    (x, y) = (x, y)
-  x        (a, _) = a
-  y        (_, a) = a
-  aboveP   (x, y) = (x, y - 1)
-  belowP   (x, y) = (x, y + 1)
-  leftOfP  (x, y) = (x - 1, y)
-  rightOfP (x, y) = (x + 1, y)
-
-instance Pos Position where
-  coors    (Position x y) = (x, y)
-  x        (Position a _) = a
-  y        (Position _ a) = a
-  aboveP   (Position x y) = Position x (y - 1)
-  belowP   (Position x y) = Position x (y + 1)
-  leftOfP  (Position x y) = Position (x - 1) y
-  rightOfP (Position x y) = Position (x + 1) y
 
 catOrientation :: a -> a -> Orientation -> a
 catOrientation l _ Horizontal = l

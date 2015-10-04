@@ -1,3 +1,5 @@
+{-# LANGUAGE StandaloneDeriving #-}
+
 module Scrabble.Game where
 
 import Data.Char (toUpper)
@@ -53,35 +55,30 @@ fillTray t bag = (t ++ take n bag, drop n bag) where
 isHuman :: Player -> Bool
 isHuman p = playerType p == Human
 
-data Game = Game {
+data Game b = Game {
   gamePlayers :: [Player],
-  gameBoard   :: ListBoard,
+  gameBoard   :: b (Square),
   gameBag     :: Bag,
-  gameDict    :: Dict } deriving Eq
+  gameDict    :: Dict }
 
-instance Show Game where
+--deriving instance Eq b => Eq (Game (b Square))
+
+instance Board b => Show (Game b) where
   show (Game ps brd bag dict) = concat $
     intersperse ", " ["Game {", show ps, brd', show bag, "}"] where
-      brd' = displayBoard brd
+      brd' = showBoard True brd
 
-currentPlayer :: Game -> Player
+currentPlayer :: Board b => Game b -> Player
 currentPlayer = head . gamePlayers
 
-nextPlayer :: Game -> Game
+nextPlayer :: Board b => Game b  -> Game b
 nextPlayer g@(Game (p:ps) _ _ _) = g { gamePlayers = ps++[p] }
-
-newGame :: [Player] -> IO Game
-newGame ps = do
-  bag  <- newBag
-  dict <- dictionary
-  let (players,bag') = fillTrays ps bag
-  return $ Game (reverse players) newBoard bag' dict
 
 fillTrays :: [Player] -> Bag -> ([Player], Bag)
 fillTrays ps bag = foldl f ([], bag) ps where
   f (ps,b) p = (p':ps,b') where
     (p',b') = fillPlayerTray p b
 
-isGameOver :: Game -> Bool
+isGameOver :: Board b => Game b -> Bool
 isGameOver (Game players _ bag _) = False -- TODO!
 

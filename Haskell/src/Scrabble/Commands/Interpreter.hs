@@ -12,23 +12,31 @@ import Scrabble.Search
 import Scrabble.Types
 import Prelude hiding (Word)
 
-interpret :: Game -> String -> Either String CommandResult
+interpret :: Board b =>
+             Game b  ->
+             String  ->
+             Either String (CommandResult b)
 interpret g cmd = fromString cmd >>= interpretExp g
 
-data Move = Move {
+data Move b = Move {
   pointsScored :: Points
  ,remaining :: Tray
- ,boardAfterMove :: ListBoard }
+ ,boardAfterMove :: b Square }
 
-data PrintCommand =
+data PrintCommand b =
     QueryResult [(Word, Points)]
   | PrintHelp
-  | PrintBoard Bool ListBoard
+  | PrintBoard Bool (b Square)
   | PrintScores [(Name,Score)]
 
-data CommandResult = TurnComplete Game | Print PrintCommand
+data CommandResult b =
+    TurnComplete (Game b)
+  | Print (PrintCommand b)
 
-interpretExp :: Game -> ScrabbleExp -> Either String CommandResult
+interpretExp :: Board b     =>
+                Game b      ->
+                ScrabbleExp ->
+                Either String (CommandResult b)
 interpretExp g@(Game (p:ps) board bag dict) = f where
   f Skip                    = return . TurnComplete $ nextPlayer g
   f (ShowExp ShowHelp)      = rPrint   PrintHelp
@@ -40,7 +48,7 @@ interpretExp g@(Game (p:ps) board bag dict) = f where
     g' = applyMove g <$> interpretPut board (playerTray p) pw
   rPrint = return . Print
 
-getScores :: Game -> [(Name, Score)]
+getScores :: Game a -> [(Name, Score)]
 getScores g = getNameAndScore <$> gamePlayers g
 
 interpretSearch :: SearchExp ->
@@ -51,7 +59,11 @@ interpretSearch search dict = wps <$> toSearch1 search where
   wps search = fmap f (runSearch1 search dict) where
     f w = (w,simpleWordPoints w)
 
-interpretPut :: ListBoard -> Tray -> PutWord -> Either String Move
+interpretPut :: Board b =>
+                b Square ->
+                Tray     ->
+                PutWord  ->
+                Either String (Move b)
 interpretPut b tray pw = if valid then go else Left errMsg where
   errMsg        = "error: tray missing input letters"
   trayLetters   = fmap letter tray
@@ -62,7 +74,7 @@ interpretPut b tray pw = if valid then go else Left errMsg where
   go = do (newBoard, score) <- putWord b pw
           return $ Move score trayRemainder newBoard
 
-applyMove :: Game -> Move -> Game
+applyMove :: Board b => Game b -> Move b -> Game b
 applyMove g@(Game (p:ps) _ bag d) (Move pts tray newBoard) =
   Game (ps++[p']) newBoard bag' d where
     (t',bag') = fillTray tray bag

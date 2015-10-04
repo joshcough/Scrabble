@@ -17,7 +17,7 @@ And then jump up on the repl:
     *Scrabble> let has   = ("HAS",  Horizontal, (5,6))
     *Scrabble> let as    = ("AS",   Horizontal, (5,7))
     *Scrabble> let (b,s) = quickPut [hell, has, as]
-    *Scrabble> printListBoard True b
+    *Scrabble> printBoard True b
     ______________________________________________
     |3W|  |  |2L|  |  |  |3W|  |  |  |2L|  |  |3W|
     |  |2W|  |  |  |3L|  |  |  |3L|  |  |  |2W|  |

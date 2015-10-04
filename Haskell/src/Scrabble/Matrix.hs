@@ -10,8 +10,10 @@ module Scrabble.Matrix
   ) where
 
 import Data.Functor.Compose (Compose(..))
+import Data.Map.Strict (Map)
+import qualified Data.Map.Strict as Map
 import Data.Maybe (Maybe,fromMaybe,catMaybes)
-import Scrabble.Types (Pos(..))
+import Scrabble.Position (Pos(..))
 
 class Vec m where
   before :: Int -> m a -> m a
@@ -59,3 +61,25 @@ instance Matrix ListMatrix where
   below   m p = fromMaybe [] $ after  (y p) <$> col m (x p)
   leftOf  m p = fromMaybe [] $ before (x p) <$> row m (y p)
   rightOf m p = fromMaybe [] $ after  (x p) <$> row m (y p)
+
+pattern MM a     = Compose a
+type MapMatrix p = Compose (Map p) (Map p)
+
+instance Vec (Map Int) where
+  before = error "todo"
+  after  = error "todo"
+
+instance Matrix (MapMatrix Int) where
+  type Row (MapMatrix Int) = (Map Int)
+  elemAt  (MM m) p | inListBounds p = error "todo"
+  elemAt  _ _ = Nothing
+  row     (MM m) y | y >= 0 = error "todo"
+  row     _ _ = Nothing
+  col     (MM m) x | x >= 0 = error "todo"
+  col     _ _ = Nothing
+  rows    m   = m
+  cols    m   = error "todo"
+  above   m p = error "todo"
+  below   m p = error "todo"
+  leftOf  m p = error "todo"
+  rightOf m p = error "todo"
