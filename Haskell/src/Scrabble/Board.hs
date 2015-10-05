@@ -88,11 +88,15 @@ boardBonuses = indexify [
      f (y,l)    = fmap g (zip [0..] l ) where
        g (x,a)  = (Position x y, a)
 
-{- all the tiles 'before' a position in a matrix, vertically or horizontally -}
-beforeByOrientation :: (Pos p, Matrix m) => Orientation -> m a -> p -> Row m a
+{- all the tiles 'before' a position in a matrix,
+   vertically or horizontally -}
+beforeByOrientation :: (Pos p, Matrix m) =>
+                       Orientation -> m a -> p -> Row m a
 beforeByOrientation = catOrientation leftOf above
-afterByOrientation :: (Pos p, Matrix m) => Orientation -> m a -> p -> Row m a
-{- all the tiles 'after' a position in a matrix, vertically or horizontally -}
+afterByOrientation :: (Pos p, Matrix m) =>
+                      Orientation -> m a -> p -> Row m a
+{- all the tiles 'after' a position in a matrix,
+   vertically or horizontally -}
 afterByOrientation = catOrientation rightOf below
 
 taken :: Square -> Bool
@@ -115,13 +119,17 @@ scoreWord word playedSquares = base * wordMultiplier where
   {- the score for a single letter (including its multiplier) -}
   scoreLetter :: Square -> Set Square -> Score
   scoreLetter s@(Square (Just t) bonus _) playedSquares =
-    if Set.member s playedSquares then letterBonus t bonus else score t
+    if Set.member s playedSquares
+    then letterBonus t bonus
+    else score t
 
-  {- determine the word multipliers for this word (based on using any 2W or 3W tiles -}
-  wordMultiplier = foldl' f 1 $ filter (\s -> Set.member s playedSquares) word where
+  {- determine the word multipliers for this word
+    (based on using any 2W or 3W tiles -}
+  wordMultiplier = foldl' f 1 $ filter g word where
     f acc (Square _ W3 _) = acc * 3
     f acc (Square _ W2 _) = acc * 2
     f acc _               = acc * 1
+    g s = Set.member s playedSquares
 
   {- determine the multipliers for a single letter -}
   letterBonus :: Tile -> Bonus -> Score
@@ -129,7 +137,7 @@ scoreWord word playedSquares = base * wordMultiplier where
   letterBonus t L2 = 2 * score t
   letterBonus t _  = score t
 
-{- lay tiles down on the board. calculate the score of the move -}
+{- lay tiles on the board. calculate the score of the move -}
 putWord :: (Foldable b, Board b, Vec (Row b))  =>
            b Square ->
            PutWord  ->
@@ -146,7 +154,8 @@ putWord b pw = do
     f p = maybe (Left $ "out of bounds: " ++ show p) Right $ elemAt b p
 
   zipSquaresAndTiles :: [Square] -> [(Square,PutTile,Position)]
-  zipSquaresAndTiles sqrs = zipWith (\s t -> (s, t, pos t)) sqrs (tiles pw)
+  zipSquaresAndTiles sqrs = zipWith f sqrs (tiles pw) where
+    f s t = (s, t, pos t)
 
   --TODO: the compiler won't let me put this type sig here.
   --      even with ScopedTypeVariables.
@@ -161,8 +170,9 @@ calculateScore :: (Foldable b, Board b, Vec (Row b)) =>
   Score
 calculateScore squaresPlayedThisTurn nextBoard = turnScore where
   wordsPlayedThisTurn :: Set [Square]
-  wordsPlayedThisTurn = Set.fromList . concat $ f <$> squaresPlayedThisTurn where
-    f s = getWordsTouchingSquare s nextBoard
+  wordsPlayedThisTurn =
+    Set.fromList . concat $ f <$> squaresPlayedThisTurn where
+      f s = getWordsTouchingSquare s nextBoard
   squaresSet :: Set Square
   squaresSet = Set.fromList squaresPlayedThisTurn
   turnScore :: Score
@@ -195,12 +205,14 @@ runChecks squaresAndTiles b b' = checkPuts >> return () where
       Left $ "square taken: " ++ show t ++ ", " ++ show (x p, y p)
     checkPut _ = Right ()
 
-{- get the word at the giving position, by orientation, if one exists -}
+{- get the word at the giving position, by orientation,
+   if one exists -}
 getWordAt :: (Vec (Row b), Board b, Pos p) =>
              b Square -> p -> Orientation -> Maybe [Square]
 getWordAt b p o = tile <$> here >>= f where
   here       = elemAt b p
-  beforeHere = reverse . taker . reverse . vecList $ beforeByOrientation o b p
+  beforeHere = reverse . taker . reverse . vecList $
+                 beforeByOrientation o b p
   afterHere  = taker . vecList $ afterByOrientation o b p
   taker      = takeWhile taken
   word       = beforeHere ++ maybe [] (:[]) here ++ afterHere
