@@ -2,6 +2,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TypeSynonymInstances #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module Scrabble.Board where
 
@@ -41,11 +42,6 @@ class Matrix b => Board b where
      the should be sufficiently generic -
      they really only depend on elemAt.
    -}
-
-  {- Put a word on the boar -}
-  putWord   :: b Square ->
-               PutWord  ->
-               Either String (b Square, Score)
 
   {- Get a word (if there is one) -}
   getWordAt :: Pos p => b Square    ->
@@ -154,3 +150,43 @@ scoreWord word playedSquares = base * wordMultiplier where
   letterBonus t L3 = 3 * score t
   letterBonus t L2 = 2 * score t
   letterBonus t _  = score t
+
+{- lay tiles down on the board. calculate the score of the move -}
+putWord :: (Foldable b, Board b)  =>
+           b Square ->
+           PutWord  ->
+           Either String (b Square, Score)
+putWord b pw = do
+  squares <- squaresPlayedThisTurn
+  let b' = nextBoard $ zip squares (tiles pw)
+  runChecks (zipSquaresAndTiles squares) b b'
+  return (b', calculateScore squares b') where
+
+  squaresPlayedThisTurn :: Either String [Square]
+  squaresPlayedThisTurn = traverse f (pos <$> tiles pw) where
+    f :: Position -> Either String Square
+    f p = maybe (Left $ "out of bounds: " ++ show p) Right $ elemAt b p
+
+  zipSquaresAndTiles :: [Square] -> [(Square,PutTile,Position)]
+  zipSquaresAndTiles sqrs = zipWith (\s t -> (s, t, pos t)) sqrs (tiles pw)
+
+  --TODO: the compiler won't let me put this type sig here.
+  --      even with ScopedTypeVariables.
+  --nextBoard :: [(Square,PutTile)] -> b Square
+  nextBoard sqrs = foldl f b sqrs where
+    f acc ((Square _ _ p), pt) = putTile acc p (asTile pt)
+
+{- Calculate the score for ALL words in a turn -}
+calculateScore :: (Foldable b, Board b) =>
+  [Square]  -> -- all the squares a player placed tiles in this turn
+  b Square -> -- the board (with those tiles on it)
+  Score
+calculateScore squaresPlayedThisTurn nextBoard = turnScore where
+  wordsPlayedThisTurn :: Set [Square]
+  wordsPlayedThisTurn = Set.fromList . concat $ f <$> squaresPlayedThisTurn where
+    f s = getWordsTouchingSquare s nextBoard
+  squaresSet :: Set Square
+  squaresSet = Set.fromList squaresPlayedThisTurn
+  turnScore :: Score
+  turnScore = foldl f 0 (Set.toList wordsPlayedThisTurn) where
+    f acc w = scoreWord w squaresSet + acc

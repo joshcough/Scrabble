@@ -12,9 +12,9 @@ import Scrabble.Search
 import Scrabble.Types
 import Prelude hiding (Word)
 
-interpret :: Board b =>
-             Game b  ->
-             String  ->
+interpret :: (Foldable b, Board b) =>
+             Game b ->
+             String ->
              Either String (CommandResult b)
 interpret g cmd = fromString cmd >>= interpretExp g
 
@@ -33,7 +33,7 @@ data CommandResult b =
     TurnComplete (Game b)
   | Print (PrintCommand b)
 
-interpretExp :: Board b     =>
+interpretExp :: (Foldable b, Board b) =>
                 Game b      ->
                 ScrabbleExp ->
                 Either String (CommandResult b)
@@ -59,7 +59,7 @@ interpretSearch search dict = wps <$> toSearch1 search where
   wps search = fmap f (runSearch1 search dict) where
     f w = (w,simpleWordPoints w)
 
-interpretPut :: Board b =>
+interpretPut :: (Foldable b, Board b) =>
                 b Square ->
                 Tray     ->
                 PutWord  ->

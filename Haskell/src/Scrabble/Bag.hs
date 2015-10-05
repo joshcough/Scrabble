@@ -8,6 +8,23 @@ import Scrabble.Types
 import System.Random.Shuffle
 import Prelude hiding (Word)
 
+type Tray = [Tile]
+
+data Tile = Tile { _tileLetter :: Letter, score :: Int } deriving (Eq,Ord)
+
+instance HasLetter Tile where
+  letter (Tile l _) = l
+
+instance Show Tile where
+  show (Tile letter _) = [letter]
+
+mkTile :: Letter -> Tile
+mkTile l = Tile l (fromMaybe err $ lookup l points) where
+  err = error $ l : "is an invalid letter"
+
+fromLetter :: Letter -> Tile
+fromLetter = mkTile
+
 type Bag = [Tile]
 
 newBag :: IO Bag
@@ -37,13 +54,6 @@ orderedBag = concat $ f <$> distribution where
 countLettersInBag :: Letter -> Bag -> Int
 countLettersInBag l b = length (filter (==l) $ map letter b)
 
-mkTile :: Letter -> Tile
-mkTile l = Tile l (fromMaybe err $ lookup l points) where
-  err = error $ l : "is an invalid letter"
-
-fromLetter :: Letter -> Tile
-fromLetter = mkTile
-
 points :: [(Letter,Points)]
 points = [
   ('A',1),('B',3), ('C',3),('D',2),('E',1),
@@ -67,3 +77,32 @@ simpleWordPoints :: Word -> Points
 simpleWordPoints = sum . fmap f where
   f l = fromMaybe err $ Map.lookup (Char.toUpper l) pointsMap
   err = error "simple word points"
+
+{-
+ represents a single tile being put on the board (without location)
+   * PutLetterTile means the tile has a letter on it
+   * PutBlankTile comes with the Letter that the player intends use.
+-}
+data PutTile =
+   PutLetterTile Tile   Position
+ | PutBlankTile  Letter Position
+  deriving Eq
+
+-- TODO: when are these shown? show the position be shown too?
+instance Show PutTile where
+  show (PutLetterTile t _) = [letter t]
+  show (PutBlankTile  l _) = [l]
+
+instance HasLetter PutTile where
+  letter (PutLetterTile t _) = letter t
+  letter (PutBlankTile  l _) = l
+
+instance HasPosition PutTile where
+  pos (PutLetterTile _ p) = p
+  pos (PutBlankTile  _ p) = p
+
+asTile (PutLetterTile t _) = t
+asTile (PutBlankTile  l _) = mkTile l
+
+{- A complete representation of placing a word on the board. -}
+data PutWord = PutWord { tiles :: [PutTile] } deriving Show

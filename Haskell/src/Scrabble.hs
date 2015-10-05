@@ -35,7 +35,7 @@ newGame ps = do
   let (players,bag') = fillTrays ps bag
   return $ Game (reverse players) newBoard bag' dict
 
-gameLoop :: Board b => Game b -> IO ()
+gameLoop :: (Foldable b, Board b) => Game b -> IO ()
 gameLoop g | isGameOver g = gameOver g
 gameLoop g = singleTurn >>= gameLoop where
   singleTurn =
@@ -43,7 +43,7 @@ gameLoop g = singleTurn >>= gameLoop where
     then humanTurn False g
     else return (aiTurn g)
 
-humanTurn :: Board b => Bool -> Game b -> IO (Game b)
+humanTurn :: (Foldable b, Board b) => Bool -> Game b -> IO (Game b)
 humanTurn b g = do
   when b (printBoard True $ gameBoard g)
   putStrLn $ "Turn for: " ++ show (currentPlayer g)

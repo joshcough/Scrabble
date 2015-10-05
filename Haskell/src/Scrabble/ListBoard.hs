@@ -23,7 +23,6 @@ type ListBoard  = ListMatrix Square
 
 instance Board ListMatrix where
   putTile   = putTileOnListBoard
-  putWord   = putWordOnListBoard
   showBoard = showListBoard
   getWordAt = listBoardGetWordAt
   newBoard  = newListBoard
@@ -63,31 +62,6 @@ putTileOnListBoard (LM b) p t = LM (mapNth newRow (y p) b) where
   mapNth :: (a -> a) -> Int -> [a] -> [a]
   mapNth f i as = xs ++ [f $ head ys] ++ drop 1 ys where (xs,ys) = splitAt i as
 
-{- lay tiles down on the board. calculate the score of the move -}
-putWordOnListBoard :: ListBoard -> PutWord -> Either String (ListBoard, Score)
-putWordOnListBoard b pw = do
-  squares <- squaresPlayedThisTurn
-  let b' = nextBoard $ zip squares (tiles pw)
-  runChecksListBoard (zipSquaresAndTiles squares) b b'
-  return (b', turnScore squares b') where
-
-  turnScore :: [Square] -> ListBoard -> Int
-  turnScore sqrs brd = calculateScore sqrs brd
-
-  squaresPlayedThisTurn :: Either String [Square]
-  squaresPlayedThisTurn = traverse f (pos <$> tiles pw) where
-    f :: Position -> Either String Square
-    f p = maybe (Left $ "out of bounds: " ++ show p) Right $ elemAt b p
-
-  zipSquaresAndTiles :: [Square] -> [(Square,PutTile,Position)]
-  zipSquaresAndTiles sqrs = zipWith (\s t -> (s, t, pos t)) sqrs (tiles pw)
-
-  nextBoard :: [(Square,PutTile)] -> ListBoard
-  nextBoard sqrs = foldl f b sqrs where
-    f acc ((Square _ _ p), pt) = putTile acc p (g pt) where
-      g (PutLetterTile t _) = t
-      g (PutBlankTile  l _) = mkTile l
-
 {- checks if everything in a move is good -}
 runChecksListBoard ::
   Pos p =>
@@ -112,21 +86,6 @@ runChecksListBoard squaresAndTiles b b' = checkPuts >> return () where
     checkPut ((Square (Just t) _ _), _, p) =
       Left $ "square taken: " ++ show t ++ ", " ++ show (x p, y p)
     checkPut _ = Right ()
-
-{- Calculate the score for ALL words in a turn -}
-calculateScore ::
-  [Square]  -> -- all the squares a player placed tiles in this turn
-  ListBoard -> -- the board (with those tiles on it)
-  Score
-calculateScore squaresPlayedThisTurn nextBoard = turnScore where
-  wordsPlayedThisTurn :: Set [Square]
-  wordsPlayedThisTurn = Set.fromList . concat $ f <$> squaresPlayedThisTurn where
-    f s = getWordsTouchingSquare s nextBoard
-  squaresSet :: Set Square
-  squaresSet = Set.fromList squaresPlayedThisTurn
-  turnScore :: Score
-  turnScore = foldl f 0 (Set.toList wordsPlayedThisTurn) where
-    f acc w = scoreWord w squaresSet + acc
 
 {- put some words on a brand new board -}
 quickPut :: [(String, Orientation, (Int, Int))] -> (ListBoard,[Score])
