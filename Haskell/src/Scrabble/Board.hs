@@ -33,12 +33,38 @@ instance Show Square where
   show = showSquare True
 
 class Matrix b => Board b where
-  putTile      :: Pos p => b Square -> p -> Tile -> b Square
-  putWord      :: b Square -> PutWord -> Either String (b Square, Score)
-  getWordAt    :: Pos p => b Square -> p -> Orientation -> Maybe [Square]
-  newBoard     :: b Square
-  showBoard    :: Bool -> b Square -> String
-  runChecks    :: [(Square, PutTile, Position)] -> b Square -> b Square -> Either String ()
+  newBoard  :: b Square
+  putTile   :: Pos p => b Square -> p -> Tile -> b Square
+
+  {- TODO: I think all of the remaining functions
+     in this class can be pulled out, because
+     the should be sufficiently generic -
+     they really only depend on elemAt.
+   -}
+
+  {- Put a word on the boar -}
+  putWord   :: b Square ->
+               PutWord  ->
+               Either String (b Square, Score)
+
+  {- Get a word (if there is one) -}
+  getWordAt :: Pos p => b Square    ->
+                        p           ->
+                        Orientation ->
+                        Maybe [Square]
+
+  {- 'show' for Scrabble boards.
+     The Bool is to display square bonuses, or not.
+   -}
+  showBoard :: Bool -> b Square -> String
+
+  {- Determine if it's okay to place these tiles
+     on the corresponding squares.
+   -}
+  runChecks :: Pos p => [(Square, PutTile, p)] ->
+                        b Square ->
+                        b Square ->
+                        Either String ()
 
 printBoard :: Board b => Bool -> b Square -> IO ()
 printBoard b = putStrLn . showBoard b

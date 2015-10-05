@@ -90,12 +90,13 @@ putWordOnListBoard b pw = do
 
 {- checks if everything in a move is good -}
 runChecksListBoard ::
-  [(Square,PutTile,Position)] -> -- all the letters put down this turn
+  Pos p =>
+  [(Square,PutTile,p)] -> -- all the letters put down this turn
   ListBoard -> -- old board
   ListBoard -> -- new board
   Either String ()
 runChecksListBoard squaresAndTiles b b' = checkPuts >> return () where
-  firstPos = pos . (\(_,_,p) -> p) $ head squaresAndTiles
+  firstPos = (\(_,_,p) -> p) $ head squaresAndTiles
 
   {- TODO: I think check puts should happen before this,
            when the PutTiles are created.
@@ -107,9 +108,9 @@ runChecksListBoard squaresAndTiles b b' = checkPuts >> return () where
   checkPuts :: Either String ()
   checkPuts = traverse checkPut squaresAndTiles >> return () where
     -- make sure we haven't put something in a tile thats already taken
-    checkPut :: (Square, PutTile, Position) -> Either String ()
+    checkPut :: Pos p => (Square, PutTile, p) -> Either String ()
     checkPut ((Square (Just t) _ _), _, p) =
-      Left $ "square taken: " ++ show t ++ ", " ++ show p
+      Left $ "square taken: " ++ show t ++ ", " ++ show (x p, y p)
     checkPut _ = Right ()
 
 {- Calculate the score for ALL words in a turn -}
