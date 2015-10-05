@@ -1,20 +1,14 @@
 {-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Scrabble.Board where
 
-import Data.Char (toUpper)
-import Data.Either (isRight)
-import Data.List (foldl', intercalate)
+import Data.List (foldl')
 import Data.Maybe (Maybe)
 import qualified Data.Maybe as Maybe
 import Data.Set (Set)
 import Debug.Trace
 import qualified Data.Set as Set
-import Prelude hiding (Word)
 import Scrabble.Bag
 import Scrabble.Matrix
 import Scrabble.Types
@@ -186,7 +180,8 @@ runChecks squaresAndTiles b b' = checkPuts >> return () where
   firstPos = (\(_,_,p) -> p) $ head squaresAndTiles
 
   {- TODO: I think check puts should happen before this,
-           when the PutTiles are created.
+           when the PutTiles are created. But, it might
+           not be possible to do all of them before.
    -}
   {- checkPuts returns true if
        * all the letters were put down on empty squares
@@ -210,3 +205,41 @@ getWordAt b p o = tile <$> here >>= f where
   taker      = takeWhile taken
   word       = beforeHere ++ maybe [] (:[]) here ++ afterHere
   f _        = if length word > 1 then Just word else Nothing
+
+{- put some words on a brand new board -}
+quickPut :: (Foldable b, Board b, Vec (Row b)) =>
+            [(String, Orientation, (Int, Int))] ->
+            (b Square,[Score])
+quickPut words = either error id  $ quickPut' words newBoard
+
+{- put some words onto an existing board -}
+quickPut' :: (Foldable b, Board b, Vec (Row b)) =>
+             [(String, Orientation, (Int, Int))] ->
+             b Square ->
+             Either String (b Square,[Score])
+quickPut' words b = go (b,[]) putWords where
+
+  {- TODO: this is pretty awful
+     I think EitherT over State could clean it up,
+     but not sure if i want to do that.
+     Also, I can't put the type here, again.
+  -}
+  --go :: (b Square, [Score]) -> [PutWord] -> Either String (b Square, [Score])
+  go (b,ss) pws = foldl f (Right (b,ss)) pws where
+    f acc pw = do
+      (b,scores) <- acc
+      (b',score) <- putWord b pw
+      return (b',score:scores)
+
+  putWords :: [PutWord]
+  putWords =  (\(s,o,p) -> toPutWord s o p) <$> words where
+    toPutWord :: String -> Orientation -> (Int, Int) -> PutWord
+    toPutWord w o (x,y) = PutWord putTils where
+      adder :: (Int, Int) -> (Int, Int)
+      adder = catOrientation (\(x,y) -> (x+1,y)) (\(x,y) -> (x,y+1)) o
+      coordinates :: [(Int,Int)]
+      coordinates = reverse . fst $ foldl f ([],(x,y)) w where
+        f (acc,(x,y)) c = ((x,y):acc, adder (x,y))
+      putTils :: [PutTile]
+      putTils = zipWith f w coordinates where
+        f c xy = PutLetterTile (mkTile c) (pos xy)
