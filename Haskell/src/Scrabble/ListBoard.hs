@@ -26,7 +26,6 @@ instance Board ListMatrix where
   showBoard = showListBoard
   getWordAt = listBoardGetWordAt
   newBoard  = newListBoard
-  runChecks = runChecksListBoard
 
 showListBoard :: Bool -> ListBoard -> String
 showListBoard printBonuses (LM board) = top ++ showRows ++ bottom where
@@ -61,31 +60,6 @@ putTileOnListBoard (LM b) p t = LM (mapNth newRow (y p) b) where
   newRow = mapNth (\(Square _ b p) -> Square (Just t) b p) (x p)
   mapNth :: (a -> a) -> Int -> [a] -> [a]
   mapNth f i as = xs ++ [f $ head ys] ++ drop 1 ys where (xs,ys) = splitAt i as
-
-{- checks if everything in a move is good -}
-runChecksListBoard ::
-  Pos p =>
-  [(Square,PutTile,p)] -> -- all the letters put down this turn
-  ListBoard -> -- old board
-  ListBoard -> -- new board
-  Either String ()
-runChecksListBoard squaresAndTiles b b' = checkPuts >> return () where
-  firstPos = (\(_,_,p) -> p) $ head squaresAndTiles
-
-  {- TODO: I think check puts should happen before this,
-           when the PutTiles are created.
-   -}
-  {- checkPuts returns true if
-       * all the letters were put down on empty squares
-       * a tile was placed in all the empty tiles in the word
-   -}
-  checkPuts :: Either String ()
-  checkPuts = traverse checkPut squaresAndTiles >> return () where
-    -- make sure we haven't put something in a tile thats already taken
-    checkPut :: Pos p => (Square, PutTile, p) -> Either String ()
-    checkPut ((Square (Just t) _ _), _, p) =
-      Left $ "square taken: " ++ show t ++ ", " ++ show (x p, y p)
-    checkPut _ = Right ()
 
 {- put some words on a brand new board -}
 quickPut :: [(String, Orientation, (Int, Int))] -> (ListBoard,[Score])

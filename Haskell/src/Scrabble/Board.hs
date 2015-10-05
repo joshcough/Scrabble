@@ -54,14 +54,6 @@ class Matrix b => Board b where
    -}
   showBoard :: Bool -> b Square -> String
 
-  {- Determine if it's okay to place these tiles
-     on the corresponding squares.
-   -}
-  runChecks :: Pos p => [(Square, PutTile, p)] ->
-                        b Square ->
-                        b Square ->
-                        Either String ()
-
 printBoard :: Board b => Bool -> b Square -> IO ()
 printBoard b = putStrLn . showBoard b
 
@@ -190,3 +182,28 @@ calculateScore squaresPlayedThisTurn nextBoard = turnScore where
   turnScore :: Score
   turnScore = foldl f 0 (Set.toList wordsPlayedThisTurn) where
     f acc w = scoreWord w squaresSet + acc
+
+{- checks if everything in a move is good -}
+runChecks ::
+  (Board b, Pos p) =>
+  [(Square,PutTile,p)] -> -- all the letters put down this turn
+  b Square -> -- old board
+  b Square -> -- new board
+  Either String ()
+runChecks squaresAndTiles b b' = checkPuts >> return () where
+  firstPos = (\(_,_,p) -> p) $ head squaresAndTiles
+
+  {- TODO: I think check puts should happen before this,
+           when the PutTiles are created.
+   -}
+  {- checkPuts returns true if
+       * all the letters were put down on empty squares
+       * a tile was placed in all the empty tiles in the word
+   -}
+  checkPuts :: Either String ()
+  checkPuts = traverse checkPut squaresAndTiles >> return () where
+    -- make sure we haven't put something in a tile thats already taken
+    checkPut :: Pos p => (Square, PutTile, p) -> Either String ()
+    checkPut ((Square (Just t) _ _), _, p) =
+      Left $ "square taken: " ++ show t ++ ", " ++ show (x p, y p)
+    checkPut _ = Right ()
