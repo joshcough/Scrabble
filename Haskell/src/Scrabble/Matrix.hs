@@ -16,8 +16,9 @@ import Data.Maybe (Maybe,fromMaybe,catMaybes)
 import Scrabble.Position (Pos(..))
 
 class Vec m where
-  before :: Int -> m a -> m a
-  after  :: Int -> m a -> m a
+  before  :: Int -> m a -> m a
+  after   :: Int -> m a -> m a
+  vecList :: m a -> [a]
 
 -- | A generic matrix type 'm', whose rows are
 -- represented by the associated 'Row'.
@@ -41,8 +42,9 @@ type ListMatrix = Compose [] []
 pattern LM a = Compose a
 
 instance Vec [] where
-  before = take
-  after  = drop . (+1)
+  before  = take
+  after   = drop . (+1)
+  vecList = id
 
 inListBounds :: Pos p => p -> Bool
 inListBounds p = x p >= 0 && y p >= 0
@@ -66,8 +68,9 @@ pattern MM a     = Compose a
 type MapMatrix p = Compose (Map p) (Map p)
 
 instance Vec (Map Int) where
-  before = error "todo"
-  after  = error "todo"
+  before  = error "todo"
+  after   = error "todo"
+  vecList = error "todo"
 
 instance Matrix (MapMatrix Int) where
   type Row (MapMatrix Int) = (Map Int)

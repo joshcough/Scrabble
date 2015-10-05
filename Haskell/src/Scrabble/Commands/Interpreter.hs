@@ -1,3 +1,5 @@
+{-# LANGUAGE FlexibleContexts #-}
+
 module Scrabble.Commands.Interpreter where
 
 import Data.Char (toUpper)
@@ -8,11 +10,12 @@ import Scrabble.Board
 import Scrabble.Commands.AST
 import Scrabble.Commands.SExpr
 import Scrabble.Game
+import Scrabble.Matrix
 import Scrabble.Search
 import Scrabble.Types
 import Prelude hiding (Word)
 
-interpret :: (Foldable b, Board b) =>
+interpret :: (Foldable b, Board b, Vec (Row b)) =>
              Game b ->
              String ->
              Either String (CommandResult b)
@@ -33,7 +36,7 @@ data CommandResult b =
     TurnComplete (Game b)
   | Print (PrintCommand b)
 
-interpretExp :: (Foldable b, Board b) =>
+interpretExp :: (Foldable b, Board b, Vec (Row b)) =>
                 Game b      ->
                 ScrabbleExp ->
                 Either String (CommandResult b)
@@ -59,7 +62,7 @@ interpretSearch search dict = wps <$> toSearch1 search where
   wps search = fmap f (runSearch1 search dict) where
     f w = (w,simpleWordPoints w)
 
-interpretPut :: (Foldable b, Board b) =>
+interpretPut :: (Foldable b, Board b, Vec (Row b)) =>
                 b Square ->
                 Tray     ->
                 PutWord  ->

@@ -24,7 +24,6 @@ type ListBoard  = ListMatrix Square
 instance Board ListMatrix where
   putTile   = putTileOnListBoard
   showBoard = showListBoard
-  getWordAt = listBoardGetWordAt
   newBoard  = newListBoard
 
 showListBoard :: Bool -> ListBoard -> String
@@ -43,16 +42,6 @@ printListBoard b = putStrLn . showListBoard b
 newListBoard :: ListBoard
 newListBoard = fmap f (LM boardBonuses) where
   f (pos,b) = Square Nothing b pos
-
-{- get the word at the giving position, by orientation, if one exists -}
-listBoardGetWordAt :: Pos p => ListBoard -> p -> Orientation -> Maybe [Square]
-listBoardGetWordAt b p o = tile <$> here >>= f where
-  here       = elemAt b p
-  beforeHere = reverse . taker . reverse $ beforeByOrientation o b p
-  afterHere  = taker $ afterByOrientation o b p
-  taker      = takeWhile taken
-  word       = beforeHere ++ maybe [] (:[]) here ++ afterHere
-  f _        = if length word > 1 then Just word else Nothing
 
 {- place a single tile, without worrying about scoring -}
 putTileOnListBoard :: Pos p => ListBoard -> p -> Tile -> ListBoard

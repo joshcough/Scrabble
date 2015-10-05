@@ -36,19 +36,6 @@ instance Show Square where
 class Matrix b => Board b where
   newBoard  :: b Square
   putTile   :: Pos p => b Square -> p -> Tile -> b Square
-
-  {- TODO: I think all of the remaining functions
-     in this class can be pulled out, because
-     the should be sufficiently generic -
-     they really only depend on elemAt.
-   -}
-
-  {- Get a word (if there is one) -}
-  getWordAt :: Pos p => b Square    ->
-                        p           ->
-                        Orientation ->
-                        Maybe [Square]
-
   {- 'show' for Scrabble boards.
      The Bool is to display square bonuses, or not.
    -}
@@ -57,7 +44,10 @@ class Matrix b => Board b where
 printBoard :: Board b => Bool -> b Square -> IO ()
 printBoard b = putStrLn . showBoard b
 
-getWordsAt :: (Pos p, Board b) => b Square -> p -> (Maybe [Square], Maybe [Square])
+getWordsAt :: (Vec (Row b), Board b, Pos p) =>
+              b Square ->
+              p        ->
+              (Maybe [Square], Maybe [Square])
 getWordsAt b p = (getWordAt b p Horizontal, getWordAt b p Vertical)
 
 instance Show Bonus where
@@ -114,8 +104,10 @@ afterByOrientation = catOrientation rightOf below
 taken :: Square -> Bool
 taken = Maybe.isJust . tile
 
-getWordsTouchingSquare :: (Foldable b, Board b) => Square -> b Square -> [[Square]]
-getWordsTouchingSquare s b = Maybe.catMaybes [mh,mv] where (mh,mv) = getWordsAt b (pos s)
+getWordsTouchingSquare :: (Foldable b, Board b, Vec (Row b)) =>
+                          Square -> b Square -> [[Square]]
+getWordsTouchingSquare s b = Maybe.catMaybes [mh,mv] where
+  (mh,mv) = getWordsAt b (pos s)
 
 {- calculate the score for a single word -}
 scoreWord ::
@@ -144,7 +136,7 @@ scoreWord word playedSquares = base * wordMultiplier where
   letterBonus t _  = score t
 
 {- lay tiles down on the board. calculate the score of the move -}
-putWord :: (Foldable b, Board b)  =>
+putWord :: (Foldable b, Board b, Vec (Row b))  =>
            b Square ->
            PutWord  ->
            Either String (b Square, Score)
@@ -169,7 +161,7 @@ putWord b pw = do
     f acc ((Square _ _ p), pt) = putTile acc p (asTile pt)
 
 {- Calculate the score for ALL words in a turn -}
-calculateScore :: (Foldable b, Board b) =>
+calculateScore :: (Foldable b, Board b, Vec (Row b)) =>
   [Square]  -> -- all the squares a player placed tiles in this turn
   b Square -> -- the board (with those tiles on it)
   Score
@@ -207,3 +199,14 @@ runChecks squaresAndTiles b b' = checkPuts >> return () where
     checkPut ((Square (Just t) _ _), _, p) =
       Left $ "square taken: " ++ show t ++ ", " ++ show (x p, y p)
     checkPut _ = Right ()
+
+{- get the word at the giving position, by orientation, if one exists -}
+getWordAt :: (Vec (Row b), Board b, Pos p) =>
+             b Square -> p -> Orientation -> Maybe [Square]
+getWordAt b p o = tile <$> here >>= f where
+  here       = elemAt b p
+  beforeHere = reverse . taker . reverse . vecList $ beforeByOrientation o b p
+  afterHere  = taker . vecList $ afterByOrientation o b p
+  taker      = takeWhile taken
+  word       = beforeHere ++ maybe [] (:[]) here ++ afterHere
+  f _        = if length word > 1 then Just word else Nothing
