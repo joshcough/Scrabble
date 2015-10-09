@@ -36,6 +36,7 @@ And then jump up on the repl:
     |3W|  |  |2L|  |  |  |3W|  |  |  |2L|  |  |3W|
     ----------------------------------------------
     *Scrabble> s
+    [14,14,13]
 
 ### Play the game
 

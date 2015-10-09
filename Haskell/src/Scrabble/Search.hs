@@ -9,12 +9,12 @@ import qualified Data.List as List
 import Debug.Trace
 
 dictionary :: IO Dict
-dictionary = lines <$> readFile "../dict/en.txt"
+dictionary = fmap ups <$> lines <$> readFile "../dict/en.txt"
 
 -- TODO: should this be someplace else?
 -- maybe this file just needs reorganization.
 dictContainsWord :: Dict -> Word -> Bool
-dictContainsWord = flip elem
+dictContainsWord d = flip elem d . ups
 
 type Search1 = Word -> Bool
 
@@ -59,6 +59,9 @@ matchNone = Scrabble.Search.none
 
 ups :: String -> String
 ups = List.sort . fmap toUpper
+
+downs :: String -> String
+downs = List.sort . fmap toUpper
 
 {- Search for _all_ of the letters in the first string (s1).
    If a letter appears more than once in s1, it must

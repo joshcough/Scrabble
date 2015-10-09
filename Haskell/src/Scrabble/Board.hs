@@ -13,7 +13,6 @@ import Scrabble.Bag
 import Scrabble.Matrix
 import Scrabble.Search hiding (and, or)
 import Scrabble.Types
-import System.IO.Unsafe
 
 data Bonus  = W3 | W2 | L3 | L2 | Star | NoBonus deriving (Eq,Ord)
 

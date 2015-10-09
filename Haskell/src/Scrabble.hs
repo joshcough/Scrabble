@@ -25,6 +25,7 @@ import Scrabble.ListBoard
 import Scrabble.Matrix
 import Scrabble.Search
 import Scrabble.Types
+import System.IO.Unsafe
 
 start :: [Player] -> IO ()
 start players = do
@@ -76,15 +77,15 @@ applyRes g = ((\(io, g') -> io >> return g') . f g) where
 gameOver :: Board b => Game b -> IO ()
 gameOver g = putStrLn ("Game Over!\n" ++ show g)
 
-{- put some words on a brand new board -}
+{- test putting some words on a brand new board -}
 quickPut :: [(String, Orientation, (Int, Int))] ->
-            IO (ListBoard,[Score])
-quickPut words = do
+            (ListBoard,[Score])
+quickPut words = unsafePerformIO $ do
   dict <- dictionary
   let e = quickPut' words (newBoard :: ListBoard) dict
   return $ either error id e
 
-{- put some words onto an existing board -}
+{- test put some words onto an existing board -}
 quickPut' :: (Foldable b, Board b, Vec (Row b)) =>
              [(String, Orientation, (Int, Int))] ->
              b Square ->
