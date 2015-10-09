@@ -71,7 +71,9 @@ $ tree .
 │   │   │   ├── Interpreter.hs
 │   │   │   └── SExpr.hs
 │   │   ├── Game.hs
+│   │   ├── ListBoard.hs
 │   │   ├── Matrix.hs
+│   │   ├── Position.hs
 │   │   ├── Search.hs
 │   │   └── Types.hs
 │   └── Scrabble.hs
@@ -84,14 +86,16 @@ $ tree .
 
 Info about code in the main src tree:
 
-* Scrabble.hs        - the main entry point
-* Scrabble/Bag.hs    - code for the bag and tiles
-* Scrabble/Board.hs  - code for the board and placing tiles on it
+* Scrabble.hs           - the main entry point
+* Scrabble/Bag.hs       - code for the bag and tiles
+* Scrabble/Board.hs     - code for the board and placing tiles on it
 * Scrabble/Commands/AST.hs         - AST for player input (and parsing)
 * Scrabble/Commands/Interpreter.hs - interpreter for player input
 * Scrabble/Commands/SExpr.hs       - generic sexpr parser
-* Scrabble/Matrix.hs - Generic matrix code used to represent the board.
-* Scrabble/Game.hs   - code for managing game state
-* Scrabble/Search.hs - code for searching the dictionary
-* Scrabble/Types.hs  - basic types needed for all of Scrabble.
+* Scrabble/Game.hs      - code for managing game state
+* Scrabble/ListBoard.hs - A list based representation of the board.
+* Scrabble/Matrix.hs    - Generic matrix code used to represent the board.
+* Scrabble/Position.hs  - Simple code to represent (x,y) coordinates.
+* Scrabble/Search.hs    - code for searching the dictionary
+* Scrabble/Types.hs     - basic types needed for all of Scrabble.
 
