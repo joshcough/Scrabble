@@ -183,7 +183,7 @@ putWord b pw dict = do
   squares <- squaresPlayedThisTurn
   let b' = nextBoard $ zip squares (tiles pw)
   validateMove (zipSquaresAndTiles squares) b b' dict
-  return (b', calculateScore squares b') where
+  return (b', calculateTurnScore squares b') where
 
   squaresPlayedThisTurn :: Either String [Square]
   squaresPlayedThisTurn = traverse f (pos <$> tiles pw) where
@@ -201,19 +201,21 @@ putWord b pw dict = do
     f acc ((Square _ _ p), pt) = putTile acc p (asTile pt)
 
 {- Calculate the score for ALL words in a turn -}
-calculateScore :: (Foldable b, Board b, Vec (Row b)) =>
+calculateTurnScore :: (Foldable b, Board b, Vec (Row b)) =>
   [Square] -> -- all the squares a player placed tiles in this turn
   b Square -> -- the board (with those tiles on it)
   Score
-calculateScore sqrs nextBoard = foldl f 0 s where
-  s = Set.toList $ wordsPlayedInMove sqrs nextBoard
+calculateTurnScore sqrs nextBoard = totalScore where
+  totalScore = foldl f 0 s + bingoBonus
+  s = Set.toList $ wordsPlayedInTurn sqrs nextBoard
   f acc w = scoreWord w (Set.fromList sqrs) + acc
+  bingoBonus = if length sqrs == 7 then 50 else 0
 
-wordsPlayedInMove :: (Foldable b, Board b, Vec (Row b)) =>
+wordsPlayedInTurn :: (Foldable b, Board b, Vec (Row b)) =>
   [Square] -> -- all the squares a player placed tiles in this turn
   b Square -> -- the board (with those tiles on it)
   Set [Square]
-wordsPlayedInMove squaresPlayedThisTurn nextBoard =
+wordsPlayedInTurn squaresPlayedThisTurn nextBoard =
   Set.fromList . concat $ f <$> squaresPlayedThisTurn where
     f s = getWordsTouchingSquare s nextBoard
 
@@ -272,7 +274,7 @@ validateMove move b b' dict = go where
 
   words :: [[Letter]]
   words = toWord <$> (Set.toList $
-    wordsPlayedInMove squaresPlayedInMove b')
+    wordsPlayedInTurn squaresPlayedInMove b')
 
   (_, badWords) = partition (dictContainsWord dict) words
 

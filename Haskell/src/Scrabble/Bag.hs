@@ -8,7 +8,7 @@ import Scrabble.Types
 import System.Random.Shuffle
 import Prelude hiding (Word)
 
-type Tray = [Tile]
+type Rack = [Tile]
 
 data Tile = Tile { _tileLetter :: Letter, score :: Int } deriving (Eq,Ord)
 

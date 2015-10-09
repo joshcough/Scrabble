@@ -37,7 +37,7 @@ newGame :: [Player] -> IO (Game ListMatrix)
 newGame ps = do
   bag  <- newBag
   dict <- dictionary
-  let (players,bag') = fillTrays ps bag
+  let (players,bag') = fillRacks ps bag
   return $ Game (reverse players) newBoard bag' dict
 
 gameLoop :: (Foldable b, Board b, Vec (Row b)) => Game b -> IO ()

@@ -23,7 +23,7 @@ interpret g cmd = fromString cmd >>= interpretExp g
 
 data Move b = Move {
   pointsScored :: Points
- ,remaining :: Tray
+ ,remaining :: Rack
  ,boardAfterMove :: b Square }
 
 data PrintCommand b =
@@ -48,7 +48,7 @@ interpretExp g@(Game (p:ps) board bag dict) = f where
   f (Search search)         =
     Print . QueryResult <$> interpretSearch search dict
   f (Place pw)              = TurnComplete <$> g' where
-    g' = applyMove g <$> interpretPut board (playerTray p) pw dict
+    g' = applyMove g <$> interpretPut board (playerRack p) pw dict
   rPrint = return . Print
 
 getScores :: Game a -> [(Name, Score)]
@@ -64,25 +64,25 @@ interpretSearch search dict = wps <$> toSearch1 search where
 
 interpretPut :: (Foldable b, Board b, Vec (Row b)) =>
                 b Square ->
-                Tray     ->
+                Rack     ->
                 PutWord  ->
                 Dict     ->
                 Either String (Move b)
-interpretPut b tray pw dict =
+interpretPut b rack pw dict =
   if valid then go else Left errMsg where
-    errMsg        = "error: tray missing input letters"
-    trayLetters   = fmap letter tray
-    valid         = containsAll putLetters trayLetters
+    errMsg        = "error: rack missing input letters"
+    rackLetters   = fmap letter rack
+    valid         = containsAll putLetters rackLetters
     putLetters    = letter <$> tiles pw
-    trayRemainder = fmap fromLetter $
-      foldl' (flip delete) trayLetters putLetters
+    rackRemainder = fmap fromLetter $
+      foldl' (flip delete) rackLetters putLetters
     go = do (newBoard, score) <- putWord b pw dict
-            return $ Move score trayRemainder newBoard
+            return $ Move score rackRemainder newBoard
 
 applyMove :: Board b => Game b -> Move b -> Game b
-applyMove g@(Game (p:ps) _ bag d) (Move pts tray newBoard) =
+applyMove g@(Game (p:ps) _ bag d) (Move pts rack newBoard) =
   Game (ps++[p']) newBoard bag' d where
-    (t',bag') = fillTray tray bag
+    (t',bag') = fillRack rack bag
     newScore  = playerScore p + pts
-    p' = p {playerTray = t', playerScore = newScore}
+    p' = p {playerRack = t', playerScore = newScore}
 

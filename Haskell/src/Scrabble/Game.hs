@@ -18,12 +18,12 @@ data PlayerType = Human | AI deriving (Eq, Show)
 data Player = Player {
   playerType  :: PlayerType,
   playerName  :: Name,
-  playerTray  :: Tray,
+  playerRack  :: Rack,
   playerScore :: Score } deriving Eq
 
 instance Show Player where
   show (Player _ n t s) =
-    concat ["[", n, " tray: ", show t, " score: ", show s, "]"]
+    concat ["[", n, " rack: ", show t, " score: ", show s, "]"]
 
 newPlayer :: (Name, PlayerType) -> Player
 newPlayer (name, typ) = Player typ name [] 0
@@ -37,19 +37,19 @@ ai name = newPlayer (name, AI)
 getNameAndScore :: Player -> (Name, Score)
 getNameAndScore (Player _ n _ s) = (n, s)
 
-setTray :: Player -> Tray -> Player
-setTray p tr = p {playerTray = tr}
+setRack :: Player -> Rack -> Player
+setRack p tr = p {playerRack = tr}
 
-getTray :: Player -> Tray
-getTray (Player _ _ t _) = t
+getRack :: Player -> Rack
+getRack (Player _ _ t _) = t
 
-fillPlayerTray :: Player -> Bag -> (Player, Bag)
-fillPlayerTray p b = (p', b') where
-  (t', b') = fillTray (playerTray p) b
-  p' = p {playerTray = t'}
+fillPlayerRack :: Player -> Bag -> (Player, Bag)
+fillPlayerRack p b = (p', b') where
+  (t', b') = fillRack (playerRack p) b
+  p' = p {playerRack = t'}
 
-fillTray :: Tray -> Bag -> (Tray, Bag)
-fillTray t bag = (t ++ take n bag, drop n bag) where
+fillRack :: Rack -> Bag -> (Rack, Bag)
+fillRack t bag = (t ++ take n bag, drop n bag) where
   n  = 7 - length t
 
 isHuman :: Player -> Bool
@@ -74,10 +74,10 @@ currentPlayer = head . gamePlayers
 nextPlayer :: Board b => Game b  -> Game b
 nextPlayer g@(Game (p:ps) _ _ _) = g { gamePlayers = ps++[p] }
 
-fillTrays :: [Player] -> Bag -> ([Player], Bag)
-fillTrays ps bag = foldl f ([], bag) ps where
+fillRacks :: [Player] -> Bag -> ([Player], Bag)
+fillRacks ps bag = foldl f ([], bag) ps where
   f (ps,b) p = (p':ps,b') where
-    (p',b') = fillPlayerTray p b
+    (p',b') = fillPlayerRack p b
 
 isGameOver :: Board b => Game b -> Bool
 isGameOver (Game players _ bag _) = False -- TODO!

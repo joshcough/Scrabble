@@ -44,7 +44,7 @@ Start a new game:
 
     *Scrabble> start [human "Josh", human "Stephen", human "Andrew"]
 
-Place the word 'rest' vertically at position (7,7). You can only place things in your tray.
+Place the word 'rest' vertically at position (7,7). You can only place things in your rack.
 
     (place REST V (7 7))
 
