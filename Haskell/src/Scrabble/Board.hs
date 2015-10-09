@@ -11,7 +11,7 @@ import Debug.Trace
 import qualified Data.Set as Set
 import Scrabble.Bag
 import Scrabble.Matrix
-import Scrabble.Search hiding (and, or)
+import Scrabble.Search (dictContainsWord)
 import Scrabble.Types
 
 data Bonus  = W3 | W2 | L3 | L2 | Star | NoBonus deriving (Eq,Ord)
@@ -67,6 +67,12 @@ class Matrix b => Board b where
 
 printBoard :: Board b => Bool -> b Square -> IO ()
 printBoard b = putStrLn . showBoard b
+
+boardToList :: (Board b, Foldable b) => b Square -> [Square]
+boardToList = foldr (:) []
+
+emptyBoard :: (Board b, Foldable b) => b Square -> Bool
+emptyBoard = all emptySquare . boardToList
 
 getWordsAt :: (Vec (Row b), Board b, Pos p) =>
               b Square ->
@@ -232,9 +238,9 @@ validateMove move b b' dict = go where
   go =
     if null move
       then Left "You must place at least one tile!"
-    else if boardEmpty && not centerSquarePlayed
+    else if emptyB && not centerSquarePlayed
       then Left "Must use center square!"
-    else if boardEmpty && length move <= 1
+    else if emptyB && length move <= 1
       then Left "First move must have more than one letter!"
     else if not allConnected
       then Left "Unconnected letters!"
@@ -244,7 +250,8 @@ validateMove move b b' dict = go where
       then Left $ "Bad words: " ++ show badWords
     else Right ()
 
-  boardEmpty = nullM b
+  -- so we don't have to calculate it twice
+  emptyB = emptyBoard b
 
   legals :: [SquareLegality]
   legals = f <$> squaresPlayedInMove where
@@ -267,7 +274,7 @@ validateMove move b b' dict = go where
   words = toWord <$> (Set.toList $
     wordsPlayedInMove squaresPlayedInMove b')
 
-  (goodWords, badWords) = partition (dictContainsWord dict) words
+  (_, badWords) = partition (dictContainsWord dict) words
 
   squaresTakenError = "Error, squares taken: " ++
     show (intersperse "," $ debugSquare <$> takenSquares)
