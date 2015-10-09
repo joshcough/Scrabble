@@ -7,6 +7,8 @@ module Scrabble (
  ,module Scrabble.Commands.Interpreter
  ,module Scrabble.Commands.SExpr
  ,module Scrabble.Game
+ ,module Scrabble.ListBoard
+ ,module Scrabble.Matrix
  ,module Scrabble.Search
  ,module Scrabble.Types
 ) where
@@ -19,7 +21,7 @@ import Scrabble.Commands.AST
 import Scrabble.Commands.Interpreter
 import Scrabble.Commands.SExpr
 import Scrabble.Game
-import Scrabble.ListBoard ()
+import Scrabble.ListBoard
 import Scrabble.Matrix
 import Scrabble.Search
 import Scrabble.Types
@@ -73,3 +75,44 @@ applyRes g = ((\(io, g') -> io >> return g') . f g) where
 
 gameOver :: Board b => Game b -> IO ()
 gameOver g = putStrLn ("Game Over!\n" ++ show g)
+
+{- put some words on a brand new board -}
+quickPut :: [(String, Orientation, (Int, Int))] ->
+            IO (ListBoard,[Score])
+quickPut words = do
+  dict <- dictionary
+  let e = quickPut' words (newBoard :: ListBoard) dict
+  return $ either error id e
+
+{- put some words onto an existing board -}
+quickPut' :: (Foldable b, Board b, Vec (Row b)) =>
+             [(String, Orientation, (Int, Int))] ->
+             b Square ->
+             Dict     ->
+             Either String (b Square,[Score])
+quickPut' words b dict = go (b,[]) putWords where
+
+  {- TODO: this is pretty awful
+     I think EitherT over State could clean it up,
+     but not sure if i want to do that.
+     Also, I can't put the type here, again.
+  -}
+  --go :: (b Square, [Score]) -> [PutWord] -> Either String (b Square, [Score])
+  go (b,ss) pws = foldl f (Right (b,ss)) pws where
+    f acc pw = do
+      (b,scores) <- acc
+      (b',score) <- putWord b pw dict
+      return (b',scores++[score])
+
+  putWords :: [PutWord]
+  putWords =  (\(s,o,p) -> toPutWord s o p) <$> words where
+    toPutWord :: String -> Orientation -> (Int, Int) -> PutWord
+    toPutWord w o (x,y) = PutWord putTils where
+      adder :: (Int, Int) -> (Int, Int)
+      adder = catOrientation (\(x,y) -> (x+1,y)) (\(x,y) -> (x,y+1)) o
+      coordinates :: [(Int,Int)]
+      coordinates = reverse . fst $ foldl f ([],(x,y)) w where
+        f (acc,(x,y)) c = ((x,y):acc, adder (x,y))
+      putTils :: [PutTile]
+      putTils = zipWith f w coordinates where
+        f c xy = PutLetterTile (mkTile c) (pos xy)

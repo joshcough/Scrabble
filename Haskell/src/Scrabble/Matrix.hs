@@ -7,6 +7,7 @@ module Scrabble.Matrix
   , ListMatrix
   , pattern LM
   , Vec(..)
+  , neighbors
   ) where
 
 import Data.Functor.Compose (Compose(..))
@@ -33,6 +34,10 @@ class Matrix m where
   below   :: Pos p => m a -> p -> Row m a
   leftOf  :: Pos p => m a -> p -> Row m a
   rightOf :: Pos p => m a -> p -> Row m a
+  nullM   :: m a -> Bool
+
+neighbors :: (Matrix m, Pos p) => m a -> p -> [a]
+neighbors m p = catMaybes $ elemAt m <$> neighborsP p
 
 -- | '[[a]]' is an 'a' "matrix".
 type ListMatrix = Compose [] []
@@ -63,6 +68,7 @@ instance Matrix ListMatrix where
   below   m p = fromMaybe [] $ after  (y p) <$> col m (x p)
   leftOf  m p = fromMaybe [] $ before (x p) <$> row m (y p)
   rightOf m p = fromMaybe [] $ after  (x p) <$> row m (y p)
+  nullM (LM m) = and $ null <$> m
 
 pattern MM a     = Compose a
 type MapMatrix p = Compose (Map p) (Map p)
@@ -86,3 +92,4 @@ instance Matrix (MapMatrix Int) where
   below   m p = error "todo"
   leftOf  m p = error "todo"
   rightOf m p = error "todo"
+  nullM   m   = error "todo"

@@ -28,5 +28,6 @@ goo
 *.S64*
 *.iml
 cabal.sandbox.config
+target
 
 

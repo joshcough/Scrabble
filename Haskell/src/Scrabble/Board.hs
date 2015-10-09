@@ -3,7 +3,7 @@
 
 module Scrabble.Board where
 
-import Data.List (foldl')
+import Data.List (any, foldl', intersperse, partition)
 import Data.Maybe (Maybe)
 import qualified Data.Maybe as Maybe
 import Data.Set (Set)
@@ -11,9 +11,19 @@ import Debug.Trace
 import qualified Data.Set as Set
 import Scrabble.Bag
 import Scrabble.Matrix
+import Scrabble.Search hiding (and, or)
 import Scrabble.Types
+import System.IO.Unsafe
 
 data Bonus  = W3 | W2 | L3 | L2 | Star | NoBonus deriving (Eq,Ord)
+
+instance Show Bonus where
+  show W3      = "3W"
+  show W2      = "2W"
+  show L3      = "3L"
+  show L2      = "2L"
+  show Star    = " *"
+  show NoBonus = "  "
 
 data Square = Square {
   tile      :: Maybe Tile,
@@ -26,6 +36,27 @@ instance HasPosition Square where
 
 instance Show Square where
   show = showSquare True
+
+emptySquare :: Square -> Bool
+emptySquare (Square Nothing _ _) = True
+emptySquare _                    = False
+
+taken :: Square -> Bool
+taken = not . emptySquare
+
+showSquare :: Bool -> Square -> String
+showSquare printBonus (Square mt b p) =
+  maybe (if printBonus then show b else "  ") (\t -> [' ', letter t]) mt
+
+debugSquare :: Square -> String
+debugSquare (Square mt b p) = concat
+  ["Square {tile:", show mt, ", bonus:", show b, ", pos:", show p]
+
+debugSquareList :: [Square] -> String
+debugSquareList ss = show $ debugSquare <$> ss
+
+toWord :: [Square] -> [Letter]
+toWord sqrs = letter <$> Maybe.catMaybes (tile <$> sqrs)
 
 class Matrix b => Board b where
   newBoard  :: b Square
@@ -43,24 +74,6 @@ getWordsAt :: (Vec (Row b), Board b, Pos p) =>
               p        ->
               (Maybe [Square], Maybe [Square])
 getWordsAt b p = (getWordAt b p Horizontal, getWordAt b p Vertical)
-
-instance Show Bonus where
-  show W3 = "3W"
-  show W2 = "2W"
-  show L3 = "3L"
-  show L2 = "2L"
-  show Star    = " *"
-  show NoBonus = "  "
-
-showSquare :: Bool -> Square -> String
-showSquare printBonus (Square mt b p) =
-  maybe (if printBonus then show b else "  ") (\t -> [' ', letter t]) mt
-
-debugSquare :: Square -> String
-debugSquare (Square mt b p) = concat ["Square {tile:", show mt, ", bonus:", show b, ", pos:", show p]
-
-debugSquareList :: [Square] -> String
-debugSquareList ss = show $ debugSquare <$> ss
 
 {- a simple representation of an empty Scrabble board -}
 boardBonuses :: [[(Position, Bonus)]]
@@ -88,6 +101,15 @@ boardBonuses = indexify [
      f (y,l)    = fmap g (zip [0..] l ) where
        g (x,a)  = (Position x y, a)
 
+-- Yes, technically you can have a board that isn't 15x15.
+-- But let's consider that a programming error.
+-- If the center tile (7,7) is missing, just error out.
+centerPosition = (Position 7 7)
+center :: Board b => b Square -> Square
+center b = Maybe.fromMaybe
+             (error "no center tile")
+             (elemAt b centerPosition)
+
 {- all the tiles 'before' a position in a matrix,
    vertically or horizontally -}
 beforeByOrientation :: (Pos p, Matrix m) =>
@@ -99,9 +121,6 @@ afterByOrientation :: (Pos p, Matrix m) =>
    vertically or horizontally -}
 afterByOrientation = catOrientation rightOf below
 
-taken :: Square -> Bool
-taken = Maybe.isJust . tile
-
 getWordsTouchingSquare :: (Foldable b, Board b, Vec (Row b)) =>
                           Square -> b Square -> [[Square]]
 getWordsTouchingSquare s b = Maybe.catMaybes [mh,mv] where
@@ -110,9 +129,12 @@ getWordsTouchingSquare s b = Maybe.catMaybes [mh,mv] where
 {- calculate the score for a single word -}
 scoreWord ::
   [Square]   -> -- one of the words played this turn
+                -- (and the one we are getting the score for)
   Set Square -> -- the set of squares played in this turn
   Score
-scoreWord word playedSquares = base * wordMultiplier where
+scoreWord word playedSquares =
+  base * wordMultiplier * centerMultiplier where
+
   -- score all the letters
   base = foldl (\s l -> scoreLetter l playedSquares + s) 0 word
 
@@ -137,15 +159,25 @@ scoreWord word playedSquares = base * wordMultiplier where
   letterBonus t L2 = 2 * score t
   letterBonus t _  = score t
 
-{- lay tiles on the board. calculate the score of the move -}
+  {- if the center square was played, score*2 -}
+  centerMultiplier = if centerSquarePlayed then 2 else 1
+  centerSquarePlayed =
+    or $ f <$> Set.toList playedSquares where
+      f s = pos s == centerPosition
+
+
+{- lay tiles on the board.
+   validate all the things.
+   calculate the score of the move. -}
 putWord :: (Foldable b, Board b, Vec (Row b))  =>
            b Square ->
            PutWord  ->
+           Dict     -> -- the dictionary
            Either String (b Square, Score)
-putWord b pw = do
+putWord b pw dict = do
   squares <- squaresPlayedThisTurn
   let b' = nextBoard $ zip squares (tiles pw)
-  runChecks (zipSquaresAndTiles squares) b b'
+  validateMove (zipSquaresAndTiles squares) b b' dict
   return (b', calculateScore squares b') where
 
   squaresPlayedThisTurn :: Either String [Square]
@@ -165,47 +197,96 @@ putWord b pw = do
 
 {- Calculate the score for ALL words in a turn -}
 calculateScore :: (Foldable b, Board b, Vec (Row b)) =>
-  [Square]  -> -- all the squares a player placed tiles in this turn
+  [Square] -> -- all the squares a player placed tiles in this turn
   b Square -> -- the board (with those tiles on it)
   Score
-calculateScore squaresPlayedThisTurn nextBoard = turnScore where
-  wordsPlayedThisTurn :: Set [Square]
-  wordsPlayedThisTurn =
-    Set.fromList . concat $ f <$> squaresPlayedThisTurn where
-      f s = getWordsTouchingSquare s nextBoard
-  squaresSet :: Set Square
-  squaresSet = Set.fromList squaresPlayedThisTurn
-  turnScore :: Score
-  turnScore = foldl f 0 (Set.toList wordsPlayedThisTurn) where
-    f acc w = scoreWord w squaresSet + acc
+calculateScore sqrs nextBoard = foldl f 0 s where
+  s = Set.toList $ wordsPlayedInMove sqrs nextBoard
+  f acc w = scoreWord w (Set.fromList sqrs) + acc
+
+wordsPlayedInMove :: (Foldable b, Board b, Vec (Row b)) =>
+  [Square] -> -- all the squares a player placed tiles in this turn
+  b Square -> -- the board (with those tiles on it)
+  Set [Square]
+wordsPlayedInMove squaresPlayedThisTurn nextBoard =
+  Set.fromList . concat $ f <$> squaresPlayedThisTurn where
+    f s = getWordsTouchingSquare s nextBoard
+
+-- helper data for packing information about a
+-- square played on a particular turn.
+data SquareLegality = SquareLegality {
+  square     :: Square
+ ,available  :: Bool -- is the square not taken
+ ,connected  :: Bool -- if touching another tile
+ ,centerPlay :: Bool -- if square is the center square
+} deriving Show
 
 {- checks if everything in a move is good -}
-runChecks ::
-  (Board b, Pos p) =>
+validateMove ::
+  (Vec (Row b), Foldable b, Board b, Pos p, Show p) =>
   [(Square,PutTile,p)] -> -- all the letters put down this turn
   b Square -> -- old board
   b Square -> -- new board
+  Dict     -> -- the dictionary
   Either String ()
-runChecks squaresAndTiles b b' = checkPuts >> return () where
-  firstPos = (\(_,_,p) -> p) $ head squaresAndTiles
+validateMove move b b' dict = go where
+  go =
+    if null move
+      then Left "You must place at least one tile!"
+    else if boardEmpty && not centerSquarePlayed
+      then Left "Must use center square!"
+    else if boardEmpty && length move <= 1
+      then Left "First move must have more than one letter!"
+    else if not allConnected
+      then Left "Unconnected letters!"
+    else if not $ null takenSquares
+      then Left squaresTakenError
+    else if not $ null badWords
+      then Left $ "Bad words: " ++ show badWords
+    else Right ()
 
-  {- TODO: I think check puts should happen before this,
-           when the PutTiles are created. But, it might
-           not be possible to do all of them before.
-   -}
-  {- checkPuts returns true if
-       * all the letters were put down on empty squares
-       * a tile was placed in all the empty tiles in the word
-   -}
-  checkPuts :: Either String ()
-  checkPuts = traverse checkPut squaresAndTiles >> return () where
-    -- make sure we haven't put something in a tile thats already taken
-    checkPut :: Pos p => (Square, PutTile, p) -> Either String ()
-    checkPut ((Square (Just t) _ _), _, p) =
-      Left $ "square taken: " ++ show t ++ ", " ++ show (x p, y p)
-    checkPut _ = Right ()
+  boardEmpty = nullM b
 
-{- get the word at the giving position, by orientation,
+  legals :: [SquareLegality]
+  legals = f <$> squaresPlayedInMove where
+    f s = SquareLegality s
+      (emptySquare s)
+      (or $ taken <$> neighbors b' (pos s))
+      (pos s == centerPosition)
+
+  centerSquarePlayed = or $ centerPlay <$> legals
+
+  allConnected :: Bool
+  allConnected = and $ connected <$> legals
+
+  squaresPlayedInMove = (\(s,_,_) -> s) <$> move
+
+  takenSquares :: [Square]
+  takenSquares = square <$> filter (not . available) legals
+
+  words :: [[Letter]]
+  words = toWord <$> (Set.toList $
+    wordsPlayedInMove squaresPlayedInMove b')
+
+  (goodWords, badWords) = partition (dictContainsWord dict) words
+
+  squaresTakenError = "Error, squares taken: " ++
+    show (intersperse "," $ debugSquare <$> takenSquares)
+
+-- all the empty positions on the board
+-- that are have a neighbor with a tile in them
+emptyConnectedPositions :: (Foldable b, Board b) =>
+                           b Square -> [Square]
+emptyConnectedPositions b =
+  filter (legalSquare b) $ foldr (:) [] b where
+    -- is it legal to put a tile in this square?
+    -- if its filled, it's obviously not legal
+    legalSquare b s | taken s = False
+    -- otherwise, if it has any filled neighbors, it's ok.
+    legalSquare b s = or $ taken <$> neighbors b (pos s)
+
+{-TODO: if i'm not lazy, i wouldn't have to use vecList where
+   get the word at the giving position, by orientation,
    if one exists -}
 getWordAt :: (Vec (Row b), Board b, Pos p) =>
              b Square -> p -> Orientation -> Maybe [Square]
@@ -216,42 +297,5 @@ getWordAt b p o = tile <$> here >>= f where
   afterHere  = taker . vecList $ afterByOrientation o b p
   taker      = takeWhile taken
   word       = beforeHere ++ maybe [] (:[]) here ++ afterHere
+  -- no scrabble word can be of length 1.
   f _        = if length word > 1 then Just word else Nothing
-
-{- put some words on a brand new board -}
-quickPut :: (Foldable b, Board b, Vec (Row b)) =>
-            [(String, Orientation, (Int, Int))] ->
-            (b Square,[Score])
-quickPut words = either error id  $ quickPut' words newBoard
-
-{- put some words onto an existing board -}
-quickPut' :: (Foldable b, Board b, Vec (Row b)) =>
-             [(String, Orientation, (Int, Int))] ->
-             b Square ->
-             Either String (b Square,[Score])
-quickPut' words b = go (b,[]) putWords where
-
-  {- TODO: this is pretty awful
-     I think EitherT over State could clean it up,
-     but not sure if i want to do that.
-     Also, I can't put the type here, again.
-  -}
-  --go :: (b Square, [Score]) -> [PutWord] -> Either String (b Square, [Score])
-  go (b,ss) pws = foldl f (Right (b,ss)) pws where
-    f acc pw = do
-      (b,scores) <- acc
-      (b',score) <- putWord b pw
-      return (b',score:scores)
-
-  putWords :: [PutWord]
-  putWords =  (\(s,o,p) -> toPutWord s o p) <$> words where
-    toPutWord :: String -> Orientation -> (Int, Int) -> PutWord
-    toPutWord w o (x,y) = PutWord putTils where
-      adder :: (Int, Int) -> (Int, Int)
-      adder = catOrientation (\(x,y) -> (x+1,y)) (\(x,y) -> (x,y+1)) o
-      coordinates :: [(Int,Int)]
-      coordinates = reverse . fst $ foldl f ([],(x,y)) w where
-        f (acc,(x,y)) c = ((x,y):acc, adder (x,y))
-      putTils :: [PutTile]
-      putTils = zipWith f w coordinates where
-        f c xy = PutLetterTile (mkTile c) (pos xy)

@@ -48,7 +48,7 @@ interpretExp g@(Game (p:ps) board bag dict) = f where
   f (Search search)         =
     Print . QueryResult <$> interpretSearch search dict
   f (Place pw)              = TurnComplete <$> g' where
-    g' = applyMove g <$> interpretPut board (playerTray p) pw
+    g' = applyMove g <$> interpretPut board (playerTray p) pw dict
   rPrint = return . Print
 
 getScores :: Game a -> [(Name, Score)]
@@ -66,16 +66,18 @@ interpretPut :: (Foldable b, Board b, Vec (Row b)) =>
                 b Square ->
                 Tray     ->
                 PutWord  ->
+                Dict     ->
                 Either String (Move b)
-interpretPut b tray pw = if valid then go else Left errMsg where
-  errMsg        = "error: tray missing input letters"
-  trayLetters   = fmap letter tray
-  valid         = containsAll putLetters trayLetters
-  putLetters    = letter <$> tiles pw
-  trayRemainder = fmap fromLetter $
-    foldl' (flip delete) trayLetters putLetters
-  go = do (newBoard, score) <- putWord b pw
-          return $ Move score trayRemainder newBoard
+interpretPut b tray pw dict =
+  if valid then go else Left errMsg where
+    errMsg        = "error: tray missing input letters"
+    trayLetters   = fmap letter tray
+    valid         = containsAll putLetters trayLetters
+    putLetters    = letter <$> tiles pw
+    trayRemainder = fmap fromLetter $
+      foldl' (flip delete) trayLetters putLetters
+    go = do (newBoard, score) <- putWord b pw dict
+            return $ Move score trayRemainder newBoard
 
 applyMove :: Board b => Game b -> Move b -> Game b
 applyMove g@(Game (p:ps) _ bag d) (Move pts tray newBoard) =

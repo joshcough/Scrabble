@@ -8,8 +8,13 @@ import Scrabble.Types
 import qualified Data.List as List
 import Debug.Trace
 
-dictionary :: IO [String]
+dictionary :: IO Dict
 dictionary = lines <$> readFile "../dict/en.txt"
+
+-- TODO: should this be someplace else?
+-- maybe this file just needs reorganization.
+dictContainsWord :: Dict -> Word -> Bool
+dictContainsWord = flip elem
 
 type Search1 = Word -> Bool
 
