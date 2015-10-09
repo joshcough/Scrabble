@@ -14,9 +14,9 @@ And then jump up on the repl:
 ### Place some words on the board:
 
     *Scrabble> let hell  = ("HELL", Vertical,   (7,7))
-    *Scrabble> let has   = ("HAS",  Horizontal, (5,6))
-    *Scrabble> let as    = ("AS",   Horizontal, (5,7))
-    *Scrabble> let (b,s) = quickPut [hell, has, as]
+               let has   = ("HAS",  Horizontal, (5,6))
+               let as    = ("AS",   Horizontal, (5,7))
+               let (b,s) = quickPut [hell, has, as]
     *Scrabble> printBoard True b
     ______________________________________________
     |3W|  |  |2L|  |  |  |3W|  |  |  |2L|  |  |3W|
