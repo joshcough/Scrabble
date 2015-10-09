@@ -14,6 +14,7 @@ module Scrabble.Types (
 
 import Data.Maybe (Maybe)
 import qualified Data.Maybe as Maybe
+import Data.Set (Set)
 import Prelude hiding (Word)
 import Scrabble.Position
 
@@ -21,7 +22,7 @@ type Letter = Char
 type Word   = String
 type Points = Int
 type Score  = Int
-type Dict   = [Word]
+type Dict   = Set Word
 data Orientation = Horizontal | Vertical deriving (Eq, Show)
 
 class HasLetter a where

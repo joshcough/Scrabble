@@ -7,7 +7,6 @@ import Data.List (any, foldl', intersperse, partition)
 import Data.Maybe (Maybe)
 import qualified Data.Maybe as Maybe
 import Data.Set (Set)
-import Debug.Trace
 import qualified Data.Set as Set
 import Scrabble.Bag
 import Scrabble.Matrix
@@ -228,7 +227,16 @@ data SquareLegality = SquareLegality {
  ,centerPlay :: Bool -- if square is the center square
 } deriving Show
 
-{- checks if everything in a move is good -}
+{- checks if everything in a move is good
+
+		1) At least one tile must be tentative
+		2) All tentative tiles must lie on one line
+		3) On the first turn, one tile must be located on square START_POSITION
+		4) Linear word must be unbroken (including locked tiles)
+		5) On every other turn, at least one crossword must be formed
+		6) All words formed must be inside the dictionary
+
+-}
 validateMove ::
   (Vec (Row b), Foldable b, Board b, Pos p, Show p) =>
   [(Square,PutTile,p)] -> -- all the letters put down this turn

@@ -3,8 +3,10 @@
 module Scrabble.Commands.Interpreter where
 
 import Data.Char (toUpper)
-import Data.List (delete,foldl',groupBy,intersperse)
+import Data.List (delete,foldl',groupBy,intersperse,sort)
 import Data.Maybe (catMaybes)
+import Data.Set (Set)
+import qualified Data.Set as Set
 import Scrabble.Bag
 import Scrabble.Board
 import Scrabble.Commands.AST
@@ -57,10 +59,10 @@ getScores g = getNameAndScore <$> gamePlayers g
 interpretSearch :: SearchExp ->
                    Dict      ->
                    Either String [(Word, Points)]
-interpretSearch search dict = wps <$> toSearch1 search where
-  wps :: Search1 -> [(Word, Points)]
-  wps search = fmap f (runSearch1 search dict) where
-    f w = (w,simpleWordPoints w)
+interpretSearch search dict = f <$> toSearch1 search where
+  f :: Search1 -> [(Word, Points)]
+  f search = g <$> (sort . Set.toList $ runSearch1 search dict)
+  g w = (w,simpleWordPoints w)
 
 interpretPut :: (Foldable b, Board b, Vec (Row b)) =>
                 b Square ->

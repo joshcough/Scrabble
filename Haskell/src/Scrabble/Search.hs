@@ -1,29 +1,33 @@
 module Scrabble.Search where
 
+import Control.Monad (filterM)
 import Data.Char (toUpper)
 import Data.List (delete, foldl')
-import System.Random.Shuffle
+import qualified Data.List as List
+import Data.Set (Set)
+import qualified Data.Set as Set
 import Prelude hiding (Word, or, and, all)
 import Scrabble.Types
-import qualified Data.List as List
-import Debug.Trace
+import System.Random.Shuffle
 
 dictionary :: IO Dict
-dictionary = fmap ups <$> lines <$> readFile "../dict/en.txt"
+dictionary = do
+  d <- readFile "../dict/en.txt"
+  return $ Set.fromList (ups <$> lines d)
 
 -- TODO: should this be someplace else?
 -- maybe this file just needs reorganization.
 dictContainsWord :: Dict -> Word -> Bool
-dictContainsWord d = flip elem d . ups
+dictContainsWord d = flip Set.member d . ups
 
 type Search1 = Word -> Bool
 
-cheat :: Search1 -> IO [Word]
+cheat :: Search1 -> IO (Set Word)
 cheat search = runSearch1 search <$> dictionary
 
 -- Run a search on a whole dictionary of words
-runSearch1 :: Search1 -> [Word] -> [Word]
-runSearch1 s = filter s
+runSearch1 :: Search1 -> Set Word -> Set Word
+runSearch1 s = Set.filter s
 
 or :: Search1 -> Search1 -> Search1
 or s1 s2 w = s1 w || s2 w
