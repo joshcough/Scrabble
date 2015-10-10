@@ -2,7 +2,7 @@ module Scrabble.Search where
 
 import Control.Monad (filterM)
 import Data.Char (toUpper)
-import Data.List (delete, foldl')
+import Data.List (delete, foldl', sort, permutations)
 import qualified Data.List as List
 import Data.Set (Set)
 import qualified Data.Set as Set
@@ -10,62 +10,9 @@ import Prelude hiding (Word, or, and, all)
 import Scrabble.Types
 import System.Random.Shuffle
 
-dictionary :: IO Dict
-dictionary = do
-  d <- readFile "../dict/en.txt"
-  return $ Set.fromList (ups <$> lines d)
-
--- TODO: should this be someplace else?
--- maybe this file just needs reorganization.
-dictContainsWord :: Dict -> Word -> Bool
-dictContainsWord d = flip Set.member d . ups
-
 type Search1 = Word -> Bool
 
-cheat :: Search1 -> IO (Set Word)
-cheat search = runSearch1 search <$> dictionary
-
--- Run a search on a whole dictionary of words
-runSearch1 :: Search1 -> Set Word -> Set Word
-runSearch1 s = Set.filter s
-
-or :: Search1 -> Search1 -> Search1
-or s1 s2 w = s1 w || s2 w
-
-and :: Search1 -> Search1 -> Search1
-and s1 s2 w = s1 w && s2 w
-
-any' :: [Search1] -> Search1
-any' = foldr or (const False)
-
-all' :: [Search1] -> Search1
-all' = foldr and (const True)
-
-combine :: Bool                ->
-           (Search1            ->
-           Search1 -> Search1) ->
-           [Search1]           ->
-           Search1
-combine b f = foldr f (const b)
-
-any :: [Search1] -> Search1
-any = combine False or
-
-all :: [Search1] -> Search1
-all = combine True and
-
-none :: [Search1] -> Search1
-none ss w = not (all ss w)
-
-matchAll  = Scrabble.Search.all
-matchAny  = Scrabble.Search.any
-matchNone = Scrabble.Search.none
-
-ups :: String -> String
-ups = List.sort . fmap toUpper
-
-downs :: String -> String
-downs = List.sort . fmap toUpper
+------ Single String search functions ------
 
 {- Search for _all_ of the letters in the first string (s1).
    If a letter appears more than once in s1, it must
@@ -104,3 +51,83 @@ looksLike p w = error "todo"
 
 regex :: String -> Search1
 regex r w = error "todo"
+
+ups :: String -> String
+ups = List.sort . fmap toUpper
+
+downs :: String -> String
+downs = List.sort . fmap toUpper
+
+------ Search combinators ------
+
+or :: Search1 -> Search1 -> Search1
+or s1 s2 w = s1 w || s2 w
+
+and :: Search1 -> Search1 -> Search1
+and s1 s2 w = s1 w && s2 w
+
+any' :: [Search1] -> Search1
+any' = foldr or (const False)
+
+all' :: [Search1] -> Search1
+all' = foldr and (const True)
+
+combine :: Bool                ->
+           (Search1            ->
+           Search1 -> Search1) ->
+           [Search1]           ->
+           Search1
+combine b f = foldr f (const b)
+
+any :: [Search1] -> Search1
+any = combine False or
+
+all :: [Search1] -> Search1
+all = combine True and
+
+none :: [Search1] -> Search1
+none ss w = not (all ss w)
+
+matchAll  = Scrabble.Search.all
+matchAny  = Scrabble.Search.any
+matchNone = Scrabble.Search.none
+
+------ Dictionary Searching ---------
+
+dictionary :: IO Dict
+dictionary = do
+  d <- readFile "../dict/en.txt"
+  return $ Set.fromList (fmap toUpper <$> lines d)
+
+-- Run a search on a whole dictionary of words
+runSearch1 :: Search1 -> Set Word -> Set Word
+runSearch1 s = Set.filter s
+
+cheat :: Search1 -> IO (Set Word)
+cheat search = runSearch1 search <$> dictionary
+
+dictContainsWord :: Dict -> Word -> Bool
+dictContainsWord d = flip Set.member d . ups
+
+powerset :: [a] -> [[a]]
+powerset = filterM (const [True, False])
+
+searchDictForAllWords :: Dict -> Set String -> Set String
+searchDictForAllWords d s = Set.intersection d s
+
+searchDictForPowerset :: Dict -> [Char] -> Set String
+searchDictForPowerset d = searchDictForAllWords d . permset
+
+searchDictForPowersetSorted :: Dict -> [Char] -> [String]
+searchDictForPowersetSorted d s =
+  sort . Set.toList $ searchDictForPowerset d s
+
+permset :: [Char] -> Set String
+permset s = Set.fromList $ concat (permutations <$> powerset s)
+
+{- A quick utility to search the dictionary
+   for all possible words make with the given rack. -}
+testSearch :: [Char] -> IO [Word]
+testSearch rack = do
+  d <- dictionary
+  return $ searchDictForPowersetSorted d rack

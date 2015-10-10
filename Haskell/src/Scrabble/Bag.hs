@@ -36,6 +36,9 @@ isBagEmpty = null
 newShuffledBag :: IO Bag
 newShuffledBag = shuffleM orderedBag
 
+newRack :: IO Rack
+newRack = take 7 <$> newShuffledBag
+
 distribution :: [(Letter,Int)]
 distribution = [
   ('A',9),('B',2),('C',2),('D',4),('E',12),

@@ -14,7 +14,7 @@ module Scrabble (
 ) where
 
 import Control.Monad (when)
-
+import Prelude hiding (Word)
 import Scrabble.Bag
 import Scrabble.Board
 import Scrabble.Commands.AST
@@ -117,3 +117,10 @@ quickPut' words b dict = go (b,[]) putWords where
       putTils :: [PutTile]
       putTils = zipWith f w coordinates where
         f c xy = PutLetterTile (mkTile c) (pos xy)
+
+{- Search the dictionary with a new random rack -}
+testSearchR :: IO (Rack, [Word])
+testSearchR = do
+  rack  <- newRack
+  words <- testSearch (letter <$> rack)
+  return (rack, words)
