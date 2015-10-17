@@ -19,7 +19,7 @@ instance Show Tile where
   show (Tile letter _) = [letter]
 
 mkTile :: Letter -> Tile
-mkTile l = Tile l (fromMaybe err $ lookup l points) where
+mkTile l = Tile l (fromMaybe err $ Map.lookup l points) where
   err = error $ l : "is an invalid letter"
 
 fromLetter :: Letter -> Tile
@@ -35,9 +35,6 @@ isBagEmpty = null
 
 newShuffledBag :: IO Bag
 newShuffledBag = shuffleM orderedBag
-
-newRack :: IO Rack
-newRack = take 7 <$> newShuffledBag
 
 distribution :: [(Letter,Int)]
 distribution = [
@@ -57,8 +54,8 @@ orderedBag = concat $ f <$> distribution where
 countLettersInBag :: Letter -> Bag -> Int
 countLettersInBag l b = length (filter (==l) $ map letter b)
 
-points :: [(Letter,Points)]
-points = [
+points :: Map Letter Points
+points = Map.fromList [
   ('A',1),('B',3), ('C',3),('D',2),('E',1),
   ('F',4),('G',2), ('H',4),('I',1),('J',8),
   ('K',5),('L',1), ('M',3),('N',1),('O',1),
@@ -66,19 +63,16 @@ points = [
   ('U',1),('V',4), ('W',4),('X',8),('Y',4),
   ('Z',10), ('_', 0)]
 
-pointsMap :: Map Letter Points
-pointsMap = Map.fromList points
-
 distributionWithPoints :: Map Letter (Int,Points)
 distributionWithPoints =
-  Map.intersectionWith (,) distributionMap pointsMap
+  Map.intersectionWith (,) distributionMap points
 
 totalPoints :: Int
 totalPoints = sum $ Map.map (uncurry (*)) distributionWithPoints
 
 simpleWordPoints :: Word -> Points
 simpleWordPoints = sum . fmap f where
-  f l = fromMaybe err $ Map.lookup (Char.toUpper l) pointsMap
+  f l = fromMaybe err $ Map.lookup (Char.toUpper l) points
   err = error "simple word points"
 
 {-

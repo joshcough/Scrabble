@@ -121,6 +121,8 @@ quickPut' words b dict = go (b,[]) putWords where
 {- Search the dictionary with a new random rack -}
 testSearchR :: IO (Rack, [Word])
 testSearchR = do
-  rack  <- newRack
-  words <- testSearch (letter <$> rack)
+  bag     <- newShuffledBag
+  let rack = take 7 bag
+  words   <- testSearch (letter <$> rack)
   return (rack, words)
+

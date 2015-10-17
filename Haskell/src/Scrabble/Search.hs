@@ -1,14 +1,16 @@
 module Scrabble.Search where
 
+import Control.Monad ((<=<))
+import Data.Foldable hiding (and, or, all)
 import Control.Monad (filterM)
 import Data.Char (toUpper)
-import Data.List (delete, foldl', sort, permutations)
+import Data.List (delete, foldl', sort, permutations, group, tails)
 import qualified Data.List as List
 import Data.Set (Set)
 import qualified Data.Set as Set
 import Prelude hiding (Word, or, and, all)
 import Scrabble.Types
-import System.Random.Shuffle
+import System.IO.Unsafe
 
 type Search1 = Word -> Bool
 
@@ -99,6 +101,8 @@ dictionary = do
   d <- readFile "../dict/en.txt"
   return $ Set.fromList (fmap toUpper <$> lines d)
 
+dictionaryUnsafe = unsafePerformIO dictionary
+
 -- Run a search on a whole dictionary of words
 runSearch1 :: Search1 -> Set Word -> Set Word
 runSearch1 s = Set.filter s
@@ -131,3 +135,14 @@ testSearch :: [Char] -> IO [Word]
 testSearch rack = do
   d <- dictionary
   return $ searchDictForPowersetSorted d rack
+
+shuffle xs [] = [xs]
+shuffle [] ys = [ys]
+shuffle (x:xs) (y:ys) =
+  map (x:) (shuffle xs (y:ys))
+    ++ map (y:) (shuffle (x:xs) ys)
+
+anagrams = foldrM shuffle "" . group . sort
+
+subanagrams = foldrM f "" . map tails . group . sort where
+  f is j = is >>= flip shuffle j
