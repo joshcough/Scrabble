@@ -5,6 +5,12 @@ import org.scalacheck.{Prop, Properties}
 import org.scalacheck.Prop._
 import Search._
 
+trait UnitTest { this: Properties =>
+  def unitTest(name:String)(f: => Prop) = property(name) = secure { f }
+}
+
+class ScrabbleTest(name: String) extends Properties(name) with UnitTest
+
 object SearchProperties extends Properties("Search") {
 
   // strGen generates a fixed length random string

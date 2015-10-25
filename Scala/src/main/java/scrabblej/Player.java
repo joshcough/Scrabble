@@ -2,6 +2,10 @@ package scrabblej;
 
 public class Player {
 
+  public static enum PlayerType {
+    HUMAN, AI;
+  }
+
   private String name;
   private PlayerType type;
 

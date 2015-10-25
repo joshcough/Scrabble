@@ -22,3 +22,8 @@ libraryDependencies ++= Seq(
  ,"org.scalacheck" %% "scalacheck"  % "1.12.5" % "test"
 )
 
+initialCommands in console :=
+  """
+    |import scrabble.Search._
+    |timed(cheat(containsAll("ZQMS".toList)))
+  """.stripMargin

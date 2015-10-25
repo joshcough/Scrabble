@@ -1,9 +1,6 @@
 package scrabblej;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 public class Search {
 
@@ -62,15 +59,15 @@ public class Search {
   public static Matcher containsNone(final String s1) {
     return new Matcher() {
       public boolean apply(String s2) {
-        return ! containsNone(s1).apply(s2);
+        return ! containsAny(s1).apply(s2);
       }
     };
   }
 
-  public static Matcher charAt(final char c, final int i) {
+  public static Matcher charAt(final int i, final char c) {
     return new Matcher() {
       public boolean apply(String s) {
-        return upSort(s).charAt(i) == Character.toUpperCase(c);
+        return up(s).charAt(i) == Character.toUpperCase(c);
       }
     };
   }
@@ -78,7 +75,7 @@ public class Search {
   public static Matcher endsWith(final String s1) {
     return new Matcher() {
       public boolean apply(String s2) {
-        return upSort(s2).endsWith(upSort(s1));
+        return up(s2).endsWith(up(s1));
       }
     };
   }
@@ -86,7 +83,7 @@ public class Search {
   public static Matcher startsWith(final String s1) {
     return new Matcher() {
       public boolean apply(String s2) {
-        return upSort(s2).endsWith(upSort(s1));
+        return up(s2).endsWith(up(s1));
       }
     };
   }
@@ -111,10 +108,18 @@ public class Search {
     return new Matcher() {
       public boolean apply(String s) {
         if(ms.size()==0) return false;
-        else {
-          List<Matcher> copy = ms.subList(1);
-          return ms.get(0) || any(lms.remove(0)).apply(lms.toArray());
-        }
+        else return
+          ms.get(0).apply(s) || any(ms.subList(1,ms.size())).apply(s);
+      }
+    };
+  }
+
+  public static Matcher all(final List<Matcher>  ms) {
+    return new Matcher() {
+      public boolean apply(String s) {
+        if(ms.size()==0) return true;
+        else return
+          ms.get(0).apply(s) && any(ms.subList(1,ms.size())).apply(s);
       }
     };
   }
@@ -124,87 +129,8 @@ public class Search {
     Arrays.sort(chars);
     return new String(chars);
   }
+
+  public static String up(String s) {
+    return s.toUpperCase();
+  }
 }
-
-/**
- ------ Search combinators ------
-
- any' :: [Matcher] -> Matcher
- any' = foldr or (const False)
-
- all' :: [Matcher] -> Matcher
- all' = foldr and (const True)
-
- combine :: Bool                ->
- (Matcher            ->
- Matcher -> Matcher) ->
- [Matcher]           ->
- Matcher
- combine b f = foldr f (const b)
-
- any :: [Matcher] -> Matcher
- any = combine False or
-
- all :: [Matcher] -> Matcher
- all = combine True and
-
- none :: [Matcher] -> Matcher
- none ss w = not (all ss w)
-
- matchAll  = Scrabble.Search.all
- matchAny  = Scrabble.Search.any
- matchNone = Scrabble.Search.none
-
- ------ Dictionary Searching ---------
-
- dictionary :: IO Dict
- dictionary = do
- d <- readFile "../dict/en.txt"
- return $ Set.fromList (fmap toUpper <$> lines d)
-
- dictionaryUnsafe = unsafePerformIO dictionary
-
- -- Run a search on a whole dictionary of words
- runMatcher :: Matcher -> Set Word -> Set Word
- runMatcher s = Set.filter s
-
- cheat :: Matcher -> IO (Set Word)
- cheat search = runMatcher search <$> dictionary
-
- dictContainsWord :: Dict -> Word -> Bool
- dictContainsWord d = flip Set.member d . ups
-
- powerset :: [a] -> [[a]]
- powerset = filterM (const [True, False])
-
- searchDictForAllWords :: Dict -> Set String -> Set String
- searchDictForAllWords d s = Set.intersection d s
-
- searchDictForPowerset :: Dict -> [Char] -> Set String
- searchDictForPowerset d = searchDictForAllWords d . permset
-
- searchDictForPowersetSorted :: Dict -> [Char] -> [String]
- searchDictForPowersetSorted d s =
- sort . Set.toList $ searchDictForPowerset d s
-
- permset :: [Char] -> Set String
- permset s = Set.fromList $ concat (permutations <$> powerset s)
-
- {- A quick utility to search the dictionary
- for all possible words make with the given rack. -}
- testSearch :: [Char] -> IO [Word]
- testSearch rack = do
- d <- dictionary
- return $ searchDictForPowersetSorted d rack
-
- shuffle xs [] = [xs]
- shuffle [] ys = [ys]
- shuffle (x:xs) (y:ys) =
- map (x:) (shuffle xs (y:ys))
- ++ map (y:) (shuffle (x:xs) ys)
-
- anagrams = foldrM shuffle "" . group . sort
-
- subanagrams = foldrM f "" . map tails . group . sort where
- f is j = is >>= flip shuffle j
-**/
