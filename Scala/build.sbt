@@ -18,8 +18,9 @@ scalacOptions ++= Seq(
   "-Xfuture")
 
 libraryDependencies ++= Seq(
-  "org.scalaz"     %% "scalaz-core" % "7.1.3"
- ,"org.scalacheck" %% "scalacheck"  % "1.12.5" % "test"
+  "org.scalaz"     %% "scalaz-core"   % "7.1.4"
+ ,"org.scalaz"     %% "scalaz-effect" % "7.1.4"
+ ,"org.scalacheck" %% "scalacheck"    % "1.12.5" % "test"
 )
 
 initialCommands in console :=

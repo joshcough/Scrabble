@@ -34,11 +34,13 @@ class Tile {
     return "(" + letter + "," + value + ")";
   }
 
+  static Tile fromChar(char c) {
+    return new Tile(c, tilePoints.get(c));
+  }
+
   static List<Tile> fromString(String move) {
     List<Tile> tiles = new ArrayList<>();
-    for(Character c: move.toCharArray()) {
-      tiles.add(new Tile(c, tilePoints.get(c)));
-    }
+    for(Character c: move.toCharArray()) { fromChar(c); }
     return tiles;
   }
 }
