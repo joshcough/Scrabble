@@ -13,14 +13,11 @@ import Prelude hiding (Word)
 
 type Regex = String
 
-data ShowExp = ShowBoard Bool | ShowScores | ShowHelp
-  deriving Show
-
 data ScrabbleExp =
   Search  SearchExp |
   Place   PutWord   |
   Skip              |
-  ShowExp ShowExp
+  ShowExp ShowExp -- TODO rename to ShowBoard or something
   deriving (Show)
 
 data SearchExp =
@@ -41,6 +38,9 @@ data PrimSearchExp =
   LooksLike String    |
   Regex Regex
   deriving (Show)
+
+data ShowExp = ShowBoard Bool | ShowScores | ShowHelp
+  deriving Show
 
 instance FromSExpr ScrabbleExp where
   fromSExpr exp@(List l) = f l where

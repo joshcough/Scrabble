@@ -32,8 +32,15 @@ containsAny = contains' List.any . ups where
   contains' :: ((Char -> Bool) -> [Char] -> Bool) -> String -> Search1
   contains' f t w = f (\c -> elem c (ups w)) (ups t)
 
+-- TODO: what are the semantics of contains only?
+-- csu.foldRight(true) { (c,acc) => acc && wu.exists(_ == c) }
+-- ABCABCABC `containsOnly` ABC => true
 containsOnly :: String -> Search1
-containsOnly t w = ups t == ups w
+containsOnly t w = foldl f (true) (ups t) where
+  w' = ups w
+  f acc c = elem c w'
+
+ups t == ups w
 
 containsNone :: String -> Search1
 containsNone t = not . containsAny t
@@ -105,7 +112,7 @@ dictionaryUnsafe = unsafePerformIO dictionary
 
 -- Run a search on a whole dictionary of words
 runSearch1 :: Search1 -> Set Word -> Set Word
-runSearch1 s = Set.filter s
+runSearch1 = Set.filter
 
 cheat :: Search1 -> IO (Set Word)
 cheat search = runSearch1 search <$> dictionary

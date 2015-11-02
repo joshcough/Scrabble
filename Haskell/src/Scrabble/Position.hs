@@ -24,8 +24,6 @@ class Pos a where
   belowP     :: a -> a
   leftOfP    :: a -> a
   rightOfP   :: a -> a
-  -- TODO: fricken figure out default impls
-  neighborsP :: a -> [a]
 
 instance Pos (Int, Int) where
   coors      (x, y) = (x, y)
@@ -35,7 +33,9 @@ instance Pos (Int, Int) where
   belowP     (x, y) = (x, y + 1)
   leftOfP    (x, y) = (x - 1, y)
   rightOfP   (x, y) = (x + 1, y)
-  neighborsP p = [aboveP p, belowP p, leftOfP p, rightOfP p]
+
+neighborsP :: Pos p => [p]
+neighborsP p = [aboveP p, belowP p, leftOfP p, rightOfP p]
 
 instance Pos Position where
   coors      (Position x y) = (x, y)
@@ -45,4 +45,3 @@ instance Pos Position where
   belowP     (Position x y) = Position x (y + 1)
   leftOfP    (Position x y) = Position (x - 1) y
   rightOfP   (Position x y) = Position (x + 1) y
-  neighborsP p = [aboveP p, belowP p, leftOfP p, rightOfP p]
