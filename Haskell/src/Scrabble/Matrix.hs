@@ -23,17 +23,25 @@ class Vec m where
 
 -- | A generic matrix type 'm', whose rows are
 -- represented by the associated 'Row'.
-class Matrix m where
+class Pos (Mix m) => Matrix m where
   type Row m :: * -> *
-  elemAt  :: Pos p => (m a) -> p -> Maybe a
-  row     :: m a -> Int -> Maybe (Row m a)
-  col     :: m a -> Int -> Maybe (Row m a)
-  rows    :: m a -> m a
-  cols    :: m a -> m a
-  above   :: Pos p => m a -> p -> Row m a
-  below   :: Pos p => m a -> p -> Row m a
-  leftOf  :: Pos p => m a -> p -> Row m a
-  rightOf :: Pos p => m a -> p -> Row m a
+  type MIx m :: *
+  elemAt  :: m a -> (MIx m, MIx m) -> Maybe a
+  row     :: m a -> MIx m -> Maybe (Row m a)
+  col     :: m a -> MIx m -> Maybe (Row m a)
+  rows    :: m a -> [Row m a]
+  cols    :: m a -> [Row m a]
+  above   :: m a -> (MIx m, MIx m) -> Row m a
+  below   :: m a -> (MIx m, MIx m) -> Row m a
+  leftOf  :: m a -> (MIx m, MIx m) -> Row m a
+  rightOf :: m a -> (MIx m, MIx m) -> Row m a
+
+-- | A generic matrix type 'm', whose rows are
+-- represented by the associated 'Row'.
+class Matrix m => TotalMatrix m where
+  elemAtT  :: m a -> (MIx m, MIx m) -> a
+  rowT     :: m a -> MIx m -> Row m a
+  colT     :: m a -> MIx m -> Row m a
 
 neighbors :: (Matrix m, Pos p) => m a -> p -> [a]
 neighbors m p = catMaybes $ elemAt m <$> neighborsP p
@@ -55,6 +63,7 @@ inListBounds p = x p >= 0 && y p >= 0
 
 instance Matrix ListMatrix where
   type Row ListMatrix = []
+  type MIx ListMatrix = Int
   elemAt  (LM m) p | inListBounds p = Just $ m !! y p !! x p
   elemAt  _ _ = Nothing
   row     (LM m) y | y >= 0 = Just $ m !! y
@@ -68,6 +77,7 @@ instance Matrix ListMatrix where
   leftOf  m p = fromMaybe [] $ before (x p) <$> row m (y p)
   rightOf m p = fromMaybe [] $ after  (x p) <$> row m (y p)
 
+{-
 pattern MM a     = Compose a
 type MapMatrix p = Compose (Map p) (Map p)
 
@@ -90,3 +100,4 @@ instance Matrix (MapMatrix Int) where
   below   m p = error "todo"
   leftOf  m p = error "todo"
   rightOf m p = error "todo"
+-}

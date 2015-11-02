@@ -21,6 +21,7 @@ library
   hs-source-dirs: src
   exposed-modules:
     Scrabble
+    Scrabble.ArrayBoard
     Scrabble.Bag
     Scrabble.Board
     Scrabble.Game

@@ -1,7 +1,8 @@
 {-# LANGUAGE FlexibleContexts #-}
 
 module Scrabble (
-  module Scrabble.Bag
+  module Scrabble.ArrayBoard
+ ,module Scrabble.Bag
  ,module Scrabble.Board
  ,module Scrabble.Commands.AST
  ,module Scrabble.Commands.Interpreter
@@ -15,6 +16,7 @@ module Scrabble (
 
 import Control.Monad (when)
 import Prelude hiding (Word)
+import Scrabble.ArrayBoard
 import Scrabble.Bag
 import Scrabble.Board
 import Scrabble.Commands.AST
