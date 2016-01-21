@@ -62,10 +62,7 @@ class Matrix b => Board b where
   {- 'show' for Scrabble boards.
      The Bool is to display square bonuses, or not.
    -}
-  showBoard :: Bool -> b Square -> String
-
-printBoard :: Board b => Bool -> b Square -> IO ()
-printBoard b = putStrLn . showBoard b
+  showBoard :: b Square -> Bool -> String
 
 boardToList :: (Board b, Foldable b) => b Square -> [Square]
 boardToList = foldr (:) []

@@ -66,13 +66,16 @@ data Game b = Game {
 instance Board b => Show (Game b) where
   show (Game ps brd bag dict) = concat $
     intersperse ", " ["Game {", show ps, brd', show bag, "}"] where
-      brd' = showBoard True brd
+      brd' = showBoard brd True
 
 currentPlayer :: Board b => Game b -> Player
 currentPlayer = head . gamePlayers
 
-nextPlayer :: Board b => Game b  -> Game b
+nextPlayer :: Board b => Game b -> Game b
 nextPlayer g@(Game (p:ps) _ _ _) = g { gamePlayers = ps++[p] }
+
+skipTurn :: Board b => Game b -> Game b
+skipTurn = nextPlayer
 
 fillRacks :: [Player] -> Bag -> ([Player], Bag)
 fillRacks ps bag = foldl f ([], bag) ps where

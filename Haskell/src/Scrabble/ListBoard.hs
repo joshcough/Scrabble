@@ -16,8 +16,8 @@ instance Board ListMatrix where
   showBoard = showListBoard
   newBoard  = newListBoard
 
-showListBoard :: Bool -> ListBoard -> String
-showListBoard printBonuses (LM board) = top ++ showRows ++ bottom where
+showListBoard :: ListBoard -> Bool -> String
+showListBoard (LM board) printBonuses = top ++ showRows ++ bottom where
   showRows      = intercalate "\n" (fmap showRow board) ++ "\n"
   showRow     r = "|" ++ concat (fmap showSquare' r)
   showSquare' s = showSquare printBonuses s ++ "|"

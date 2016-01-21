@@ -31,7 +31,7 @@ import System.IO.Unsafe
 start :: [Player] -> IO ()
 start players = do
   g <- newGame players
-  printBoard True (gameBoard g)
+  printBoard g True
   gameLoop g
 
 newGame :: [Player] -> IO (Game ListMatrix)
@@ -51,7 +51,7 @@ gameLoop g = singleTurn >>= gameLoop where
 
 humanTurn :: (Foldable b, Board b, Vec (Row b)) => Bool -> Game b -> IO (Game b)
 humanTurn b g = do
-  when b (printBoard True $ gameBoard g)
+  when b $ printBoard g True
   putStrLn $ "Turn for: " ++ show (currentPlayer g)
   putStrLn "Enter command (or type help)"
   command <- getLine
@@ -73,7 +73,7 @@ applyRes g = ((\(io, g') -> io >> return g') . f g) where
   f g (Print (QueryResult words)) = (putStrLn $ show words, g)
   f g (Print PrintHelp)           = (putStrLn help,         g)
   f g (Print (PrintScores scrs))  = (putStrLn $ show scrs,  g)
-  f g (Print (PrintBoard b brd))  = (printBoard b brd,      g)
+  f g (Print (PrintBoard b brd))  = (printBoard' brd b,     g)
 
 gameOver :: Board b => Game b -> IO ()
 gameOver g = putStrLn ("Game Over!\n" ++ show g)
@@ -141,5 +141,18 @@ place g w o p blanks = do
                     (playerRack $ currentPlayer g)
                     pw
                     (gameDict g)
+
+showHelp :: IO String
+showHelp = error "todo"
+
+-- print the board contained in the Game
+printBoard :: Board b => Game b -> Bool -> IO ()
+printBoard g = printBoard' (gameBoard g)
+
+printBoard' :: Board b => b Square -> Bool -> IO ()
+printBoard' b showBonuses = putStrLn $ showBoard b showBonuses
+
+showScores :: Game b -> IO ()
+showScores g = putStrLn . show $ getScores g
 
 unsafeNewGame = unsafePerformIO . newGame
