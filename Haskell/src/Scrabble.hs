@@ -14,6 +14,7 @@ module Scrabble (
 ) where
 
 import Control.Monad (when)
+import Data.Char (toUpper)
 import Prelude hiding (Word)
 import Scrabble.Bag
 import Scrabble.Board
@@ -126,3 +127,19 @@ testSearchR = do
   words   <- testSearch (letter <$> rack)
   return (rack, words)
 
+place :: (Foldable b, Board b, Vec (Row b)) =>
+  Game b      ->
+  String      ->
+  Orientation ->
+  Position    ->
+  [Char]      ->
+  Either String (Game b)
+place g w o p blanks = do
+  pw <- makePutWord (fmap toUpper w) o p blanks
+  applyMove g <$> interpretPut
+                    (gameBoard g)
+                    (playerRack $ currentPlayer g)
+                    pw
+                    (gameDict g)
+
+unsafeNewGame = unsafePerformIO . newGame

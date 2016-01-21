@@ -36,11 +36,9 @@ containsAny = contains' List.any . ups where
 -- csu.foldRight(true) { (c,acc) => acc && wu.exists(_ == c) }
 -- ABCABCABC `containsOnly` ABC => true
 containsOnly :: String -> Search1
-containsOnly t w = foldl f (true) (ups t) where
+containsOnly t w = foldl f True (ups t) where
   w' = ups w
   f acc c = elem c w'
-
-ups t == ups w
 
 containsNone :: String -> Search1
 containsNone t = not . containsAny t
@@ -118,7 +116,7 @@ cheat :: Search1 -> IO (Set Word)
 cheat search = runSearch1 search <$> dictionary
 
 dictContainsWord :: Dict -> Word -> Bool
-dictContainsWord d = flip Set.member d . ups
+dictContainsWord d = flip Set.member d . fmap toUpper
 
 powerset :: [a] -> [[a]]
 powerset = filterM (const [True, False])

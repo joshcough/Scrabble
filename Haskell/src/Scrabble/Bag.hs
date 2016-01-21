@@ -20,7 +20,7 @@ instance Show Tile where
 
 mkTile :: Letter -> Tile
 mkTile l = Tile l (fromMaybe err $ Map.lookup l points) where
-  err = error $ l : "is an invalid letter"
+  err = error $ l : " is an invalid letter"
 
 fromLetter :: Letter -> Tile
 fromLetter = mkTile

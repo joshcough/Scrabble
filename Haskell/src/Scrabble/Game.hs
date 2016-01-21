@@ -57,7 +57,7 @@ isHuman p = playerType p == Human
 
 data Game b = Game {
   gamePlayers :: [Player],
-  gameBoard   :: b (Square),
+  gameBoard   :: b Square,
   gameBag     :: Bag,
   gameDict    :: Dict }
 
@@ -81,4 +81,3 @@ fillRacks ps bag = foldl f ([], bag) ps where
 
 isGameOver :: Board b => Game b -> Bool
 isGameOver (Game players _ bag _) = False -- TODO!
-

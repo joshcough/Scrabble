@@ -14,7 +14,7 @@ import Data.Functor.Compose (Compose(..))
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
 import Data.Maybe (Maybe,fromMaybe,catMaybes)
-import Scrabble.Position (Pos(..))
+import Scrabble.Position (Pos(..), neighborsP)
 
 class Vec m where
   before  :: Int -> m a -> m a
@@ -68,6 +68,7 @@ instance Matrix ListMatrix where
   leftOf  m p = fromMaybe [] $ before (x p) <$> row m (y p)
   rightOf m p = fromMaybe [] $ after  (x p) <$> row m (y p)
 
+{-
 pattern MM a     = Compose a
 type MapMatrix p = Compose (Map p) (Map p)
 
@@ -90,3 +91,4 @@ instance Matrix (MapMatrix Int) where
   below   m p = error "todo"
   leftOf  m p = error "todo"
   rightOf m p = error "todo"
+-}

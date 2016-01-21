@@ -34,7 +34,7 @@ instance Pos (Int, Int) where
   leftOfP    (x, y) = (x - 1, y)
   rightOfP   (x, y) = (x + 1, y)
 
-neighborsP :: Pos p => [p]
+neighborsP :: Pos p => p -> [p]
 neighborsP p = [aboveP p, belowP p, leftOfP p, rightOfP p]
 
 instance Pos Position where
