@@ -2,14 +2,11 @@
 
 ### Getting started
 
-First things first, install all the dependencies:
-
-    $ cd Haskell
-    $ cabal install --only-dependencies
+First things first, install stack: http://docs.haskellstack.org/en/stable/README.html#how-to-install
 
 And then jump up on the repl:
 
-    $ cabal repl
+    $ stack ghci
 
 ### Place some words on the board:
 
