@@ -103,7 +103,7 @@ matchNone = Scrabble.Search.none
 
 dictionary :: IO Dict
 dictionary = do
-  d <- readFile "../dict/en.txt"
+  d <- readFile "./dict/en.txt"
   return $ Set.fromList (fmap toUpper <$> lines d)
 
 dictionaryUnsafe = unsafePerformIO dictionary
