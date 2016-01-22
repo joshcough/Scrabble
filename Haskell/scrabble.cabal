@@ -24,6 +24,9 @@ library
     Scrabble.Bag
     Scrabble.Board
     Scrabble.Game
+    Scrabble.ListBoard
+    Scrabble.Matrix
+    Scrabble.Position
     Scrabble.Search
     Scrabble.Types
     Scrabble.Commands.AST
@@ -32,18 +35,18 @@ library
     --Scrabble.Commands.Parser
   other-modules:
   build-depends:
-    base           >= 4.6           && < 5
-   ,array          >= 0.5.0
-   ,bytestring     >= 0.10.4.0
-   ,containers     >= 0.5.6.2
-   ,parsers        >= 0.12.1.1
-   ,primitive      >= 0.6
-   ,random-shuffle >= 0.0.4
-   ,semigroups     >= 0.8.3.1       && < 1
-   ,transformers   >= 0.4
-   ,trifecta       >= 1.5.1
-   ,unordered-containers >= 0.2.5.0
-   ,utf8-string    >= 0.3.6         && < 0.4
+    base >= 4.7 && < 5
+   ,array
+   ,bytestring
+   ,containers
+   ,parsers
+   ,primitive
+   ,random-shuffle
+   ,semigroups
+   ,transformers
+   ,trifecta
+   ,unordered-containers
+   ,utf8-string
 
 -- `cabal install --enable-tests -f-tests` to disable tests suite
 flag tests
@@ -63,16 +66,16 @@ test-suite tests
     buildable: False
   else
     build-depends:
-      base
-     ,checkers                   >= 0.4.3
-     ,directory                  >= 1.2.0.1
-     ,data-default               >= 0.5.3
-     ,filemanip                  >= 0.3.6.2
+      base >= 4.7 && < 5
+     ,checkers
+     ,directory
+     ,data-default
+     ,filemanip
      ,HUnit
-     ,QuickCheck                 >= 2.8.1
-     ,quickcheck-instances       >= 0.3.11
-     ,test-framework             >= 0.6
+     ,QuickCheck
+     ,quickcheck-instances
+     ,test-framework
      ,test-framework-hunit
-     ,test-framework-quickcheck2 >= 0.2
-     ,test-framework-th          >= 0.2.4
+     ,test-framework-quickcheck2
+     ,test-framework-th
      ,scrabble

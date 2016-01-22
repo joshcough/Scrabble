@@ -18,30 +18,37 @@ import Scrabble
 -- TODO: get this working with template haskell.
 -- https://hackage.haskell.org/package/test-framework-th
 tests = [
-{-
-  These break the linker:
-    Linking dist/build/tests/tests ...
-    Undefined symbols for architecture x86_64:
-      "_scrabzu9tVa6U7XyHd9TMpkN0oVXH_ScrabbleziMatrix_above_info", referenced from:
-
- testGroup "Bag Unit Tests" [
-   u "# e's in bag"     $ countLettersInBag 'E' orderedBag   @?= 12
-  ,u "# _'s in bag"     $ countLettersInBag '_' orderedBag   @?= 2
-  ,u "# letters in bag" $ length orderedBag                  @?= 100
-  ,u "# shuffled bag"   $ do { b <- newShuffledBag; length b @?= 100 }
-  ,u "total points"     $ totalPoints                        @?= 187
-  ,u "word points"      $ simpleWordPoints "XYZ"             @?= 22
-  ]
-  testGroup "Board Unit Tests" [
-    u "?" $ Square Nothing W3 (Position 7 7) @?= Square Nothing W3 (Position 7 7)
-   ,u "?" $ snd (quickPut [("ZOOLOGIC", Vertical, (0,0))]) @?= [7]
-   ,u "?" $ snd (quickPut [("ZOOLOGIC", Vertical, (0,0))]) @?= [7]
+  testGroup "Bag Unit Tests" [
+    u "sanity check"     $ orderedBag @?= orderedBag,
+    u "# e's in bag"     $ countLettersInBag 'E' orderedBag   @?= 12,
+    u "# _'s in bag"     $ countLettersInBag '_' orderedBag   @?= 2,
+    u "# letters in bag" $ length orderedBag                  @?= 100,
+    u "# shuffled bag"   $ do { b <- newShuffledBag; length b @?= 100 },
+    u "total points"     $ totalPoints                        @?= 187,
+    u "word points"      $ simpleWordPoints "XYZ"             @?= 22
   ],
-
+  testGroup "Board Unit Tests" [
+    u "lower/vertical"  $ snd (placeVert "zoologic") @?= [40]
+   ,u "upper/vertical"  $ snd (placeVert "ZOOLOGIC") @?= [40]
+   ,u "lower/horizonal" $ snd (placeHztl "zoologic") @?= [40]
+   ,u "upper/horizonal" $ snd (placeHztl "ZOOLOGIC") @?= [40]
+  ],
   testGroup "Game Unit Tests" [
-    u "?" $ do
-      g1 <- newGame [human "Josh"]
-      g2 <- newGame [human "Josh"]
-      g1 @?= g2
-  ] -}
- ]
+    u "players have full racks at the start of a new game" $ do
+      g <- newGame [human "Josh", human "Jimbo"]
+      (length . playerRack <$> gamePlayers g) @?= [7,7]
+  ]
+ ] -- leave this indented one space
+
+{- places the given word vertically starting on
+   the center position of a new board -}
+placeVert :: String -> (ListBoard,[Score])
+placeVert word = centered word Vertical
+{- places the given word horizontally starting on
+   the center position of a new board -}
+placeHztl :: String -> (ListBoard,[Score])
+placeHztl word = centered word Horizontal
+{- places the given word on the center position of a new board
+   using the given orientation -}
+centered :: String -> Orientation -> (ListBoard,[Score])
+centered word orientation = quickPut [(word, orientation, (7,7))]

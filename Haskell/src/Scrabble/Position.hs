@@ -1,6 +1,11 @@
 {-# LANGUAGE FlexibleInstances #-}
 
-module Scrabble.Position where
+module Scrabble.Position (
+  HasPosition(..)
+ ,Pos(..)
+ ,Position(..)
+ ,neighborsP
+) where
 
 class HasPosition a where
   pos :: a -> Position

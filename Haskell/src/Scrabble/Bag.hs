@@ -19,7 +19,7 @@ instance Show Tile where
   show (Tile letter _) = [letter]
 
 mkTile :: Letter -> Tile
-mkTile l = Tile l (fromMaybe err $ Map.lookup l points) where
+mkTile l = Tile l (fromMaybe err $ Map.lookup (Char.toUpper l) points) where
   err = error $ l : " is an invalid letter"
 
 fromLetter :: Letter -> Tile
@@ -29,6 +29,9 @@ type Bag = [Tile]
 
 newBag :: IO Bag
 newBag = newShuffledBag
+
+emptyBag :: Bag
+emptyBag = []
 
 isBagEmpty :: Bag -> Bool
 isBagEmpty = null

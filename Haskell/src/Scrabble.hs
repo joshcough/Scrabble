@@ -8,9 +8,12 @@ module Scrabble (
  ,module Scrabble.Commands.SExpr
  ,module Scrabble.Game
  ,module Scrabble.ListBoard
+ ,module Scrabble.Position
  ,module Scrabble.Matrix
  ,module Scrabble.Search
  ,module Scrabble.Types
+ ,newGame
+ ,quickPut
 ) where
 
 import Control.Monad (when)
@@ -24,6 +27,7 @@ import Scrabble.Commands.SExpr
 import Scrabble.Game
 import Scrabble.ListBoard
 import Scrabble.Matrix
+import Scrabble.Position
 import Scrabble.Search
 import Scrabble.Types
 import System.IO.Unsafe
