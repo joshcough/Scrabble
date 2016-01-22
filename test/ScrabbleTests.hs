@@ -4,51 +4,50 @@ module ScrabbleTests (tests) where
 
 import Data.Monoid (mempty)
 import Data.List
+import Scrabble
 import Test.Framework (testGroup)
 import Test.Framework.Providers.HUnit
 import Test.Framework.Providers.QuickCheck2 (testProperty)
+import Test.Framework.TH
 import Test.QuickCheck
 import Test.QuickCheck.Instances.Char
 import Test.HUnit
+import TestHelpers
 
-import UnitTests.TestHelpers
+-- Bag Unit Tests
+bag = orderedBag
+case_sanity_check       = bag @?= orderedBag
+case_es_in_bag          = countLettersInBag 'E' bag @?= 12
+case_blanks_in_bag      = countLettersInBag '_' bag @?= 2
+case_letters_in_bag     = length bag @?= 100
+case_count_shuffled_bag = do { b <- newShuffledBag; length b @?= 100 }
+case_total_points       = totalPoints @?= 187
+case_word_points        = simpleWordPoints "XYZ" @?= 22
 
-import Scrabble
+-- Board Unit Tests
+case_lower_vertical     = snd (placeVert "zoologic") @?= [40]
+case_upper_vertical     = snd (placeVert "ZOOLOGIC") @?= [40]
+case_lower_horizonal    = snd (placeHztl "zoologic") @?= [40]
+case_upper_horizonal    = snd (placeHztl "ZOOLOGIC") @?= [40]
 
--- TODO: get this working with template haskell.
--- https://hackage.haskell.org/package/test-framework-th
-tests = [
-  testGroup "Bag Unit Tests" [
-    u "sanity check"     $ orderedBag @?= orderedBag,
-    u "# e's in bag"     $ countLettersInBag 'E' orderedBag   @?= 12,
-    u "# _'s in bag"     $ countLettersInBag '_' orderedBag   @?= 2,
-    u "# letters in bag" $ length orderedBag                  @?= 100,
-    u "# shuffled bag"   $ do { b <- newShuffledBag; length b @?= 100 },
-    u "total points"     $ totalPoints                        @?= 187,
-    u "word points"      $ simpleWordPoints "XYZ"             @?= 22
-  ],
-  testGroup "Board Unit Tests" [
-    u "lower/vertical"  $ snd (placeVert "zoologic") @?= [40]
-   ,u "upper/vertical"  $ snd (placeVert "ZOOLOGIC") @?= [40]
-   ,u "lower/horizonal" $ snd (placeHztl "zoologic") @?= [40]
-   ,u "upper/horizonal" $ snd (placeHztl "ZOOLOGIC") @?= [40]
-  ],
-  testGroup "Game Unit Tests" [
-    u "players have full racks at the start of a new game" $ do
-      g <- newGame [human "Josh", human "Jimbo"]
-      (length . playerRack <$> gamePlayers g) @?= [7,7]
-  ]
- ] -- leave this indented one space
+-- Game Unit Tests
+case_players_have_full_racks_at_the_start_of_a_new_game = do
+  g <- newGame [human "Josh", human "Jimbo"]
+  (length . playerRack <$> gamePlayers g) @?= [7,7]
 
 {- places the given word vertically starting on
    the center position of a new board -}
 placeVert :: String -> (ListBoard,[Score])
 placeVert word = centered word Vertical
+
 {- places the given word horizontally starting on
    the center position of a new board -}
 placeHztl :: String -> (ListBoard,[Score])
 placeHztl word = centered word Horizontal
+
 {- places the given word on the center position of a new board
    using the given orientation -}
 centered :: String -> Orientation -> (ListBoard,[Score])
 centered word orientation = quickPut [(word, orientation, (7,7))]
+
+tests = $testGroupGenerator

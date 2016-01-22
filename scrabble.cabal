@@ -32,7 +32,6 @@ library
     Scrabble.Commands.AST
     Scrabble.Commands.Interpreter
     Scrabble.Commands.SExpr
-    --Scrabble.Commands.Parser
   other-modules:
   build-depends:
     base >= 4.7 && < 5
@@ -59,8 +58,10 @@ test-suite tests
   main-is:        test/Main.hs
   hs-source-dirs: . test
   other-modules:
+    ScrabbleArbitrary
     ScrabbleTests
-    UnitTests.TestHelpers
+    SearchTests
+    TestHelpers
 
   if !flag(tests)
     buildable: False

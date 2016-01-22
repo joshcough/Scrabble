@@ -4,44 +4,34 @@ module SearchTests (tests) where
 
 import Data.Monoid (mempty)
 import Data.List
+import Scrabble
 import Test.Framework (testGroup)
 import Test.Framework.Providers.HUnit
 import Test.Framework.Providers.QuickCheck2 (testProperty)
+import Test.Framework.TH
 import Test.QuickCheck
 import Test.QuickCheck.Instances.Char
 import Test.HUnit
-
-import UnitTests.TestHelpers
-
-import Scrabble
+import Scrabble.Search
+import TestHelpers
 
 string = listOf lowerAlpha
 search = searchDictForPowersetSorted
 
-tests dict = [
-   testGroup "Search Properties" [
-      p "startsWith self"     . forAll string $ \s -> startsWith  s s
-     ,p "containsAll self"    . forAll string $ \s -> containsAll s s
-     ,p "containsAll reverse" . forAll string $ \s -> containsAll s (reverse s)
-     ,p "containsAll implies containsAny" .
-        forAll string $ \s -> containsAll  "ab" s ==> containsAny "ab" s
-     ,p "containsNone implies ! containsAny" .
-        forAll string $ \s -> containsNone "ab" s ==> not $ containsAny "ab" s
-    ],
+prop_startsWith_self     = forAll string $ \s -> startsWith  s s
+prop_containsAll_self    = forAll string $ \s -> containsAll s s
+prop_containsAll_reverse = forAll string $ \s -> containsAll s (reverse s)
+prop_containsAll_implies_containsAny =
+  forAll string $ \s -> containsAll  "ab" s ==> containsAny "ab" s
+prop_containsNone_implies_not_containsAny =
+  forAll string $ \s -> containsNone "ab" s ==> not $ containsAny "ab" s
 
-    testGroup "Search Unit Tests" [
-      u "startsWith"   $ startsWith   "hello" "hello, world" @?= True
-     ,u "endsWith"     $ endsWith     "world" "hello, world" @?= True
-     ,u "containsOnly" $ containsOnly "abc"   "abc"          @?= True
-    ],
-    superSearchTests dict
- ]
-
-superSearchTests dict = testGroup "Super Search" [
-  u "ANIMALS" $ search dict "ANIMALS" @?= searchANIMALS,
-  u "ANSXYZQ" $ search dict "ANSXYZQ" @?= searchANSXYZQ,
-  u "SMITH"   $ search dict "SMITH"   @?= searchSMITH
- ]
+case_startsWith     = startsWith   "hello" "hello, world" @?= True
+case_endsWith       = endsWith     "world" "hello, world" @?= True
+case_containsOnly   = containsOnly "abc"   "abc"          @?= True
+case_search_ANIMALS = search dict "ANIMALS" @?= searchANIMALS
+case_search_ANSXYZQ = search dict "ANSXYZQ" @?= searchANSXYZQ
+case_search_SMITH   = search dict "SMITH"   @?= searchSMITH
 
 searchANIMALS =
   ["AA","AAL","AALS","AAS","AI","AIA","AIAS","AIL","AILS","AIM","AIMS",
@@ -70,3 +60,5 @@ searchSMITH =
   ["HI","HIM","HIMS","HIS","HIST","HIT","HITS","HM","IS","ISH","ISM",
    "IT","ITS","MI","MIS","MIST","SH","SHIM","SHIT","SI","SIM","SIT",
    "SITH","SMIT","SMITH","ST","STIM","THIS","TI","TIS"]
+
+tests = $testGroupGenerator

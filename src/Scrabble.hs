@@ -82,12 +82,14 @@ applyRes g = ((\(io, g') -> io >> return g') . f g) where
 gameOver :: Board b => Game b -> IO ()
 gameOver g = putStrLn ("Game Over!\n" ++ show g)
 
+quickBoard = newBoard :: ListBoard
+
 {- test putting some words on a brand new board -}
 quickPut :: [(String, Orientation, (Int, Int))] ->
             (ListBoard,[Score])
 quickPut words = unsafePerformIO $ do
   dict <- dictionary
-  let e = quickPut' words (newBoard :: ListBoard) dict
+  let e = quickPut' words quickBoard dict
   return $ either error id e
 
 {- test put some words onto an existing board -}

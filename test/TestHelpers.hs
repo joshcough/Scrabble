@@ -1,14 +1,18 @@
 {-# LANGUAGE TemplateHaskell #-}
-module UnitTests.TestHelpers where
+module TestHelpers where
 
 import Data.Monoid (mempty)
 import Data.List
+import Scrabble.Search
+import System.IO.Unsafe
 import Test.Framework (testGroup)
 import Test.Framework.Providers.HUnit
 import Test.Framework.Providers.QuickCheck2 (testProperty)
 import Test.QuickCheck
 import Test.QuickCheck.Instances.Char
 import Test.HUnit
+
+dict = unsafePerformIO dictionary
 
 p s t = testProperty (s ++ "_property" ) t
 u s t = testCase     (s ++ "_unit_test") t
