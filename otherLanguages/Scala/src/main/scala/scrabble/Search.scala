@@ -3,6 +3,7 @@ package scrabble
 import scala.io.Source
 
 object Search {
+
   type Matcher = String => Boolean
   type Word = String
 
@@ -58,6 +59,8 @@ object Search {
   def and(m1:Matcher, m2:Matcher)(w:Word): Boolean = m1(w) && m2(w)
   def any(ms: List[Matcher])(w:Word): Boolean =
     ms.foldRight[Word => Boolean](Function const false)(or)(w)
+
+
   def all(ms: List[Matcher])(w:Word): Boolean =
     ms.foldRight[Word => Boolean](Function const true)(and)(w)
 
@@ -84,4 +87,26 @@ object Search {
     println(System.currentTimeMillis - now)
     a
   }
+}
+
+object SearchExamples {
+  // 1. find me all the words that contain a
+  def containsA(dict: List[String]) =
+    dict.filter(w => w.contains("a"))
+
+  // 1. find me all the words that contain a
+  // 2. and find all the words that end with s.
+  def containA_and_endsWithS(dict: List[String]) =
+    containsA(dict).filter(w => w.endsWith("s"))
+
+  // a slightly better way to do this might be...
+  // and then combine them inline
+  def containA_and_endsWithS_2(dict: List[String]) =
+    dict.filter(w => w.contains("a") && w.endsWith("s"))
+
+  // but now, what if we want or?
+  def containA_or_endsWithS(dict: List[String]) =
+    dict.filter(w => w.contains("a") || w.endsWith("s"))
+
+
 }
