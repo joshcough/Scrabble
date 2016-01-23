@@ -16,6 +16,7 @@ module Scrabble (
  ,quickPut
 ) where
 
+import Control.Exception (catch, SomeException)
 import Control.Monad (when)
 import Data.Char (toUpper)
 import Prelude hiding (Word)
@@ -47,13 +48,18 @@ newGame ps = do
 
 gameLoop :: (Foldable b, Board b, Vec (Row b)) => Game b -> IO ()
 gameLoop g | isGameOver g = gameOver g
-gameLoop g = singleTurn >>= gameLoop where
-  singleTurn =
-    if   isHuman (currentPlayer g)
-    then humanTurn False g
-    else return (aiTurn g)
+gameLoop g = singleTurn g >>= maybe (return ()) gameLoop where
 
-humanTurn :: (Foldable b, Board b, Vec (Row b)) => Bool -> Game b -> IO (Game b)
+-- Just g means continue with game g.
+-- Nothing means game is over.
+singleTurn :: (Foldable b, Board b, Vec (Row b)) => Game b -> IO (Maybe (Game b))
+singleTurn g =
+ (if   isHuman (currentPlayer g)
+  then humanTurn False g
+  else return (Just $ aiTurn g)) `catch` handleErr where
+  handleErr e = putStrLn (show (e :: SomeException)) >> return (Just g)
+
+humanTurn :: (Foldable b, Board b, Vec (Row b)) => Bool -> Game b -> IO (Maybe (Game b))
 humanTurn b g = do
   when b $ printBoard g True
   putStrLn $ "Turn for: " ++ show (currentPlayer g)
@@ -70,14 +76,15 @@ help = "help unimplemented"
 applyRes :: Board b =>
             Game b          ->
             CommandResult b ->
-            IO (Game b)
+            IO (Maybe (Game b))
 applyRes g = ((\(io, g') -> io >> return g') . f g) where
-  f :: Board b => Game b -> CommandResult b -> (IO (), Game b)
-  f _ (TurnComplete g)            = (pure (),               g)
-  f g (Print (QueryResult words)) = (putStrLn $ show words, g)
-  f g (Print PrintHelp)           = (putStrLn help,         g)
-  f g (Print (PrintScores scrs))  = (putStrLn $ show scrs,  g)
-  f g (Print (PrintBoard b brd))  = (printBoard' brd b,     g)
+  f :: Board b => Game b -> CommandResult b -> (IO (), Maybe (Game b))
+  f _  GameOver                   = (pure (),               Nothing)
+  f _ (TurnComplete g)            = (pure (),               Just g)
+  f g (Print (QueryResult words)) = (putStrLn $ show words, Just g)
+  f g (Print PrintHelp)           = (putStrLn help,         Just g)
+  f g (Print (PrintScores scrs))  = (putStrLn $ show scrs,  Just g)
+  f g (Print (PrintBoard b brd))  = (printBoard' brd b,     Just g)
 
 gameOver :: Board b => Game b -> IO ()
 gameOver g = putStrLn ("Game Over!\n" ++ show g)

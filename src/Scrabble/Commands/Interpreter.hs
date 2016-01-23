@@ -37,6 +37,7 @@ data PrintCommand b =
 data CommandResult b =
     TurnComplete (Game b)
   | Print (PrintCommand b)
+  | GameOver
 
 interpretExp :: (Foldable b, Board b, Vec (Row b)) =>
                 Game b      ->
@@ -44,6 +45,7 @@ interpretExp :: (Foldable b, Board b, Vec (Row b)) =>
                 Either String (CommandResult b)
 interpretExp g@(Game (p:ps) board bag dict) = f where
   f Skip                    = return . TurnComplete $ nextPlayer g
+  f Quit                    = return   GameOver
   f (ShowExp ShowHelp)      = rPrint   PrintHelp
   f (ShowExp (ShowBoard b)) = rPrint $ PrintBoard b board
   f (ShowExp ShowScores)    = rPrint . PrintScores $ getScores g

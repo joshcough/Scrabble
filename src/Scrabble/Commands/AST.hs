@@ -17,6 +17,7 @@ data ScrabbleExp =
   Search  SearchExp |
   Place   PutWord   |
   Skip              |
+  Quit              |
   ShowExp ShowExp -- TODO rename to ShowBoard or something
   deriving (Show)
 
@@ -43,10 +44,12 @@ data ShowExp = ShowBoard Bool | ShowScores | ShowHelp
   deriving Show
 
 instance FromSExpr ScrabbleExp where
+  fromSExpr (AtomSym "skip") = return Skip
+  fromSExpr (AtomSym "quit") = return Quit
+  fromSExpr (AtomSym ":q")   = return Quit
   fromSExpr exp@(List l) = f l where
     f [AtomSym "search", s]    = Search <$> fromSExpr s
     f (AtomSym "place" : info) = parsePlace info
-    f [AtomSym "skip"]         = return Skip
     f (AtomSym "show"  : exps) = parseShowExps (showSExpr_ <$> exps)
     f bad                      = parseError_ "bad command" exp
 
