@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/joshcough/Scrabble.png?branch=master)](https://travis-ci.org/joshcough/Scrabble)
+
 # Scrabble
 
 This is a Haskell implementation of Scrabble.
