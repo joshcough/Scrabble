@@ -9,7 +9,7 @@ author:              Josh Cough
 maintainer:          joshcough@gmail.com
 category:            Demo
 build-type:          Simple
-cabal-version:       >=1.22
+cabal-version:       >=1.18
 
 source-repository head
   type: git
