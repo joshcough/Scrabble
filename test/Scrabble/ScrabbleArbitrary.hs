@@ -1,6 +1,6 @@
 {-# LANGUAGE DefaultSignatures #-}
 {-# LANGUAGE RankNTypes #-}
-module ScrabbleArbitrary where
+module Scrabble.ScrabbleArbitrary where
 
 import Control.Applicative
 import Data.Map

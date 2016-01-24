@@ -26,6 +26,7 @@ library
     Scrabble.Game
     Scrabble.ListBoard
     Scrabble.Matrix
+    Scrabble.Play
     Scrabble.Position
     Scrabble.Search
     Scrabble.Types
@@ -58,9 +59,12 @@ test-suite tests
   main-is:        test/Main.hs
   hs-source-dirs: . test
   other-modules:
-    ScrabbleArbitrary
-    ScrabbleTests
-    SearchTests
+    Scrabble.ScrabbleArbitrary
+    Scrabble.BagTests
+    Scrabble.BoardTests
+    Scrabble.GameTests
+    Scrabble.ScrabbleTests
+    Scrabble.SearchTests
     TestHelpers
 
   if !flag(tests)

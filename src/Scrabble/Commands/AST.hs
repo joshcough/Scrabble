@@ -6,6 +6,7 @@ import qualified Data.Map.Strict as Map
 import Data.Maybe (catMaybes)
 import Debug.Trace
 import Scrabble.Bag
+import Scrabble.Play
 import Scrabble.Search
 import Scrabble.Types
 import Scrabble.Commands.SExpr

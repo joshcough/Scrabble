@@ -13,6 +13,7 @@ import Scrabble.Commands.AST
 import Scrabble.Commands.SExpr
 import Scrabble.Game
 import Scrabble.Matrix
+import Scrabble.Play
 import Scrabble.Search
 import Scrabble.Types
 import Prelude hiding (Word)

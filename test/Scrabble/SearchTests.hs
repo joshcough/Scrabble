@@ -1,6 +1,6 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-module SearchTests (tests) where
+module Scrabble.SearchTests (tests) where
 
 import Data.Monoid (mempty)
 import Data.List

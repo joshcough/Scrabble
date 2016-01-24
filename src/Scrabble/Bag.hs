@@ -33,9 +33,6 @@ newBag = newShuffledBag
 emptyBag :: Bag
 emptyBag = []
 
-isBagEmpty :: Bag -> Bool
-isBagEmpty = null
-
 newShuffledBag :: IO Bag
 newShuffledBag = shuffleM orderedBag
 
@@ -77,32 +74,3 @@ simpleWordPoints :: Word -> Points
 simpleWordPoints = sum . fmap f where
   f l = fromMaybe err $ Map.lookup (Char.toUpper l) points
   err = error "simple word points"
-
-{-
- represents a single tile being put on the board (without location)
-   * PutLetterTile means the tile has a letter on it
-   * PutBlankTile comes with the Letter that the player intends use.
--}
-data PutTile =
-   PutLetterTile Tile   Position
- | PutBlankTile  Letter Position
-  deriving Eq
-
--- TODO: when are these shown? show the position be shown too?
-instance Show PutTile where
-  show (PutLetterTile t _) = [letter t]
-  show (PutBlankTile  l _) = [l]
-
-instance HasLetter PutTile where
-  letter (PutLetterTile t _) = letter t
-  letter (PutBlankTile  l _) = l
-
-instance HasPosition PutTile where
-  pos (PutLetterTile _ p) = p
-  pos (PutBlankTile  _ p) = p
-
-asTile (PutLetterTile t _) = t
-asTile (PutBlankTile  l _) = mkTile l
-
-{- A complete representation of placing a word on the board. -}
-data PutWord = PutWord { tiles :: [PutTile] } deriving Show
