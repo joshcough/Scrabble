@@ -1,7 +1,7 @@
 # Scrabble
 
 [![Build Status](https://travis-ci.org/joshcough/Scrabble.png?branch=master)](https://travis-ci.org/joshcough/Scrabble)
-[![Code coverage](https://coveralls.io/github/joshcough/Scrabble)](https://img.shields.io/coveralls/joshcough/Scrabble.svg?style=flat-square)
+[![Coverage Status](https://coveralls.io/repos/github/joshcough/Scrabble/badge.svg?branch=master)](https://coveralls.io/github/joshcough/Scrabble?branch=master)
 
 This is a Haskell implementation of Scrabble.
 
