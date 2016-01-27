@@ -3,7 +3,7 @@ module TestHelpers where
 
 import Data.Monoid (mempty)
 import Data.List
-import Scrabble.Search
+import Scrabble.Dictionary
 import System.IO.Unsafe
 import Test.Framework (testGroup)
 import Test.Framework.Providers.HUnit

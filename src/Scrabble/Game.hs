@@ -8,9 +8,9 @@ import Data.Maybe (catMaybes)
 import Debug.Trace
 import Scrabble.Bag
 import Scrabble.Board
-import Scrabble.Search
-import Scrabble.Types
-import Prelude hiding (Word)
+import Scrabble.Dictionary
+import Scrabble.ListBoard
+import Scrabble.Matrix
 
 type Name = String
 
@@ -61,6 +61,13 @@ data Game b = Game {
   gameBag     :: Bag,
   gameDict    :: Dict }
 
+newGame :: [Player] -> IO (Game ListMatrix)
+newGame ps = do
+  bag  <- newBag
+  dict <- Scrabble.Dictionary.dictionary
+  let (players,bag') = fillRacks ps bag
+  return $ Game (reverse players) newBoard bag' dict
+
 --deriving instance Eq b => Eq (Game (b Square))
 
 instance Board b => Show (Game b) where
@@ -84,3 +91,6 @@ fillRacks ps bag = foldl f ([], bag) ps where
 
 isGameOver :: Board b => Game b -> Bool
 isGameOver (Game players _ bag _) = False -- TODO!
+
+getScores :: Game a -> [(Name, Score)]
+getScores g = getNameAndScore <$> gamePlayers g

@@ -9,9 +9,9 @@ import qualified Data.Maybe as Maybe
 import Data.Set (Set)
 import qualified Data.Set as Set
 import Scrabble.Bag
+import Scrabble.Dictionary
 import Scrabble.Matrix
-import Scrabble.Search (dictContainsWord)
-import Scrabble.Types
+import Scrabble.Position
 
 data Bonus  = W3 | W2 | L3 | L2 | Star | NoBonus deriving (Eq,Ord)
 
@@ -44,7 +44,7 @@ taken = not . emptySquare
 
 showSquare :: Bool -> Square -> String
 showSquare printBonus (Square mt b p) =
-  maybe (if printBonus then show b else "  ") (\t -> [' ', letter t]) mt
+  maybe (if printBonus then show b else "  ") (\t -> ' ' : show (letter t)) mt
 
 debugSquare :: Square -> String
 debugSquare (Square mt b p) = concat
@@ -55,6 +55,12 @@ debugSquareList ss = show $ debugSquare <$> ss
 
 toWord :: [Square] -> [Letter]
 toWord sqrs = letter <$> Maybe.catMaybes (tile <$> sqrs)
+
+data Orientation = Horizontal | Vertical deriving (Eq, Show)
+
+catOrientation :: a -> a -> Orientation -> a
+catOrientation l _ Horizontal = l
+catOrientation _ r Vertical   = r
 
 class Matrix b => Board b where
   newBoard  :: b Square
@@ -106,10 +112,6 @@ boardBonuses = indexify [
 -- But let's consider that a programming error.
 -- If the center tile (7,7) is missing, just error out.
 centerPosition = (Position 7 7)
-center :: Board b => b Square -> Square
-center b = Maybe.fromMaybe
-             (error "no center tile")
-             (elemAt b centerPosition)
 
 {- all the tiles 'before' a position in a matrix,
    vertically or horizontally -}

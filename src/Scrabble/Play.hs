@@ -3,16 +3,25 @@
 
 module Scrabble.Play where
 
-import Data.List (any, foldl', intersperse, partition)
+import Data.Char (toUpper)
+import Data.List (any, delete, foldl', groupBy, intersperse, partition, sort)
 import Data.Maybe (Maybe)
 import qualified Data.Maybe as Maybe
 import Data.Set (Set)
 import qualified Data.Set as Set
+import Prelude hiding (Word)
 import Scrabble.Bag
 import Scrabble.Board
+import Scrabble.Game
+import Scrabble.Dictionary
 import Scrabble.Matrix
-import Scrabble.Search (dictContainsWord)
-import Scrabble.Types
+import Scrabble.Position
+import Scrabble.Search (containsAll)
+
+data Move b = Move {
+  pointsScored   :: Points
+ ,remaining      :: Rack
+ ,boardAfterMove :: b Square }
 
 {-
  represents a single tile being put on the board (without location)
@@ -26,8 +35,8 @@ data PutTile =
 
 -- TODO: when are these shown? show the position be shown too?
 instance Show PutTile where
-  show (PutLetterTile t _) = [letter t]
-  show (PutBlankTile  l _) = [l]
+  show (PutLetterTile t _) = show $ letter t
+  show (PutBlankTile  l _) = show l
 
 instance HasLetter PutTile where
   letter (PutLetterTile t _) = letter t
@@ -38,7 +47,7 @@ instance HasPosition PutTile where
   pos (PutBlankTile  _ p) = p
 
 asTile (PutLetterTile t _) = t
-asTile (PutBlankTile  l _) = mkTile l
+asTile (PutBlankTile  l _) = fromLetter l
 
 {- A complete representation of placing a word on the board. -}
 data PutWord = PutWord { tiles :: [PutTile] } deriving Show
@@ -187,43 +196,79 @@ validateMove move b b' dict = go where
   takenSquares :: [Square]
   takenSquares = square <$> filter (not . available) legals
 
-  words :: [[Letter]]
-  words = toWord <$> (Set.toList $
-    wordsPlayedInTurn squaresPlayedInMove b')
+  words :: [Word]
+  words = toWord <$> (Set.toList $ wordsPlayedInTurn squaresPlayedInMove b')
 
   (_, badWords) = partition (dictContainsWord dict) words
 
   squaresTakenError = "Error, squares taken: " ++
     show (intersperse "," $ debugSquare <$> takenSquares)
 
-{- test putting some words onto an existing board -}
-putManyWords :: (Foldable b, Board b, Vec (Row b)) =>
-  [(String, Orientation, (Int, Int))] ->
-  b Square ->
-  Dict     ->
-  Either String (b Square,[Score])
-putManyWords words b dict = go (b,[]) putWords where
-  {- TODO: this is pretty awful
-     I think EitherT over State could clean it up,
-     but not sure if i want to do that.
-     Also, I can't put the type here, again.
-  -}
-  --go :: (b Square, [Score]) -> [PutWord] -> Either String (b Square, [Score])
-  go (b,ss) pws = foldl f (Right (b,ss)) pws where
-    f acc pw = do
-      (b,scores) <- acc
-      (b',score) <- putWord b pw dict
-      return (b',scores++[score])
+place :: (Foldable b, Board b, Vec (Row b)) =>
+  Game b      ->
+  String      ->
+  Orientation ->
+  Position    ->
+  [Char]      ->
+  Either String (Game b)
 
-  putWords :: [PutWord]
-  putWords =  (\(s,o,p) -> toPutWord s o p) <$> words where
-    toPutWord :: String -> Orientation -> (Int, Int) -> PutWord
-    toPutWord w o (x,y) = PutWord putTils where
-      adder :: (Int, Int) -> (Int, Int)
-      adder = catOrientation (\(x,y) -> (x+1,y)) (\(x,y) -> (x,y+1)) o
-      coordinates :: [(Int,Int)]
-      coordinates = reverse . fst $ foldl f ([],(x,y)) w where
-        f (acc,(x,y)) c = ((x,y):acc, adder (x,y))
-      putTils :: [PutTile]
-      putTils = zipWith f w coordinates where
-        f c xy = PutLetterTile (mkTile c) (pos xy)
+place g w o p blanks = do
+  pw <- makePutWord (fmap toUpper w) o p blanks
+  applyMove g <$> createMove
+                    (gameBoard g)
+                    (playerRack $ currentPlayer g)
+                    pw
+                    (gameDict g)
+
+-- a lot of error handling isn't happening here
+-- this code is pretty bad
+makePutWord :: String      ->
+               Orientation ->
+               Position    ->
+               [Char]      ->
+               Either String PutWord
+makePutWord w o p blanks = PutWord <$> putTils where
+
+  coords :: [(Int,Int)]
+  coords = reverse . fst $ foldl f ([],coors p) w where
+    f (acc,p) c = (p:acc, catOrientation rightOfP belowP o p)
+
+  putTils :: Either String [PutTile]
+  putTils = Maybe.catMaybes <$> (sequence $ zipWith f w (zip coords [0..])) where
+    f :: Char -> ((Int,Int),Int) -> Either String (Maybe PutTile)
+    f '@' _     = Right Nothing
+    f '_' (p,i) = plt (blanks !! i) (pos p)
+    f  c  (p,i) = plt c (pos p)
+    plt :: Char -> Position -> Either String (Maybe PutTile)
+    plt c p     = Just <$> (PutLetterTile <$> maybe (err c) Right (tileFromChar c) <*> pure p)
+    err c       = Left $ "invalid character: " ++ [c]
+
+applyPutWord :: (Foldable b, Board b, Vec (Row b)) => Game b ->
+                                                      PutWord ->
+                                                      Either String (Game b)
+applyPutWord g@(Game (p:_) board bag dict) pw =
+  applyMove g <$> createMove board (playerRack p) pw dict
+
+applyMove :: Board b => Game b -> Move b -> Game b
+applyMove g@(Game (p:ps) _ bag d) (Move pts rack newBoard) =
+  Game (ps++[p']) newBoard bag' d where
+    (t',bag') = fillRack rack bag
+    newScore  = playerScore p + pts
+    p' = p {playerRack = t', playerScore = newScore}
+
+createMove :: (Foldable b, Board b, Vec (Row b)) =>
+               b Square ->
+               Rack     ->
+               PutWord  ->
+               Dict     ->
+               Either String (Move b)
+createMove b rack pw dict =
+  if valid then go else Left errMsg where
+    errMsg        = "error: rack missing input letters"
+    rackLetters   = fmap letter rack
+    valid         = containsAll (toString putLetters) (toString rackLetters)
+    putLetters    = letter <$> tiles pw
+    rackRemainder = fmap fromLetter $
+      foldl' (flip delete) rackLetters putLetters
+    go = do (newBoard, score) <- putWord b pw dict
+            return $ Move score rackRemainder newBoard

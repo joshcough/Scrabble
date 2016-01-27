@@ -6,11 +6,12 @@ import qualified Data.Map.Strict as Map
 import Data.Maybe (catMaybes)
 import Debug.Trace
 import Scrabble.Bag
+import Scrabble.Board
+import Scrabble.Dictionary
 import Scrabble.Play
+import Scrabble.Position
 import Scrabble.Search
-import Scrabble.Types
 import Scrabble.Commands.SExpr
-import Prelude hiding (Word)
 
 type Regex = String
 
@@ -30,14 +31,14 @@ data SearchExp =
   deriving (Show)
 
 data PrimSearchExp =
-  StartsWith String   |
-  EndsWith   String   |
-  LetterAt Letter Int |
-  NoneOf [Letter]     |
-  AnyOf  [Letter]     |
-  AllOf  [Letter]     |
-  Only   [Letter]     |
-  LooksLike String    |
+  StartsWith String |
+  EndsWith   String |
+  LetterAt Char Int |
+  NoneOf [Char]     |
+  AnyOf  [Char]     |
+  AllOf  [Char]     |
+  Only   [Char]     |
+  LooksLike String  |
   Regex Regex
   deriving (Show)
 
@@ -111,42 +112,21 @@ instance FromSExpr PrimSearchExp where
     f   _ = err
     err = parseError_ "bad search" exp
 
-toSearch1 :: SearchExp -> Either String Search1
-toSearch1 = f where
+toSearch :: SearchExp -> Either String Search
+toSearch = f where
   f (MatchAll  searches) = matchAll  <$> t searches
   f (MatchAny  searches) = matchAny  <$> t searches
   f (MatchNone searches) = matchNone <$> t searches
-  f (Prim search)        = return $ primToSearch1 search
-  t = traverse toSearch1
+  f (Prim search)        = return $ primToSearch search
+  t = traverse toSearch
 
-primToSearch1 :: PrimSearchExp -> Search1
-primToSearch1 (StartsWith pat) = startsWith $ show pat
-primToSearch1 (EndsWith   pat) = endsWith   $ show pat
-primToSearch1 (LetterAt   l n) = containsLetterAtPos l n
-primToSearch1 (NoneOf     ls)  = containsNone ls
-primToSearch1 (AnyOf      ls)  = containsAny  ls
-primToSearch1 (AllOf      ls)  = containsAll  ls
-primToSearch1 (Only       ls)  = containsOnly ls
-primToSearch1 (LooksLike  pat) = looksLike $ show pat
-primToSearch1 (Regex r)        = regex r
-
--- TODO: check if input chars are bad
--- a lot of error handling isn't happening here
--- this code is really bad
-makePutWord :: String      ->
-               Orientation ->
-               Position    ->
-               [Char]      ->
-               Either String PutWord
-makePutWord w o p blanks = return $ PutWord putTils where
-
-  coords :: [(Int,Int)]
-  coords = reverse . fst $ foldl f ([],coors p) w where
-    f (acc,p) c = (p:acc, catOrientation rightOfP belowP o p)
-
-  putTils :: [PutTile]
-  putTils = catMaybes $ zipWith f w (zip coords [0..]) where
-    f '@' _     = Nothing
-    f '_' (p,i) = plt (mkTile $ blanks !! i) (pos p)
-    f  c  (p,i) = plt (mkTile c) (pos p)
-    plt t p     = Just $ PutLetterTile t p
+primToSearch :: PrimSearchExp -> Search
+primToSearch (StartsWith pat) = startsWith $ show pat
+primToSearch (EndsWith   pat) = endsWith   $ show pat
+primToSearch (LetterAt   l n) = containsLetterAtPos l n
+primToSearch (NoneOf     ls)  = containsNone ls
+primToSearch (AnyOf      ls)  = containsAny  ls
+primToSearch (AllOf      ls)  = containsAll  ls
+primToSearch (Only       ls)  = containsOnly ls
+primToSearch (LooksLike  pat) = looksLike $ show pat
+primToSearch (Regex r)        = regex r

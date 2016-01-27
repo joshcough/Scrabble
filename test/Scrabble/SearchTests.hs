@@ -4,7 +4,8 @@ module Scrabble.SearchTests (tests) where
 
 import Data.Monoid (mempty)
 import Data.List
-import Scrabble
+import Scrabble.Search
+import System.IO.Unsafe
 import Test.Framework (testGroup)
 import Test.Framework.Providers.HUnit
 import Test.Framework.Providers.QuickCheck2 (testProperty)
@@ -12,11 +13,11 @@ import Test.Framework.TH
 import Test.QuickCheck
 import Test.QuickCheck.Instances.Char
 import Test.HUnit
-import Scrabble.Search
-import TestHelpers
+
+dict = unsafePerformIO dictionary
 
 string = listOf lowerAlpha
-search = searchDictForPowersetSorted
+search = searchWordBagForPowersetSorted
 
 prop_startsWith_self     = forAll string $ \s -> startsWith  s s
 prop_containsAll_self    = forAll string $ \s -> containsAll s s
