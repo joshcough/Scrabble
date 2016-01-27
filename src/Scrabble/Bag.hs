@@ -15,7 +15,6 @@ module Scrabble.Bag (
  ,tileFromChar
 ) where
 
-import qualified Data.Char as Char
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
 import Data.Maybe (fromJust)
@@ -34,7 +33,7 @@ instance HasLetter Tile where
   letter (Tile l _) = l
 
 instance Show Tile where
-  show (Tile letter _) = show letter
+  show (Tile l _) = show l
 
 mkTile :: Letter -> Tile
 mkTile l = Tile l (fromJust $ Map.lookup l points)

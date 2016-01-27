@@ -18,8 +18,6 @@ module Scrabble (
 
 import Control.Exception (catch, SomeException)
 import Control.Monad (when)
-import Data.Char (toUpper)
-import Data.Maybe (fromJust)
 import Prelude hiding (Word)
 import Scrabble.Bag
 import Scrabble.Board
@@ -33,8 +31,6 @@ import Scrabble.Matrix
 import Scrabble.Play
 import Scrabble.Position
 import Scrabble.ReplHelpers
-import Scrabble.Search
-import System.IO.Unsafe
 
 start :: [Player] -> IO ()
 start players = do
@@ -67,6 +63,7 @@ humanTurn b g = do
 aiTurn :: Board b => Game b -> Game b
 aiTurn g = error "todo: aiTurn"
 
+help :: [Char]
 help = "help unimplemented"
 
 applyRes :: Board b =>

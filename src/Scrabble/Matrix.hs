@@ -11,9 +11,7 @@ module Scrabble.Matrix
   ) where
 
 import Data.Functor.Compose (Compose(..))
-import Data.Map.Strict (Map)
-import qualified Data.Map.Strict as Map
-import Data.Maybe (Maybe,fromMaybe,catMaybes)
+import Data.Maybe (fromMaybe,catMaybes)
 import Scrabble.Position (Pos(..), neighborsP)
 
 class Vec m where
@@ -69,6 +67,9 @@ instance Matrix ListMatrix where
   rightOf m p = fromMaybe [] $ after  (x p) <$> row m (y p)
 
 {-
+import Data.Map.Strict (Map)
+import qualified Data.Map.Strict as Map
+
 pattern MM a     = Compose a
 type MapMatrix p = Compose (Map p) (Map p)
 

@@ -7,6 +7,7 @@ module Scrabble.Dictionary (
  ,HasLetter(..)
  ,dictContainsWord
  ,dictionary
+ ,dictionaryUnsafe
  ,fromChar
  ,wordFromString
  ,toChar
@@ -14,7 +15,6 @@ module Scrabble.Dictionary (
 ) where
 
 import Data.Char (toUpper)
-import Data.Maybe (Maybe)
 import qualified Data.Maybe as Maybe
 import Data.Map (Map)
 import qualified Data.Map as Map
@@ -22,7 +22,6 @@ import Data.Set (Set)
 import qualified Data.Set as Set
 import Data.Tuple (swap)
 import Prelude hiding (Word)
-import Scrabble.Position
 import System.IO.Unsafe
 
 data Letter =
@@ -75,6 +74,7 @@ dictionary = do
   return $ Set.fromList (fmap f <$> lines d) where
   f = Maybe.fromJust . fromChar . toUpper
 
+dictionaryUnsafe :: Dict
 dictionaryUnsafe = unsafePerformIO dictionary
 
 dictContainsWord :: Dict -> Word -> Bool

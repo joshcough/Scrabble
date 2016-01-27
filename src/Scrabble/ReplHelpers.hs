@@ -2,16 +2,11 @@
 
 module Scrabble.ReplHelpers where
 
-import Control.Exception (catch, SomeException)
-import Control.Monad (when)
 import Data.Char (toUpper)
 import Data.Maybe (fromJust)
 import Prelude hiding (Word)
 import Scrabble.Bag
 import Scrabble.Board
-import Scrabble.Commands.AST
-import Scrabble.Commands.Interpreter
-import Scrabble.Commands.SExpr
 import Scrabble.Dictionary
 import Scrabble.Game
 import Scrabble.ListBoard
@@ -21,6 +16,7 @@ import Scrabble.Position
 import Scrabble.Search
 import System.IO.Unsafe
 
+quickBoard :: ListBoard
 quickBoard = newBoard :: ListBoard
 
 {- test putting some words on a brand new board -}

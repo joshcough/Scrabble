@@ -3,11 +3,7 @@
 
 module Scrabble.Board where
 
-import Data.List (any, foldl', intersperse, partition)
-import Data.Maybe (Maybe)
 import qualified Data.Maybe as Maybe
-import Data.Set (Set)
-import qualified Data.Set as Set
 import Scrabble.Bag
 import Scrabble.Dictionary
 import Scrabble.Matrix
@@ -43,7 +39,7 @@ taken :: Square -> Bool
 taken = not . emptySquare
 
 showSquare :: Bool -> Square -> String
-showSquare printBonus (Square mt b p) =
+showSquare printBonus (Square mt b _) =
   maybe (if printBonus then show b else "  ") (\t -> ' ' : show (letter t)) mt
 
 debugSquare :: Square -> String
@@ -111,6 +107,7 @@ boardBonuses = indexify [
 -- Yes, technically you can have a board that isn't 15x15.
 -- But let's consider that a programming error.
 -- If the center tile (7,7) is missing, just error out.
+centerPosition :: Position
 centerPosition = (Position 7 7)
 
 {- all the tiles 'before' a position in a matrix,
@@ -149,9 +146,9 @@ getWordAt b p o = tile <$> here >>= f where
 emptyConnectedPositions :: (Foldable b, Board b) =>
                            b Square -> [Square]
 emptyConnectedPositions b =
-  filter (legalSquare b) $ foldr (:) [] b where
+  filter legalSquare $ foldr (:) [] b where
     -- is it legal to put a tile in this square?
     -- if its filled, it's obviously not legal
-    legalSquare b s | taken s = False
+    legalSquare s | taken s = False
     -- otherwise, if it has any filled neighbors, it's ok.
-    legalSquare b s = or $ taken <$> neighbors b (pos s)
+    legalSquare s = or $ taken <$> neighbors b (pos s)

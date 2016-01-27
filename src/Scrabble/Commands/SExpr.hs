@@ -34,7 +34,6 @@ import Data.Char (isDigit, isSpace)
 import qualified Data.HashSet as HashSet
 import Data.Int
 import Data.List (intersperse)
-import Data.Semigroup
 import Text.Parser.Combinators
 import Text.Parser.Token
 import qualified Text.Parser.Token.Highlight as Highlight

@@ -4,8 +4,7 @@
 module Scrabble.Play where
 
 import Data.Char (toUpper)
-import Data.List (any, delete, foldl', groupBy, intersperse, partition, sort)
-import Data.Maybe (Maybe)
+import Data.List (delete, foldl', intersperse, partition)
 import qualified Data.Maybe as Maybe
 import Data.Set (Set)
 import qualified Data.Set as Set
@@ -46,6 +45,7 @@ instance HasPosition PutTile where
   pos (PutLetterTile _ p) = p
   pos (PutBlankTile  _ p) = p
 
+asTile :: PutTile -> Tile
 asTile (PutLetterTile t _) = t
 asTile (PutBlankTile  l _) = fromLetter l
 
@@ -68,6 +68,7 @@ scoreWord word playedSquares =
   scoreLetter :: Square -> Set Square -> Score
   scoreLetter s@(Square (Just t) bonus _) playedSquares =
     if Set.member s playedSquares then letterBonus t bonus else score t
+  scoreLetter _ _ = 0
 
   {- determine the word multipliers for this word
     (based on using any 2W or 3W tiles -}
@@ -229,6 +230,7 @@ makePutWord :: String      ->
                Either String PutWord
 makePutWord w o p blanks = PutWord <$> putTils where
 
+  -- TODO: this code sucks...what is it even doing?
   coords :: [(Int,Int)]
   coords = reverse . fst $ foldl f ([],coors p) w where
     f (acc,p) c = (p:acc, catOrientation rightOfP belowP o p)
@@ -238,7 +240,8 @@ makePutWord w o p blanks = PutWord <$> putTils where
     f :: Char -> ((Int,Int),Int) -> Either String (Maybe PutTile)
     f '@' _     = Right Nothing
     f '_' (p,i) = plt (blanks !! i) (pos p)
-    f  c  (p,i) = plt c (pos p)
+    f  c  (p,_) = plt c (pos p)
+    -- TODO: why is this function called plt? also, add comment.
     plt :: Char -> Position -> Either String (Maybe PutTile)
     plt c p     = Just <$> (PutLetterTile <$> maybe (err c) Right (tileFromChar c) <*> pure p)
     err c       = Left $ "invalid character: " ++ [c]
@@ -246,11 +249,11 @@ makePutWord w o p blanks = PutWord <$> putTils where
 applyPutWord :: (Foldable b, Board b, Vec (Row b)) => Game b ->
                                                       PutWord ->
                                                       Either String (Game b)
-applyPutWord g@(Game (p:_) board bag dict) pw =
+applyPutWord g@(Game (p:_) board _ dict) pw =
   applyMove g <$> createMove board (playerRack p) pw dict
 
 applyMove :: Board b => Game b -> Move b -> Game b
-applyMove g@(Game (p:ps) _ bag d) (Move pts rack newBoard) =
+applyMove (Game (p:ps) _ bag d) (Move pts rack newBoard) =
   Game (ps++[p']) newBoard bag' d where
     (t',bag') = fillRack rack bag
     newScore  = playerScore p + pts

@@ -2,14 +2,11 @@
 
 module Scrabble.Game where
 
-import Data.Char (toUpper)
-import Data.List (delete,groupBy,intersperse)
-import Data.Maybe (catMaybes)
-import Debug.Trace
+import Data.List (intersperse)
 import Scrabble.Bag
 import Scrabble.Board
 import Scrabble.Dictionary
-import Scrabble.ListBoard
+import Scrabble.ListBoard()
 import Scrabble.Matrix
 
 type Name = String
@@ -80,6 +77,7 @@ currentPlayer = head . gamePlayers
 
 nextPlayer :: Board b => Game b -> Game b
 nextPlayer g@(Game (p:ps) _ _ _) = g { gamePlayers = ps++[p] }
+nextPlayer g = g
 
 skipTurn :: Board b => Game b -> Game b
 skipTurn = nextPlayer
@@ -90,7 +88,7 @@ fillRacks ps bag = foldl f ([], bag) ps where
     (p',b') = fillPlayerRack p b
 
 isGameOver :: Board b => Game b -> Bool
-isGameOver (Game players _ bag _) = False -- TODO!
+isGameOver (Game _ _ _ _) = False -- TODO!
 
 getScores :: Game a -> [(Name, Score)]
 getScores g = getNameAndScore <$> gamePlayers g

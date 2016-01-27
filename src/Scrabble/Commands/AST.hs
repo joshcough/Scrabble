@@ -1,13 +1,8 @@
 module Scrabble.Commands.AST where
 
-import Data.Char (toUpper)
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
-import Data.Maybe (catMaybes)
-import Debug.Trace
-import Scrabble.Bag
 import Scrabble.Board
-import Scrabble.Dictionary
 import Scrabble.Play
 import Scrabble.Position
 import Scrabble.Search
@@ -53,7 +48,8 @@ instance FromSExpr ScrabbleExp where
     f [AtomSym "search", s]    = Search <$> fromSExpr s
     f (AtomSym "place" : info) = parsePlace info
     f (AtomSym "show"  : exps) = parseShowExps (showSExpr_ <$> exps)
-    f bad                      = parseError_ "bad command" exp
+    f _                        = parseError_ "bad command" exp
+  fromSExpr bad                = parseError_ "bad command" bad
 
 parseShowExps :: [String] -> Either String ScrabbleExp
 parseShowExps = p where
@@ -68,7 +64,7 @@ parsePlace :: [SExpr] -> Either String ScrabbleExp
 parsePlace l = parsePlace' l where
   parsePlace' [AtomSym w, o, p, AtomSym b] = f w o p b
   parsePlace' [AtomSym w, o, p]            = f w o p ""
-  parsePlace  bad = parseError_ "bad placement" bad
+  parsePlace' bad = parseError_ "bad placement" (List bad)
   f w o p b = do
     o' <- fromSExpr o
     p' <- fromSExpr p
@@ -111,6 +107,7 @@ instance FromSExpr PrimSearchExp where
       maybe err (\g -> return $ g s) (Map.lookup kw searchKeyWords)
     f   _ = err
     err = parseError_ "bad search" exp
+  fromSExpr bad = parseError_ "bad search" bad
 
 toSearch :: SearchExp -> Either String Search
 toSearch = f where

@@ -3,12 +3,14 @@ module Scrabble.Search (
  ,all
  ,and
  ,Scrabble.Search.any
+ ,cheat
  ,containsAll
  ,containsAny
  ,containsNone
  ,containsOnly
  ,containsLetterAtPos
  ,dictionary
+ ,dictionaryUnsafe
  ,endsWith
  ,looksLike
  ,matchAll
@@ -28,7 +30,7 @@ import Control.Monad ((<=<))
 import Data.Foldable hiding (and, or, all)
 import Control.Monad (filterM)
 import Data.Char (toUpper)
-import Data.List (delete, foldl', sort, permutations, group, tails)
+import Data.List (delete, sort, permutations)
 import qualified Data.List as List
 import Data.Set (Set)
 import qualified Data.Set as Set
@@ -60,8 +62,7 @@ containsAny = contains' List.any . ups where
 -- ABCABCABC `containsOnly` ABC => true
 containsOnly :: String -> Search
 containsOnly t w = foldl f True (ups t) where
-  w' = ups w
-  f acc c = elem c w'
+  f acc c = acc && elem c (ups w)
 
 containsNone :: String -> Search
 containsNone t = not . containsAny t
@@ -85,9 +86,6 @@ regex r w = error "todo"
 ups :: String -> String
 ups = List.sort . fmap toUpper
 
-downs :: String -> String
-downs = List.sort . fmap toUpper
-
 ------ Search combinators ------
 
 or :: Search -> Search -> Search
@@ -95,12 +93,6 @@ or s1 s2 w = s1 w || s2 w
 
 and :: Search -> Search -> Search
 and s1 s2 w = s1 w && s2 w
-
-any' :: [Search] -> Search
-any' = foldr or (const False)
-
-all' :: [Search] -> Search
-all' = foldr and (const True)
 
 combine :: Bool                         ->
            (Search -> Search -> Search) ->
@@ -117,8 +109,13 @@ all = combine True and
 none :: [Search] -> Search
 none ss w = not (all ss w)
 
+matchAll :: [Search] -> Search
 matchAll  = Scrabble.Search.all
+
+matchAny :: [Search] -> Search
 matchAny  = Scrabble.Search.any
+
+matchNone :: [Search] -> Search
 matchNone = Scrabble.Search.none
 
 ------ Dictionary Searching ---------
@@ -128,6 +125,7 @@ dictionary = do
   d <- readFile "./dict/en.txt"
   return $ Set.fromList (fmap toUpper <$> lines d)
 
+dictionaryUnsafe :: Set String
 dictionaryUnsafe = unsafePerformIO dictionary
 
 -- Run a search on a whole bag of words
@@ -163,13 +161,19 @@ testSearch rack = do
   d <- dictionary
   return $ searchWordBagForPowersetSorted d rack
 
+{-
+Dan Doel gave me these to improve search speed
+
+shuffle :: [t] -> [t] -> [[t]]
 shuffle xs [] = [xs]
 shuffle [] ys = [ys]
 shuffle (x:xs) (y:ys) =
-  map (x:) (shuffle xs (y:ys))
-    ++ map (y:) (shuffle (x:xs) ys)
+  map (x:) (shuffle xs (y:ys)) ++ map (y:) (shuffle (x:xs) ys)
 
+anagrams :: [Char] -> [[Char]]
 anagrams = foldrM shuffle "" . group . sort
 
+subanagrams :: [Char] -> [[Char]]
 subanagrams = foldrM f "" . map tails . group . sort where
   f is j = is >>= flip shuffle j
+-}
