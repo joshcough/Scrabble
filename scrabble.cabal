@@ -79,6 +79,7 @@ test-suite tests
     build-depends:
       base >= 4.7 && < 5
      ,checkers
+     ,containers
      ,directory
      ,data-default
      ,filemanip

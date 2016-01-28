@@ -70,7 +70,7 @@ containsNone t = not . containsAny t
 
 containsLetterAtPos :: Char -> Int -> Search
 containsLetterAtPos l n w =
-  if n >= length w then False else w !! n == l
+  if n >= length w then False else w !! n == (toUpper l)
 
 endsWith :: String -> Search
 endsWith s w = startsWith (reverse s) (reverse w)

@@ -4,6 +4,8 @@ module Scrabble.SearchTests (tests) where
 
 import Data.Monoid (mempty)
 import Data.List
+import Data.Set (Set)
+import qualified Data.Set as Set
 import Scrabble.Search
 import System.IO.Unsafe
 import Test.Framework (testGroup)
@@ -33,6 +35,12 @@ case_containsOnly   = containsOnly "abc"   "abc"          @?= True
 case_search_ANIMALS = search dict "ANIMALS" @?= searchANIMALS
 case_search_ANSXYZQ = search dict "ANSXYZQ" @?= searchANSXYZQ
 case_search_SMITH   = search dict "SMITH"   @?= searchSMITH
+case_z_and_w_at_4   = runSearch
+  (matchAll [containsAny "z", containsLetterAtPos 'w' 4]) dict @?= searchZandW4
+
+searchZandW4 = Set.fromList [
+   "BUZZWIG","BUZZWIGS","BUZZWORD","BUZZWORDS","UNBOWDLERIZED",
+   "ZUGZWANG","ZUGZWANGED","ZUGZWANGING","ZUGZWANGS"]
 
 searchANIMALS =
   ["AA","AAL","AALS","AAS","AI","AIA","AIAS","AIL","AILS","AIM","AIMS",
