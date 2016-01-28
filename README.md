@@ -63,7 +63,7 @@ Place the word 'rest' vertically at position (7,7). You can only place things in
 ### What code is here
 
 ```
-$ tree .
+$ tree src
 .
 ├── Scrabble
 │   ├── Bag.hs             -- Tile and Bag representation
