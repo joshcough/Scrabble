@@ -1,4 +1,6 @@
 {-# LANGUAGE FlexibleContexts #-}
+
+-- | Interpreter for player input
 module Scrabble.Commands.Interpreter where
 
 import Data.List (sort)
@@ -10,7 +12,6 @@ import Scrabble.Commands.AST
 import qualified Scrabble.Commands.SExpr as S
 import Scrabble.Game
 import Scrabble.Matrix
-import Scrabble.Play
 import Prelude hiding (Word)
 
 interpret :: (Foldable b, Board b, Vec (Row b)) =>
@@ -34,14 +35,14 @@ interpretExp :: (Foldable b, Board b, Vec (Row b)) =>
                 Game b      ->
                 ScrabbleExp ->
                 Either String (CommandResult b)
-interpretExp g@(Game _ board _ dict) = f where
+interpretExp g@(Game _ board _ dict _) = f where
   f Skip                    = return . TurnComplete $ nextPlayer g
   f Quit                    = return   GameOver
   f (ShowExp ShowHelp)      = return . Print $ PrintHelp
   f (ShowExp (ShowBoard b)) = return . Print $ PrintBoard b board
   f (ShowExp ShowScores)    = return . Print . PrintScores $ getScores g
   f (Search search)         = Print  . QueryResult <$> runSearch search dict
-  f (Place pw)              = TurnComplete <$> applyPutWord g pw
+  f (Place wp)              = TurnComplete <$> applyWordPut g wp
 
 runSearch :: SearchExp -> Dict -> Either String [(Word, Points)]
 runSearch search dict = f <$> toSearch search where

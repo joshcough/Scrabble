@@ -2,6 +2,8 @@
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeSynonymInstances #-}
+
+-- | Generic matrix code used to represent the board
 module Scrabble.Matrix
   ( Matrix(..)
   , ListMatrix

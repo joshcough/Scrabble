@@ -1,5 +1,6 @@
 {-# LANGUAGE FlexibleContexts #-}
 
+-- | Some quick testing helper functions for use on the REPL.
 module Scrabble.ReplHelpers where
 
 import Data.Char (toUpper)
@@ -11,7 +12,7 @@ import Scrabble.Dictionary
 import Scrabble.Game
 import Scrabble.ListBoard
 import Scrabble.Matrix
-import Scrabble.Play
+import Scrabble.Move.Move
 import Scrabble.Position
 import Scrabble.Search
 import System.IO.Unsafe
@@ -33,31 +34,31 @@ putManyWords :: (Foldable b, Board b, Vec (Row b)) =>
   b Square ->
   Dict     ->
   Either String (b Square,[Score])
-putManyWords words b dict = go (b,[]) putWords where
+putManyWords words b dict = go (b,[]) wordPuts where
   {- TODO: this is pretty awful
      I think EitherT over State could clean it up,
      but not sure if i want to do that.
      Also, I can't put the type here, again.
   -}
-  --go :: (b Square, [Score]) -> [PutWord] -> Either String (b Square, [Score])
+  --go :: (b Square, [Score]) -> [WordPut] -> Either String (b Square, [Score])
   go (b,ss) pws = foldl f (Right (b,ss)) pws where
-    f acc pw = do
+    f acc wp = do
       (b,scores) <- acc
-      (b',score) <- putWord b pw dict
+      (b',score) <- wordPut b wp dict
       return (b',scores++[score])
 
-  putWords :: [PutWord]
-  putWords =  (\(s,o,p) -> toPutWord s o p) <$> words where
-    toPutWord :: String -> Orientation -> (Int, Int) -> PutWord
-    toPutWord w o (x,y) = PutWord putTils where
+  wordPuts :: [WordPut]
+  wordPuts =  (\(s,o,p) -> toWordPut s o p) <$> words where
+    toWordPut :: String -> Orientation -> (Int, Int) -> WordPut
+    toWordPut w o (x,y) = WordPut putTils where
       adder :: (Int, Int) -> (Int, Int)
       adder = catOrientation (\(x,y) -> (x+1,y)) (\(x,y) -> (x,y+1)) o
       coordinates :: [(Int,Int)]
       coordinates = reverse . fst $ foldl f ([],(x,y)) w where
         f (acc,(x,y)) c = ((x,y):acc, adder (x,y))
-      putTils :: [PutTile]
+      putTils :: [TilePut]
       putTils = zipWith f w coordinates where
-        f c xy = PutLetterTile (fromJust $ tileFromChar (toUpper c)) (pos xy)
+        f c xy = LetterTilePut (fromJust $ tileFromChar (toUpper c)) (pos xy)
 
 {- Search the dictionary with a new random rack -}
 testSearchR :: IO (Rack, [Word])

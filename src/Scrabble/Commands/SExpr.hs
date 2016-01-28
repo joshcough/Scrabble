@@ -1,6 +1,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE DefaultSignatures #-}
 
+-- | Generic sexpr parser
 module Scrabble.Commands.SExpr
   (
     ParseResult

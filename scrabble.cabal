@@ -28,7 +28,11 @@ library
     Scrabble.Game
     Scrabble.ListBoard
     Scrabble.Matrix
-    Scrabble.Play
+    Scrabble.Move.Move
+    Scrabble.Move.MoveHelpers
+    Scrabble.Move.Scoring
+    Scrabble.Move.Validation
+    Scrabble.Move.WordPut
     Scrabble.Position
     Scrabble.ReplHelpers
     Scrabble.Search

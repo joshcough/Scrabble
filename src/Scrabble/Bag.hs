@@ -1,3 +1,4 @@
+-- | Tile and Bag representation
 module Scrabble.Bag (
   Bag
  ,Points

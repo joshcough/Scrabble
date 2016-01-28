@@ -1,13 +1,18 @@
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE StandaloneDeriving #-}
 
+-- | Player and Game state representation
 module Scrabble.Game where
 
+import Data.Char (toUpper)
 import Data.List (intersperse)
 import Scrabble.Bag
 import Scrabble.Board
 import Scrabble.Dictionary
-import Scrabble.ListBoard()
+import Scrabble.ListBoard ()
 import Scrabble.Matrix
+import Scrabble.Move.Move
+import Scrabble.Position
 
 type Name = String
 
@@ -52,31 +57,39 @@ fillRack t bag = (t ++ take n bag, drop n bag) where
 isHuman :: Player -> Bool
 isHuman p = playerType p == Human
 
+data Turn b = Turn {
+  turnPlayer :: Player
+ ,turnMove   :: Move b
+ ,turnGameBeforeTurn :: Game b
+}
+
 data Game b = Game {
-  gamePlayers :: [Player],
-  gameBoard   :: b Square,
-  gameBag     :: Bag,
-  gameDict    :: Dict }
+  gamePlayers :: [Player]
+ ,gameBoard   :: b Square
+ ,gameBag     :: Bag
+ ,gameDict    :: Dict
+ ,turns       :: [Turn b] }
 
 newGame :: [Player] -> IO (Game ListMatrix)
 newGame ps = do
   bag  <- newBag
   dict <- Scrabble.Dictionary.dictionary
   let (players,bag') = fillRacks ps bag
-  return $ Game (reverse players) newBoard bag' dict
+  return $ Game (reverse players) newBoard bag' dict []
 
 --deriving instance Eq b => Eq (Game (b Square))
 
 instance Board b => Show (Game b) where
-  show (Game ps brd bag dict) = concat $
-    intersperse ", " ["Game {", show ps, brd', show bag, "}"] where
-      brd' = showBoard brd True
+  show (Game ps brd bag dict turns) = concat $ intersperse ", "
+    ["Game {", show ps, brd', show bag, turns', "}"] where
+      brd'   = showBoard brd True
+      turns' = "nr turns:" ++ show (length turns)
 
 currentPlayer :: Board b => Game b -> Player
 currentPlayer = head . gamePlayers
 
 nextPlayer :: Board b => Game b -> Game b
-nextPlayer g@(Game (p:ps) _ _ _) = g { gamePlayers = ps++[p] }
+nextPlayer g@(Game (p:ps) _ _ _ _) = g { gamePlayers = ps++[p] }
 nextPlayer g = g
 
 skipTurn :: Board b => Game b -> Game b
@@ -88,7 +101,27 @@ fillRacks ps bag = foldl f ([], bag) ps where
     (p',b') = fillPlayerRack p b
 
 isGameOver :: Board b => Game b -> Bool
-isGameOver (Game _ _ _ _) = False -- TODO!
+isGameOver (Game _ _ _ _ _) = False -- TODO!
 
 getScores :: Game a -> [(Name, Score)]
 getScores g = getNameAndScore <$> gamePlayers g
+
+-- | Put a WordPut on the game's board by first creating the move
+-- and then simply calling applyMove
+applyWordPut :: (Foldable b, Board b, Vec (Row b)) => Game b ->
+                                                      WordPut ->
+                                                      Either String (Game b)
+applyWordPut g@(Game (p:_) board _ dict _) wp =
+  applyMove g <$> createMove board (playerRack p) wp dict
+
+-- | applyMove does all of the following
+-- * fills the rack of the player that made the move
+-- * updates the score for that player
+-- * moves the that player to the end, bringing up the next player.
+-- * adds turn to the game's turn list.
+applyMove :: Board b => Game b -> Move b -> Game b
+applyMove g@(Game (p:ps) _ bag d ts) m@(Move wp pts rackAfter newBoard) =
+  Game (ps++[p']) newBoard bag' d (t':ts) where
+    (r',bag') = fillRack rackAfter bag
+    p' = p {playerRack = r', playerScore = playerScore p + pts}
+    t' = Turn p m g

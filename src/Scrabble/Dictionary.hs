@@ -1,5 +1,6 @@
 {-# LANGUAGE FlexibleInstances #-}
 
+-- | Letter and Dictionary representation
 module Scrabble.Dictionary (
   Word
  ,Dict

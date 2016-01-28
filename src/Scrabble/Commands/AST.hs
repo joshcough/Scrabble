@@ -1,9 +1,10 @@
+-- | AST for player input (and parsing)
 module Scrabble.Commands.AST where
 
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
 import Scrabble.Board
-import Scrabble.Play
+import Scrabble.Move.WordPut
 import Scrabble.Position
 import Scrabble.Search
 import Scrabble.Commands.SExpr
@@ -12,7 +13,7 @@ type Regex = String
 
 data ScrabbleExp =
   Search  SearchExp |
-  Place   PutWord   |
+  Place   WordPut   |
   Skip              |
   Quit              |
   ShowExp ShowExp -- TODO rename to ShowBoard or something
@@ -68,7 +69,7 @@ parsePlace l = parsePlace' l where
   f w o p b = do
     o' <- fromSExpr o
     p' <- fromSExpr p
-    Place <$> makePutWord w o' p' b
+    Place <$> makeWordPut w o' p' b
 
 instance FromSExpr Position where
   fromSExpr (List [AtomNum x, AtomNum y]) =

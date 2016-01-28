@@ -77,7 +77,12 @@ $ tree .
 │   │   ├── Game.hs
 │   │   ├── ListBoard.hs
 │   │   ├── Matrix.hs
-│   │   ├── Play.hs
+│   │   ├── Move
+│   │   │   ├── Move.hs
+│   │   │   ├── MoveHelpers.hs
+│   │   │   ├── Scoring.hs
+│   │   │   ├── Validation.hs
+│   │   │   └── WordPut.hs
 │   │   ├── Position.hs
 │   │   ├── ReplHelpers.hs
 │   │   └── Search.hs
@@ -103,7 +108,7 @@ Info about code in the main src tree:
 * Scrabble/Game.hs        - Player and Game state representation
 * Scrabble/ListBoard.hs   - A list based representation of the board
 * Scrabble/Matrix.hs      - Generic matrix code used to represent the board
-* Scrabble/Play.hs        - Code for placing tiles onto the board, validation, scoring, etc.
+* Scrabble/Move/*         - Code for placing tiles onto the board, validation, scoring, etc.
 * Scrabble/Position.hs    - Simple code to represent (x,y) coordinates.
 * Scrabble/ReplHelpers.hs - Some quick testing helper functions for use on the REPL.
 * Scrabble/Search.hs      - Code for searching the dictionary

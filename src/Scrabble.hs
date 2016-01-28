@@ -1,5 +1,6 @@
 {-# LANGUAGE FlexibleContexts #-}
 
+-- | Main entry point
 module Scrabble (
   module Scrabble.Bag
  ,module Scrabble.Board
@@ -10,7 +11,7 @@ module Scrabble (
  ,module Scrabble.Game
  ,module Scrabble.ListBoard
  ,module Scrabble.Matrix
- ,module Scrabble.Play
+ ,module Scrabble.Move.Move
  ,module Scrabble.Position
  ,module Scrabble.ReplHelpers
  ,start
@@ -28,7 +29,7 @@ import Scrabble.Dictionary
 import Scrabble.Game
 import Scrabble.ListBoard
 import Scrabble.Matrix
-import Scrabble.Play
+import Scrabble.Move.Move
 import Scrabble.Position
 import Scrabble.ReplHelpers
 

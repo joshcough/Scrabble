@@ -1,6 +1,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
+-- | Board representation
 module Scrabble.Board where
 
 import qualified Data.Maybe as Maybe

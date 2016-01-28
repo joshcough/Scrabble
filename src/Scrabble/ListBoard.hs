@@ -1,6 +1,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 
+-- | A list based representation of a Scrabble board
 module Scrabble.ListBoard where
 
 import Data.List (intercalate)

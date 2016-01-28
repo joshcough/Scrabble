@@ -1,5 +1,6 @@
 {-# LANGUAGE FlexibleInstances #-}
 
+-- | Simple code to represent (x,y) coordinates.
 module Scrabble.Position (
   HasPosition(..)
  ,Pos(..)

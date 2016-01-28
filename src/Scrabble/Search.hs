@@ -1,3 +1,4 @@
+-- | Code combinators searching through a dictionary
 module Scrabble.Search (
   Search
  ,all
