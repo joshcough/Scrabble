@@ -5,6 +5,8 @@
 
 This is a Haskell implementation of Scrabble.
 
+Todo: GUI, Network game server, AI engine.
+
 ### Getting started
 
 First things first, install stack: http://docs.haskellstack.org/en/stable/README.html#how-to-install
