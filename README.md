@@ -65,57 +65,26 @@ Place the word 'rest' vertically at position (7,7). You can only place things in
 ```
 $ tree .
 .
-├── src
-│   ├── Scrabble
-│   │   ├── Bag.hs
-│   │   ├── Board.hs
-│   │   ├── Commands
-│   │   │   ├── AST.hs
-│   │   │   ├── Interpreter.hs
-│   │   │   └── SExpr.hs
-│   │   ├── Dictionary.hs
-│   │   ├── Game.hs
-│   │   ├── ListBoard.hs
-│   │   ├── Matrix.hs
-│   │   ├── Move
-│   │   │   ├── Move.hs
-│   │   │   ├── MoveHelpers.hs
-│   │   │   ├── Scoring.hs
-│   │   │   ├── Validation.hs
-│   │   │   └── WordPut.hs
-│   │   ├── Position.hs
-│   │   ├── ReplHelpers.hs
-│   │   └── Search.hs
-│   └── Scrabble.hs
-└── test
-    ├── Main.hs
-    ├── Scrabble
-    │   ├── BagTests.hs
-    │   ├── BoardTests.hs
-    │   ├── GameTests.hs
-    │   ├── ScrabbleArbitrary.hs
-    │   ├── ScrabbleTests.hs
-    │   └── SearchTests.hs
-    └── TestHelpers.hs
+├── Scrabble
+│   ├── Bag.hs             -- Tile and Bag representation
+│   ├── Board.hs           -- Board representation
+│   ├── Commands           -- Code for inputting game commands
+│   │   ├── AST.hs         -- AST for player input (and parsing)
+│   │   ├── Interpreter.hs -- Interpreter for player input
+│   │   └── SExpr.hs       -- Generic sexpr parser
+│   ├── Dictionary.hs      -- Letter and Dictionary representation
+│   ├── Game.hs            -- Player and Game state representation
+│   ├── ListBoard.hs       -- A list based representation of the board
+│   ├── Matrix.hs          -- Generic matrix code used to represent the board
+│   ├── Move               -- Making a move, validation, scoring, etc
+│   │   ├── Move.hs        -- Move representation and functions to make moves
+│   │   ├── MoveHelpers.hs -- Code used by both scoring and validation
+│   │   ├── Scoring.hs     -- Calculates score for a move
+│   │   ├── Validation.hs  -- Checks to see if a move is valid
+│   │   └── WordPut.hs     -- Representation of tiles put on the board in a turn
+│   ├── Position.hs        -- Simple code to represent (x,y) coordinates
+│   ├── ReplHelpers.hs     -- Some quick testing helper functions for use on the REPL
+│   └── Search.hs          -- Code for searching the dictionary
+└── Scrabble.hs            -- Main entry point
 ```
-
-Info about code in the main src tree:
-
-* Scrabble.hs             - Main entry point
-* Scrabble/Bag.hs         - Tile and Bag representation
-* Scrabble/Board.hs       - Board representation
-* Scrabble/Dictionary.hs  - Letter and Dictionary representation
-* Scrabble/Game.hs        - Player and Game state representation
-* Scrabble/ListBoard.hs   - A list based representation of the board
-* Scrabble/Matrix.hs      - Generic matrix code used to represent the board
-* Scrabble/Move/*         - Code for placing tiles onto the board, validation, scoring, etc.
-* Scrabble/Position.hs    - Simple code to represent (x,y) coordinates.
-* Scrabble/ReplHelpers.hs - Some quick testing helper functions for use on the REPL.
-* Scrabble/Search.hs      - Code for searching the dictionary
-
-Code for inputting commands:
-
-* Scrabble/Commands/AST.hs         - AST for player input (and parsing)
-* Scrabble/Commands/Interpreter.hs - Interpreter for player input
-* Scrabble/Commands/SExpr.hs       - Generic sexpr parser
 
