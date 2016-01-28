@@ -82,8 +82,6 @@ $ tree .
 │   │   ├── ReplHelpers.hs
 │   │   └── Search.hs
 │   └── Scrabble.hs
-├── stack-version-info.txt
-├── stack.yaml
 └── test
     ├── Main.hs
     ├── Scrabble
