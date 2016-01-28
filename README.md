@@ -60,12 +60,11 @@ Place the word 'rest' vertically at position (7,7). You can only place things in
     *Scrabble> cheat (matchAll [containsAny "x", containsLetterAtPos 'b' 4, endsWith 'g'])
     ["exhibiting","exorbitating","extubating","kickboxing","soapboxing"]
 
-### What's here
+### What code is here
 
 ```
 $ tree .
 .
-├── scrabble.cabal
 ├── src
 │   ├── Scrabble
 │   │   ├── Bag.hs
@@ -74,32 +73,46 @@ $ tree .
 │   │   │   ├── AST.hs
 │   │   │   ├── Interpreter.hs
 │   │   │   └── SExpr.hs
+│   │   ├── Dictionary.hs
 │   │   ├── Game.hs
 │   │   ├── ListBoard.hs
 │   │   ├── Matrix.hs
+│   │   ├── Play.hs
 │   │   ├── Position.hs
-│   │   ├── Search.hs
-│   │   └── Types.hs
+│   │   ├── ReplHelpers.hs
+│   │   └── Search.hs
 │   └── Scrabble.hs
+├── stack-version-info.txt
+├── stack.yaml
 └── test
     ├── Main.hs
-    ├── ScrabbleTests.hs
-    └── UnitTests
-        └── TestHelpers.hs
+    ├── Scrabble
+    │   ├── BagTests.hs
+    │   ├── BoardTests.hs
+    │   ├── GameTests.hs
+    │   ├── ScrabbleArbitrary.hs
+    │   ├── ScrabbleTests.hs
+    │   └── SearchTests.hs
+    └── TestHelpers.hs
 ```
 
 Info about code in the main src tree:
 
-* Scrabble.hs           - the main entry point
-* Scrabble/Bag.hs       - code for the bag and tiles
-* Scrabble/Board.hs     - code for the board and placing tiles on it
+* Scrabble.hs             - Main entry point
+* Scrabble/Bag.hs         - Tile and Bag representation
+* Scrabble/Board.hs       - Board representation
+* Scrabble/Dictionary.hs  - Letter and Dictionary representation
+* Scrabble/Game.hs        - Player and Game state representation
+* Scrabble/ListBoard.hs   - A list based representation of the board
+* Scrabble/Matrix.hs      - Generic matrix code used to represent the board
+* Scrabble/Play.hs        - Code for placing tiles onto the board, validation, scoring, etc.
+* Scrabble/Position.hs    - Simple code to represent (x,y) coordinates.
+* Scrabble/ReplHelpers.hs - Some quick testing helper functions for use on the REPL.
+* Scrabble/Search.hs      - Code for searching the dictionary
+
+Code for inputting commands:
+
 * Scrabble/Commands/AST.hs         - AST for player input (and parsing)
-* Scrabble/Commands/Interpreter.hs - interpreter for player input
-* Scrabble/Commands/SExpr.hs       - generic sexpr parser
-* Scrabble/Game.hs      - code for managing game state
-* Scrabble/ListBoard.hs - A list based representation of the board.
-* Scrabble/Matrix.hs    - Generic matrix code used to represent the board.
-* Scrabble/Position.hs  - Simple code to represent (x,y) coordinates.
-* Scrabble/Search.hs    - code for searching the dictionary
-* Scrabble/Types.hs     - basic types needed for all of Scrabble.
+* Scrabble/Commands/Interpreter.hs - Interpreter for player input
+* Scrabble/Commands/SExpr.hs       - Generic sexpr parser
 
