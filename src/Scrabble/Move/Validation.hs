@@ -21,13 +21,12 @@ import Scrabble.Position
 --  5) On every turn after the first, at least one crossword must be formed
 --  6) All words formed must be inside the dictionary
 -- TODO: return all the errors.
-validateMove ::
-  (Vec (Row b), Foldable b, Board b, Pos p, Show p) =>
-  [(Square,TilePut,p)] -> -- ^ all the letters put down this turn
-  b Square ->             -- ^ old board
-  b Square ->             -- ^ new board
-  Dict     ->             -- ^ the dictionary
-  Either String ()
+validateMove :: (Vec (Row b), Foldable b, Board b, Pos p, Show p) =>
+     [(Square,TilePut,p)] -- ^ all the letters put down this turn
+  -> b Square             -- ^ old board
+  -> b Square             -- ^ new board
+  -> Dict                 -- ^ the dictionary
+  -> Either String ()
 validateMove move b b' dict = go where
   go =
     if null move
