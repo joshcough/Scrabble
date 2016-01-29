@@ -58,17 +58,18 @@ isHuman :: Player -> Bool
 isHuman p = playerType p == Human
 
 data Turn b = Turn {
-  turnPlayer :: Player
- ,turnMove   :: Move b
- ,turnGameBeforeTurn :: Game b
+  turnPlayer :: Player         -- ^ The player that made the move.
+ ,turnMove   :: Move b         -- ^ The contents of the move that was made.
+ ,turnGameBeforeTurn :: Game b -- ^ The game state before the move was made.
 }
 
 data Game b = Game {
-  gamePlayers :: [Player]
- ,gameBoard   :: b Square
- ,gameBag     :: Bag
- ,gameDict    :: Dict
- ,turns       :: [Turn b] }
+  gamePlayers :: [Player] -- ^ The players in this game.
+ ,gameBoard   :: b Square -- ^ The board, possibly with tiles on it.
+ ,gameBag     :: Bag      -- ^ The bag containing all the remaining tiles.
+ ,gameDict    :: Dict     -- ^ The official Scrabble English dictionary.
+ ,turns       :: [Turn b] -- ^ All the turns played in this game.
+}
 
 newGame :: [Player] -> IO (Game ListMatrix)
 newGame ps = do
