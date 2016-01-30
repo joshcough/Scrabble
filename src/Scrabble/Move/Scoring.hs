@@ -21,9 +21,9 @@ standardScoring = calculateTurnScore
 
 -- | Calculate the score for ALL words in a turn
 calculateTurnScore ::
-  [Square] -> -- ^ all the squares a player placed tiles in this turn
-  Board    -> -- ^ the board (with those tiles on it)
-  Score
+    [Square] -- ^ all the squares a player placed tiles in this turn
+  -> Board   -- ^ the board (with those tiles on it)
+  -> Score
 calculateTurnScore sqrs nextBoard = totalScore where
   totalScore = foldl f 0 s + bingoBonus
   s = Set.toList $ wordsPlayedInTurn sqrs nextBoard
