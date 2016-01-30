@@ -23,11 +23,11 @@ instance Arbitrary a => Arbitrary (Game a) where
   arbitrary = unsafeNewGame <$> listOf arbitrary
 
 {-
-this could be done better:
+this could be done with more interesting data:
 
-data Game b = Game {
+data Game = Game {
   gamePlayers :: [Player],
-  gameBoard   :: b Square,
+  gameBoard   :: Board,
   gameBag     :: Bag,
   gameDict    :: Dict }
 

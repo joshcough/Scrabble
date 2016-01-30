@@ -26,8 +26,6 @@ library
     Scrabble.Board
     Scrabble.Dictionary
     Scrabble.Game
-    Scrabble.ListBoard
-    Scrabble.Matrix
     Scrabble.Move.Move
     Scrabble.Move.MoveHelpers
     Scrabble.Move.Scoring

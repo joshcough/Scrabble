@@ -8,10 +8,22 @@ import qualified Data.Set as Set
 import Prelude hiding (Word)
 import Scrabble.Board
 import Scrabble.Dictionary
-import Scrabble.Matrix
 import Scrabble.Move.MoveHelpers
 import Scrabble.Move.WordPut
 import Scrabble.Position
+
+type Validator =
+    [(Square,TilePut,Point)] -- ^ all the letters put down this turn
+  -> Board                   -- ^ old board
+  -> Board                   -- ^ new board
+  -> Dict                    -- ^ the dictionary
+  -> Either String ()
+
+noValidation :: Validator
+noValidation _ _ _ _ = Right ()
+
+standardValidation :: Validator
+standardValidation = validateMove
 
 -- | Validate a move
 --  1) At least one tile must be connected
@@ -21,12 +33,7 @@ import Scrabble.Position
 --  5) On every turn after the first, at least one crossword must be formed
 --  6) All words formed must be inside the dictionary
 -- TODO: return all the errors.
-validateMove :: (Vec (Row b), Foldable b, Board b, Pos p, Show p) =>
-     [(Square,TilePut,p)] -- ^ all the letters put down this turn
-  -> b Square             -- ^ old board
-  -> b Square             -- ^ new board
-  -> Dict                 -- ^ the dictionary
-  -> Either String ()
+validateMove :: Validator
 validateMove move b b' dict = go where
   go =
     if null move
@@ -50,8 +57,8 @@ validateMove move b b' dict = go where
   legals = f <$> squaresPlayedInMove where
     f s = SquareLegality s
       (emptySquare s)
-      (or $ taken <$> neighbors b' (pos s))
-      (pos s == centerPosition)
+      (or $ taken <$> neighbors b' (squarePos s))
+      (squarePos s == centerPosition)
 
   centerSquarePlayed = or $ centerPlay <$> legals
 

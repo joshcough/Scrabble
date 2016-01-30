@@ -11,30 +11,25 @@ import Scrabble.Dictionary
 import Scrabble.Commands.AST
 import qualified Scrabble.Commands.SExpr as S
 import Scrabble.Game
-import Scrabble.Matrix
 import Prelude hiding (Word)
 
-interpret :: (Foldable b, Board b, Vec (Row b)) =>
-             Game b ->
-             String ->
-             Either String (CommandResult b)
+interpret :: Game -> String -> Either String CommandResult
 interpret g cmd = S.fromString cmd >>= interpretExp g
 
-data PrintCommand b =
+data PrintCommand =
     QueryResult [(Word, Points)]
   | PrintHelp
-  | PrintBoard Bool (b Square)
+  | PrintBoard Bool Board
   | PrintScores [(Name,Score)]
 
-data CommandResult b =
-    TurnComplete (Game b)
-  | Print (PrintCommand b)
+data CommandResult =
+    TurnComplete Game
+  | Print PrintCommand
   | GameOver
 
-interpretExp :: (Foldable b, Board b, Vec (Row b)) =>
-                Game b      ->
+interpretExp :: Game        ->
                 ScrabbleExp ->
-                Either String (CommandResult b)
+                Either String CommandResult
 interpretExp g@(Game _ board _ dict _) = f where
   f Skip                    = return . TurnComplete $ nextPlayer g
   f Quit                    = return   GameOver

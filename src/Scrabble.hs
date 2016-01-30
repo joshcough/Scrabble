@@ -9,8 +9,6 @@ module Scrabble (
  ,module Scrabble.Commands.SExpr
  ,module Scrabble.Dictionary
  ,module Scrabble.Game
- ,module Scrabble.ListBoard
- ,module Scrabble.Matrix
  ,module Scrabble.Move.Move
  ,module Scrabble.Position
  ,module Scrabble.ReplHelpers
@@ -27,8 +25,6 @@ import Scrabble.Commands.Interpreter
 import Scrabble.Commands.SExpr
 import Scrabble.Dictionary
 import Scrabble.Game
-import Scrabble.ListBoard
-import Scrabble.Matrix
 import Scrabble.Move.Move
 import Scrabble.Position
 import Scrabble.ReplHelpers
@@ -39,20 +35,20 @@ start players = do
   printGameBoard g True
   gameLoop g
 
-gameLoop :: (Foldable b, Board b, Vec (Row b)) => Game b -> IO ()
+gameLoop ::  Game -> IO ()
 gameLoop g | isGameOver g = gameOver g
 gameLoop g = singleTurn g >>= maybe (return ()) gameLoop where
 
 -- Just g means continue with game g.
 -- Nothing means game is over.
-singleTurn :: (Foldable b, Board b, Vec (Row b)) => Game b -> IO (Maybe (Game b))
+singleTurn :: Game -> IO (Maybe Game)
 singleTurn g =
  (if   isHuman (currentPlayer g)
   then humanTurn False g
   else return (Just $ aiTurn g)) `catch` handleErr where
   handleErr e = putStrLn (show (e :: SomeException)) >> return (Just g)
 
-humanTurn :: (Foldable b, Board b, Vec (Row b)) => Bool -> Game b -> IO (Maybe (Game b))
+humanTurn :: Bool -> Game -> IO (Maybe Game)
 humanTurn b g = do
   when b $ printGameBoard g True
   putStrLn $ "Turn for: " ++ show (currentPlayer g)
@@ -61,18 +57,17 @@ humanTurn b g = do
   either (handleErr g) (applyRes g) (interpret g command)
  where handleErr g s = putStrLn s >> humanTurn False g
 
-aiTurn :: Board b => Game b -> Game b
+aiTurn :: Game -> Game
 aiTurn g = error "todo: aiTurn"
 
 help :: [Char]
 help = "help unimplemented"
 
-applyRes :: Board b =>
-            Game b          ->
-            CommandResult b ->
-            IO (Maybe (Game b))
+applyRes :: Game          ->
+            CommandResult ->
+            IO (Maybe Game)
 applyRes g = ((\(io, g') -> io >> return g') . f g) where
-  f :: Board b => Game b -> CommandResult b -> (IO (), Maybe (Game b))
+  f :: Game -> CommandResult -> (IO (), Maybe Game)
   f _  GameOver                   = (pure (),               Nothing)
   f _ (TurnComplete g)            = (pure (),               Just g)
   f g (Print (QueryResult words)) = (putStrLn $ show words, Just g)
@@ -80,15 +75,8 @@ applyRes g = ((\(io, g') -> io >> return g') . f g) where
   f g (Print (PrintScores scrs))  = (putStrLn $ show scrs,  Just g)
   f g (Print (PrintBoard b brd))  = (printBoard brd b,      Just g)
 
-gameOver :: Board b => Game b -> IO ()
+gameOver :: Game -> IO ()
 gameOver g = putStrLn ("Game Over!\n" ++ show g)
 
 showHelp :: IO String
 showHelp = error "todo"
-
--- print the board contained in the Game
-printGameBoard :: Board b => Game b -> Bool -> IO ()
-printGameBoard g = printBoard (gameBoard g)
-
-printBoard :: Board b => b Square -> Bool -> IO ()
-printBoard b showBonuses = putStrLn $ showBoard b showBonuses

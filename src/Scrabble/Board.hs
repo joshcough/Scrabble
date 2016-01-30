@@ -2,12 +2,44 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
 -- | Board representation
-module Scrabble.Board where
+module Scrabble.Board (
+  Board
+ ,Bonus(..)
+ ,Orientation(..)
+ ,Square(..)
+ ,above
+ ,below
+ ,beforeByOrientation
+ ,catOrientation
+ ,centerPosition
+ ,col
+ ,cols
+ ,debugSquare
+ ,elemAt
+ ,emptyBoard
+ ,emptySquare
+ ,getWordAt
+ ,getWordsAt
+ ,getWordsTouchingSquare
+ ,getWordsTouchingPoint
+ ,leftOf
+ ,neighbors
+ ,newBoard
+ ,printBoard
+ ,putTile
+ ,rightOf
+ ,row
+ ,rows
+ ,showBoard
+ ,taken
+ ,toWord
+) where
 
+import Data.Array
+import Data.List (intercalate)
 import qualified Data.Maybe as Maybe
 import Scrabble.Bag
 import Scrabble.Dictionary
-import Scrabble.Matrix
 import Scrabble.Position
 
 data Bonus  = W3 | W2 | L3 | L2 | Star | NoBonus deriving (Eq,Ord)
@@ -23,11 +55,9 @@ instance Show Bonus where
 data Square = Square {
   tile      :: Maybe Tile,
   bonus     :: Bonus,
-  squarePos :: Position
+  squarePos :: Point
 } deriving (Eq,Ord)
 
-instance HasPosition Square where
-  pos (Square _ _ p) = p
 
 instance Show Square where
   show = showSquare True
@@ -59,29 +89,67 @@ catOrientation :: a -> a -> Orientation -> a
 catOrientation l _ Horizontal = l
 catOrientation _ r Vertical   = r
 
-class Matrix b => Board b where
-  newBoard  :: b Square
-  putTile   :: Pos p => b Square -> p -> Tile -> b Square
-  {- 'show' for Scrabble boards.
-     The Bool is to display square bonuses, or not.
-   -}
-  showBoard :: b Square -> Bool -> String
+type Board = Array (Int, Int) Square
+type Row = Array Int Square
+type Col = Array Int Square
 
-boardToList :: (Board b, Foldable b) => b Square -> [Square]
+newBoard  :: Board
+newBoard = listArray ((0,0), (14,14)) (f <$> boardBonuses) where
+  f (p,b) = Square Nothing b p
+
+putTile   :: Board -> Point -> Tile -> Board
+putTile b p t = b // [(p, (b ! p) { tile = Just t })]
+
+-- | 'show' for Scrabble boards. The Bool is to show square bonuses, or not.
+showBoard :: Board -> Bool  -> String
+showBoard board printBonuses = top ++ showRows ++ bottom where
+  showRows      = intercalate "\n" (showRow <$> (elems $ rows board)) ++ "\n"
+  showRow     r = "|" ++ concat (fmap showSquare' r)
+  showSquare' s = showSquare printBonuses s ++ "|"
+  top           = line '_'
+  bottom        = line '-'
+  line        c = replicate 46 c ++ "\n"
+
+-- | TODO: this Maybe sucks
+elemAt  :: Board -> Point -> Maybe Square
+elemAt b p = if inbounds p then Just (b ! p) else Nothing
+-- | get the row at the given y
+row     :: Board -> Int -> Row
+row b y = listArray (0,14) [b ! (x, y) | x <- [0..14]]
+-- | get the column at the given x
+col     :: Board -> Int -> Col
+col b x = listArray (0,14) [b ! (x, y) | y <- [0..14]]
+-- | get all the rows in the board
+rows    :: Board -> Array Int Row
+rows b = listArray (0,14) [row b y | y <- [0..14]]
+-- | get all the columns in the board
+cols    :: Board -> Array Int Col
+cols b = listArray (0,14) [col b x | x <- [0..14]]
+-- | get all the squares in a column above a point
+above   :: Board -> Point -> Row
+above b (x,y) = listArray (0,y-1) [b ! (x, y) | y <- [0..y-1]]
+-- | get all the squares in a column below a point
+below   :: Board -> Point -> Row
+below b (x,y) = listArray (0,13-y) [b ! (x, y) | y <- [y+1..14]]
+-- | get all the squares in a row left of a point
+leftOf  :: Board -> Point -> Col
+leftOf b (x,y) = listArray (0,x-1) [b ! (x, y) | x <- [0..x-1]]
+-- | get all the squares in a row right of a point
+rightOf :: Board -> Point -> Col
+rightOf b (x,y) = listArray (0,13-x) [b ! (x, y) | x <- [x+1..14]]
+
+boardToList :: Board -> [Square]
 boardToList = foldr (:) []
 
-emptyBoard :: (Board b, Foldable b) => b Square -> Bool
+emptyBoard :: Board -> Bool
 emptyBoard = all emptySquare . boardToList
 
-getWordsAt :: (Vec (Row b), Board b, Pos p) =>
-              b Square ->
-              p        ->
-              (Maybe [Square], Maybe [Square])
+getWordsAt :: Board -> Point -> (Maybe [Square], Maybe [Square])
 getWordsAt b p = (getWordAt b p Horizontal, getWordAt b p Vertical)
 
 {- a simple representation of an empty Scrabble board -}
-boardBonuses :: [[(Position, Bonus)]]
-boardBonuses = indexify [
+boardBonuses :: [(Point, Bonus)]
+boardBonuses = zip [(x,y) | x <- [0..14], y <- [0..14]] (concat [
   [W3,  o,  o, L2,  o,  o,  o, W3,  o,  o,  o, L2,  o,  o, W3],
   [ o, W2,  o,  o,  o, L3,  o,  o,  o, L3,  o,  o,  o, W2,  o],
   [ o,  o, W2,  o,  o,  o, L2,  o, L2,  o,  o,  o, W2,  o,  o],
@@ -96,60 +164,56 @@ boardBonuses = indexify [
   [L2,  o,  o, W2,  o,  o,  o, L2,  o,  o,  o, W2,  o,  o, L2],
   [ o,  o, W2,  o,  o,  o, L2,  o, L2,  o,  o,  o, W2,  o,  o],
   [ o, W2,  o,  o,  o, L3,  o,  o,  o, L3,  o,  o,  o, W2,  o],
-  [W3,  o,  o, L2,  o,  o,  o, W3,  o,  o,  o, L2,  o,  o, W3]]
- where
-   o = NoBonus
-   (*) = Star
-   indexify :: [[a]] -> [[(Position, a)]]
-   indexify as  = fmap f (zip [0..] as) where
-     f (y,l)    = fmap g (zip [0..] l ) where
-       g (x,a)  = (Position x y, a)
+  [W3,  o,  o, L2,  o,  o,  o, W3,  o,  o,  o, L2,  o,  o, W3]])
+ where o = NoBonus; (*) = Star
 
--- Yes, technically you can have a board that isn't 15x15.
--- But let's consider that a programming error.
--- If the center tile (7,7) is missing, just error out.
-centerPosition :: Position
-centerPosition = (Position 7 7)
+centerPosition :: Point
+centerPosition = (7, 7)
 
 {- all the tiles 'before' a position in a matrix,
    vertically or horizontally -}
-beforeByOrientation :: (Pos p, Matrix m) =>
-                       Orientation -> m a -> p -> Row m a
+beforeByOrientation :: Orientation -> Board -> Point -> Row
 beforeByOrientation = catOrientation leftOf above
-afterByOrientation :: (Pos p, Matrix m) =>
-                      Orientation -> m a -> p -> Row m a
+afterByOrientation :: Orientation -> Board -> Point -> Row
 {- all the tiles 'after' a position in a matrix,
    vertically or horizontally -}
 afterByOrientation = catOrientation rightOf below
 
-getWordsTouchingSquare :: (Foldable b, Board b, Vec (Row b)) =>
-                          Square -> b Square -> [[Square]]
-getWordsTouchingSquare s b = Maybe.catMaybes [mh,mv] where
-  (mh,mv) = getWordsAt b (pos s)
+getWordsTouchingPoint :: Point -> Board -> [[Square]]
+getWordsTouchingPoint p b = Maybe.catMaybes [mh,mv] where
+  (mh,mv) = getWordsAt b p
 
-{-TODO: if i'm not lazy, i wouldn't have to use vecList where
-   get the word at the giving position, by orientation,
-   if one exists -}
-getWordAt :: (Vec (Row b), Board b, Pos p) =>
-             b Square -> p -> Orientation -> Maybe [Square]
-getWordAt b p o = tile <$> here >>= f where
-  here       = elemAt b p
-  beforeHere = reverse . taker . reverse . vecList $
-                 beforeByOrientation o b p
-  afterHere  = taker . vecList $ afterByOrientation o b p
+getWordsTouchingSquare :: Square -> Board -> [[Square]]
+getWordsTouchingSquare s = getWordsTouchingPoint (squarePos s)
+
+-- | get the word at the giving position, by orientation, if one exists
+getWordAt :: Board -> Point -> Orientation -> Maybe [Square]
+getWordAt b p o = tile (b ! p) >>= f where
+  beforeHere = reverse . taker . reverse . elems $ beforeByOrientation o b p
+  afterHere  = taker . elems $ afterByOrientation o b p
   taker      = takeWhile taken
-  word       = beforeHere ++ maybe [] (:[]) here ++ afterHere
+  word       = beforeHere ++ [b ! p] ++ afterHere
   -- no scrabble word can be of length 1.
   f _        = if length word > 1 then Just word else Nothing
 
--- all the empty positions on the board
--- that are have a neighbor with a tile in them
-emptyConnectedPositions :: (Foldable b, Board b) =>
-                           b Square -> [Square]
+-- | all the empty positions on the board
+--   that are have a neighbor with a tile in them
+emptyConnectedPositions :: Board -> [Square]
 emptyConnectedPositions b =
   filter legalSquare $ foldr (:) [] b where
     -- is it legal to put a tile in this square?
     -- if its filled, it's obviously not legal
     legalSquare s | taken s = False
     -- otherwise, if it has any filled neighbors, it's ok.
-    legalSquare s = or $ taken <$> neighbors b (pos s)
+    legalSquare s = or $ taken <$> neighbors b (squarePos s)
+
+-- | all the neighbors of a particular square (left,right,up,down)
+neighbors :: Board -> Point -> [Square]
+neighbors b p = [b ! (x,y) | (x,y) <- neighborsP p, inbounds p]
+
+-- | returns True if a point is in the space ((0,0),(14,14))
+inbounds :: Point -> Bool
+inbounds (x,y) = f x && f y where f i = i >= 0 && i <= 14
+
+printBoard :: Board -> Bool -> IO ()
+printBoard b showBonuses = putStrLn $ showBoard b showBonuses

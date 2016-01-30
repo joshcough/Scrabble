@@ -115,6 +115,14 @@ instance FromSExpr a => FromSExpr [a] where
   fromSExpr (List args) = sequence (fmap fromSExpr args)
   fromSExpr bad         = Left $ "bad list" ++ showSExpr_ bad
 
+instance (FromSExpr a, FromSExpr b) => FromSExpr (a,b) where
+  fromSExpr (List [x, y]) = (,) <$> fromSExpr x <*> fromSExpr y
+  fromSExpr bad = parseError_ "bad position" bad
+
+instance FromSExpr Int where
+  fromSExpr (AtomNum n) = Right $ fromIntegral n
+  fromSExpr bad = parseError_ "bad position" bad
+
 parseError :: String -> String -> ParseResult a
 parseError msg  exp = Left $ concat ["Parse Error: '", msg, "' in: ", show exp]
 -- TODO: rename this

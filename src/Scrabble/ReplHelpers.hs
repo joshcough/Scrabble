@@ -10,41 +10,60 @@ import Scrabble.Bag
 import Scrabble.Board
 import Scrabble.Dictionary
 import Scrabble.Game
-import Scrabble.ListBoard
-import Scrabble.Matrix
 import Scrabble.Move.Move
-import Scrabble.Position
 import Scrabble.Search
 import System.IO.Unsafe
 
-quickBoard :: ListBoard
-quickBoard = newBoard :: ListBoard
+now :: String -> IO ()
+now = printBS . now'
+
+now' :: String -> (Board,[Score])
+now' s = quickPut [(s, Horizontal, (7, 7))]
+
+nowNoValidation :: String -> IO ()
+nowNoValidation = printBS . nowNoValidation'
+
+nowNoValidation' :: String -> (Board,[Score])
+nowNoValidation' s = quickPutNoValidation [(s, Horizontal, (7, 7))]
+
+printBS :: (Board,[Score]) -> IO ()
+printBS (b, scores) = printBoard b True >> putStrLn (show scores)
+
+quickPut :: [(String, Orientation, (Int, Int))] -> (Board,[Score])
+quickPut = quickPut' standardValidation
+
+quickPutNoValidation :: [(String, Orientation, (Int, Int))] -> (Board,[Score])
+quickPutNoValidation = quickPut' noValidation
 
 {- test putting some words on a brand new board -}
-quickPut :: [(String, Orientation, (Int, Int))] -> (ListBoard,[Score])
-quickPut words = unsafePerformIO $ do
+quickPut' ::
+     Validator
+  -> [(String, Orientation, (Int, Int))]
+  -> (Board,[Score])
+quickPut' validator words = unsafePerformIO $ do
   dict <- Scrabble.Dictionary.dictionary
-  let e = putManyWords words quickBoard dict
+  let e = putManyWords validator words newBoard dict
   return $ either error id e
 
 {- test putting some words onto an existing board
    this is just a test function and its ok if it bombs -}
-putManyWords :: (Foldable b, Board b, Vec (Row b)) =>
-  [(String, Orientation, (Int, Int))] ->
-  b Square ->
-  Dict     ->
-  Either String (b Square,[Score])
-putManyWords words b dict = go (b,[]) wordPuts where
+putManyWords ::
+     Validator
+  -> [(String, Orientation, (Int, Int))]
+  -> Board
+  -> Dict
+  -> Either String (Board,[Score])
+putManyWords validator words b dict = go (b,[]) wordPuts where
   {- TODO: this is pretty awful
      I think EitherT over State could clean it up,
      but not sure if i want to do that.
      Also, I can't put the type here, again.
   -}
-  --go :: (b Square, [Score]) -> [WordPut] -> Either String (b Square, [Score])
+  --go :: (Board, [Score]) -> [WordPut] -> Either String (Board, [Score])
   go (b,ss) pws = foldl f (Right (b,ss)) pws where
     f acc wp = do
       (b,scores) <- acc
-      (b',score) <- wordPut b wp dict
+      (b',score) <- wordPut validator b wp dict
       return (b',scores++[score])
 
   wordPuts :: [WordPut]
@@ -58,7 +77,7 @@ putManyWords words b dict = go (b,[]) wordPuts where
         f (acc,(x,y)) c = ((x,y):acc, adder (x,y))
       putTils :: [TilePut]
       putTils = zipWith f w coordinates where
-        f c xy = LetterTilePut (fromJust $ tileFromChar (toUpper c)) (pos xy)
+        f c xy = LetterTilePut (fromJust $ tileFromChar (toUpper c)) xy
 
 {- Search the dictionary with a new random rack -}
 testSearchR :: IO (Rack, [Word])
@@ -68,5 +87,5 @@ testSearchR = do
   words   <- testSearch (toString $ letter <$> rack)
   return (rack, fromJust . wordFromString <$> words)
 
-showScores :: Game b -> IO ()
+showScores :: Game -> IO ()
 showScores g = putStrLn . show $ getScores g

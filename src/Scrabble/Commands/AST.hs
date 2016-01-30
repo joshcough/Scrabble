@@ -5,7 +5,6 @@ import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
 import Scrabble.Board
 import Scrabble.Move.WordPut
-import Scrabble.Position
 import Scrabble.Search
 import Scrabble.Commands.SExpr
 
@@ -68,13 +67,8 @@ parsePlace l = parsePlace' l where
   parsePlace' bad = parseError_ "bad placement" (List bad)
   f w o p b = do
     o' <- fromSExpr o
-    p' <- fromSExpr p
+    p' <- fromSExpr p :: Either String (Int, Int)
     Place <$> makeWordPut w o' p' b
-
-instance FromSExpr Position where
-  fromSExpr (List [AtomNum x, AtomNum y]) =
-    return $ Position (fromIntegral x) (fromIntegral y)
-  fromSExpr bad = parseError_ "bad position" bad
 
 instance FromSExpr Orientation where
   fromSExpr (AtomSym "H") = return Horizontal

@@ -3,24 +3,38 @@
 
 module Scrabble.Move.Scoring where
 
-import Data.List (delete, foldl', intersperse, partition)
+import Data.List (foldl')
 import Data.Set (Set)
 import qualified Data.Set as Set
 import Prelude hiding (Word)
 import Scrabble.Bag
 import Scrabble.Board
-import Scrabble.Matrix
 import Scrabble.Move.MoveHelpers
-import Scrabble.Move.WordPut
-import Scrabble.Position
-import Scrabble.Search (containsAll)
 
-{- calculate the score for a single word -}
-scoreWord ::
-  [Square]   -> -- one of the words played this turn
-                -- (and the one we are getting the score for)
-  Set Square -> -- the set of squares played in this turn
+type Scorer = [Square] -> Board -> Score
+
+noScoring :: Scorer
+noScoring _ _ = 0
+
+standardScoring :: Scorer
+standardScoring = calculateTurnScore
+
+-- | Calculate the score for ALL words in a turn
+calculateTurnScore ::
+  [Square] -> -- ^ all the squares a player placed tiles in this turn
+  Board    -> -- ^ the board (with those tiles on it)
   Score
+calculateTurnScore sqrs nextBoard = totalScore where
+  totalScore = foldl f 0 s + bingoBonus
+  s = Set.toList $ wordsPlayedInTurn sqrs nextBoard
+  f acc w = scoreWord w (Set.fromList sqrs) + acc
+  bingoBonus = if length sqrs == 7 then 50 else 0
+
+-- |
+scoreWord :: {- calculate the score for a single word -}
+    [Square]    -- ^ one of the words played this turn and the one we are getting the score for
+  -> Set Square -- ^ the set of squares played in this turn
+  -> Score
 scoreWord word playedSquares =
   base * wordMultiplier * centerMultiplier where
 
@@ -50,15 +64,4 @@ scoreWord word playedSquares =
   {- if the center square was played, score*2 -}
   centerMultiplier = if centerSquarePlayed then 2 else 1
   centerSquarePlayed = or $ f <$> Set.toList playedSquares where
-    f s = pos s == centerPosition
-
-{- Calculate the score for ALL words in a turn -}
-calculateTurnScore :: (Foldable b, Board b, Vec (Row b)) =>
-  [Square] -> -- all the squares a player placed tiles in this turn
-  b Square -> -- the board (with those tiles on it)
-  Score
-calculateTurnScore sqrs nextBoard = totalScore where
-  totalScore = foldl f 0 s + bingoBonus
-  s = Set.toList $ wordsPlayedInTurn sqrs nextBoard
-  f acc w = scoreWord w (Set.fromList sqrs) + acc
-  bingoBonus = if length sqrs == 7 then 50 else 0
+    f s = squarePos s == centerPosition
