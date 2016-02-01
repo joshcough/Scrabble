@@ -1,9 +1,11 @@
 {-# LANGUAGE FlexibleContexts #-}
 
 -- | Some quick testing helper functions for use on the REPL.
+-- It is okay for the functions in here to be sloppy and throw errors.
 module Scrabble.ReplHelpers where
 
-import Data.Char (toUpper)
+import Data.Aeson
+import Data.Aeson.Types
 import Data.Maybe (fromJust)
 import Prelude hiding (Word)
 import Scrabble.Bag
@@ -14,9 +16,11 @@ import Scrabble.Move.Move
 import Scrabble.Search
 import System.IO.Unsafe
 
+-- | put a word on new board board and print the board immediately
 now :: String -> IO ()
 now = printBS . now'
 
+-- | put a word on new board board and return the board and score
 now' :: String -> (Board,[Score])
 now' s = quickPut [(s, Horizontal, (7, 7))]
 
@@ -27,11 +31,14 @@ nowNoValidation' :: String -> (Board,[Score])
 nowNoValidation' s = quickPutNoValidation [(s, Horizontal, (7, 7))]
 
 printBS :: (Board,[Score]) -> IO ()
-printBS (b, scores) = printBoard b True >> putStrLn (show scores)
+printBS (b, scores) = printBoard True b >> putStrLn (show scores)
 
 quickPut :: [(String, Orientation, (Int, Int))] -> (Board,[Score])
 quickPut = quickPut' standardValidation
 
+-- | put a word on new board board and return the board and score
+--   but don't do any validation on the word, so that you can put
+--   non-words on the board like "erwaeirawer" for testing other things
 quickPutNoValidation :: [(String, Orientation, (Int, Int))] -> (Board,[Score])
 quickPutNoValidation = quickPut' noValidation
 
@@ -40,52 +47,25 @@ quickPut' ::
      Validator
   -> [(String, Orientation, (Int, Int))]
   -> (Board,[Score])
-quickPut' validator words = unsafePerformIO $ do
+quickPut' validate words = unsafePerformIO $ do
   dict <- Scrabble.Dictionary.dictionary
-  let e = putManyWords validator words newBoard dict
-  return $ either error id e
+  let e = putManyWords validate words newBoard dict
+  return $ either (\s -> error $ "quickPut' died with: " ++ s) id e
 
-{- test putting some words onto an existing board
-   this is just a test function and its ok if it bombs -}
-putManyWords ::
-     Validator
-  -> [(String, Orientation, (Int, Int))]
-  -> Board
-  -> Dict
-  -> Either String (Board,[Score])
-putManyWords validator words b dict = go (b,[]) wordPuts where
-  {- TODO: this is pretty awful
-     I think EitherT over State could clean it up,
-     but not sure if i want to do that.
-     Also, I can't put the type here, again.
-  -}
-  --go :: (Board, [Score]) -> [WordPut] -> Either String (Board, [Score])
-  go (b,ss) pws = foldl f (Right (b,ss)) pws where
-    f acc wp = do
-      (b,scores) <- acc
-      (b',score) <- wordPut validator b wp dict
-      return (b',scores++[score])
-
-  wordPuts :: [WordPut]
-  wordPuts =  (\(s,o,p) -> toWordPut s o p) <$> words where
-    toWordPut :: String -> Orientation -> (Int, Int) -> WordPut
-    toWordPut w o (x,y) = WordPut putTils where
-      adder :: (Int, Int) -> (Int, Int)
-      adder = catOrientation (\(x,y) -> (x+1,y)) (\(x,y) -> (x,y+1)) o
-      coordinates :: [(Int,Int)]
-      coordinates = reverse . fst $ foldl f ([],(x,y)) w where
-        f (acc,(x,y)) c = ((x,y):acc, adder (x,y))
-      putTils :: [TilePut]
-      putTils = zipWith f w coordinates where
-        f c xy = LetterTilePut (fromJust $ tileFromChar (toUpper c)) xy
-
-{- Search the dictionary with a new random rack -}
+-- | Search the dictionary with a new random rack
 testSearchR :: IO (Rack, [Word])
 testSearchR = do
-  bag     <- newShuffledBag
+  Bag bag <- newShuffledBag
   let rack = take 7 bag
   words   <- testSearch (toString $ letter <$> rack)
   return (rack, fromJust . wordFromString <$> words)
 
 showScores :: Game -> IO ()
 showScores g = putStrLn . show $ getScores g
+
+-- | test if a board can go round trip 'toJSON <- -> parseJSON'
+boardRoundTripJSON :: String -> IO ()
+boardRoundTripJSON s = case parse f s of
+    Error err -> putStrLn err
+    Success b -> printBoard True b
+  where f s = parseJSON . toJSON . fst $ now' s

@@ -8,15 +8,13 @@ import qualified Data.Set as Set
 import Prelude hiding (Word)
 import Scrabble.Board
 import Scrabble.Dictionary
-import Scrabble.Move.MoveHelpers
 import Scrabble.Move.WordPut
-import Scrabble.Position
 
 type Validator =
-    [(Square,TilePut,Point)] -- ^ all the letters put down this turn
-  -> Board                   -- ^ old board
-  -> Board                   -- ^ new board
-  -> Dict                    -- ^ the dictionary
+    [TilePut] -- ^ all the letters put down this turn
+  -> Board    -- ^ old board
+  -> Board    -- ^ new board
+  -> Dict     -- ^ the dictionary
   -> Either String ()
 
 noValidation :: Validator
@@ -33,7 +31,11 @@ standardValidation = validateMove
 --  5) On every turn after the first, at least one crossword must be formed
 --  6) All words formed must be inside the dictionary
 -- TODO: return all the errors.
-validateMove :: Validator
+validateMove :: [TilePut] -- ^ all the letters put down this turn
+              -> Board    -- ^ old board
+              -> Board    -- ^ new board
+              -> Dict     -- ^ the dictionary
+              -> Either String ()
 validateMove move b b' dict = go where
   go =
     if null move
@@ -51,10 +53,10 @@ validateMove move b b' dict = go where
     else Right ()
 
   -- so we don't have to calculate it twice
-  emptyB = emptyBoard b
+  emptyB = isBoardEmpty b
 
   legals :: [SquareLegality]
-  legals = f <$> squaresPlayedInMove where
+  legals = f . (b !) <$> pointsPlayedInMove where
     f s = SquareLegality s
       (emptySquare s)
       (or $ taken <$> neighbors b' (squarePos s))
@@ -65,13 +67,13 @@ validateMove move b b' dict = go where
   allConnected :: Bool
   allConnected = and $ connected <$> legals
 
-  squaresPlayedInMove = (\(s,_,_) -> s) <$> move
+  pointsPlayedInMove = tilePutPoint <$> move
 
   takenSquares :: [Square]
   takenSquares = square <$> filter (not . available) legals
 
   words :: [Word]
-  words = toWord <$> (Set.toList $ wordsPlayedInTurn squaresPlayedInMove b')
+  words = toWord <$> (Set.toList $ wordsAtPoints pointsPlayedInMove b')
 
   (_, badWords) = partition (dictContainsWord dict) words
 

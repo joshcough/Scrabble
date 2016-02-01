@@ -78,7 +78,6 @@ $ tree src
 │   ├── Matrix.hs          -- Generic matrix code used to represent the board
 │   ├── Move               -- Making a move, validation, scoring, etc
 │   │   ├── Move.hs        -- Move representation and functions to make moves
-│   │   ├── MoveHelpers.hs -- Code used by both scoring and validation
 │   │   ├── Scoring.hs     -- Calculates score for a move
 │   │   ├── Validation.hs  -- Checks to see if a move is valid
 │   │   └── WordPut.hs     -- Representation of tiles put on the board in a turn

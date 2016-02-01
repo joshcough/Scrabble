@@ -1,5 +1,6 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE DeriveGeneric, DeriveAnyClass #-}
 
 -- | Board representation
 module Scrabble.Board (
@@ -7,42 +8,39 @@ module Scrabble.Board (
  ,Bonus(..)
  ,Orientation(..)
  ,Square(..)
- ,above
- ,below
- ,beforeByOrientation
+ ,(!)
  ,catOrientation
  ,centerPosition
- ,col
- ,cols
  ,debugSquare
  ,elemAt
- ,emptyBoard
  ,emptySquare
- ,getWordAt
- ,getWordsAt
- ,getWordsTouchingSquare
- ,getWordsTouchingPoint
- ,leftOf
+ ,isBoardEmpty
  ,neighbors
  ,newBoard
  ,printBoard
- ,putTile
- ,rightOf
- ,row
- ,rows
+ ,putTiles
  ,showBoard
  ,taken
  ,toWord
+ ,wordsAtPoints
 ) where
 
-import Data.Array
+import Data.Aeson (ToJSON, FromJSON, toJSON, parseJSON)
+import qualified Data.Aeson as J
+import Data.Array (Array, listArray)
+import qualified Data.Array as A
 import Data.List (intercalate)
 import qualified Data.Maybe as Maybe
+import Data.Set (Set)
+import qualified Data.Set as Set
+import qualified Data.Vector as V
+import GHC.Generics
 import Scrabble.Bag
 import Scrabble.Dictionary
 import Scrabble.Position
 
-data Bonus  = W3 | W2 | L3 | L2 | Star | NoBonus deriving (Eq,Ord)
+data Bonus  = W3 | W2 | L3 | L2 | Star | NoBonus
+  deriving (Eq, Ord, Generic, ToJSON, FromJSON)
 
 instance Show Bonus where
   show W3      = "3W"
@@ -56,8 +54,7 @@ data Square = Square {
   tile      :: Maybe Tile,
   bonus     :: Bonus,
   squarePos :: Point
-} deriving (Eq,Ord)
-
+} deriving (Eq, Ord, Generic, ToJSON, FromJSON)
 
 instance Show Square where
   show = showSquare True
@@ -83,27 +80,51 @@ debugSquareList ss = show $ debugSquare <$> ss
 toWord :: [Square] -> [Letter]
 toWord sqrs = letter <$> Maybe.catMaybes (tile <$> sqrs)
 
-data Orientation = Horizontal | Vertical deriving (Eq, Show)
+data Orientation = Horizontal | Vertical
+  deriving (Eq, Ord, Generic, ToJSON, FromJSON, Show)
 
 catOrientation :: a -> a -> Orientation -> a
 catOrientation l _ Horizontal = l
 catOrientation _ r Vertical   = r
 
-type Board = Array (Int, Int) Square
+data Board = Board {
+  contents :: (Array (Int, Int) Square)
+} deriving (Eq, Ord, Generic)
+
+instance ToJSON Board where
+  toJSON (Board b) = toJSON . filter f $ A.assocs b where
+    f (_,s) = Maybe.isJust $ tile s
+
+instance FromJSON Board where
+  parseJSON = J.withArray "Board" $ \arr ->
+    Board . (newBoard //) <$> mapM parseJSON (V.toList arr)
+
 type Row = Array Int Square
 type Col = Array Int Square
 
+boardBounds :: ((Int, Int), (Int, Int))
+boardBounds = ((0,0), (14,14))
+
+infixl 9  !, //
+(!) :: Board -> (Int, Int) -> Square
+(Board b) ! p = b A.! p
+(//) :: Board -> [((Int, Int), Square)] -> Array (Int, Int) Square
+(Board b) // p = b A.// p
+elems :: Board -> [Square]
+elems (Board b) = A.elems b
+
 newBoard  :: Board
-newBoard = listArray ((0,0), (14,14)) (f <$> boardBonuses) where
+newBoard = Board $ listArray boardBounds (f <$> boardBonuses) where
   f (p,b) = Square Nothing b p
 
-putTile   :: Board -> Point -> Tile -> Board
-putTile b p t = b // [(p, (b ! p) { tile = Just t })]
+putTiles  :: Board -> [(Point,Tile)] -> Board
+putTiles b pts = Board $ b // (f <$> pts) where
+  f (p,t) = (p, (b ! p) { tile = Just t })
 
 -- | 'show' for Scrabble boards. The Bool is to show square bonuses, or not.
-showBoard :: Board -> Bool  -> String
-showBoard board printBonuses = top ++ showRows ++ bottom where
-  showRows      = intercalate "\n" (showRow <$> (elems $ rows board)) ++ "\n"
+showBoard :: Bool -> Board -> String
+showBoard printBonuses board = top ++ showRows ++ bottom where
+  showRows      = intercalate "\n" (showRow <$> (A.elems $ rows board)) ++ "\n"
   showRow     r = "|" ++ concat (fmap showSquare' r)
   showSquare' s = showSquare printBonuses s ++ "|"
   top           = line '_'
@@ -139,13 +160,10 @@ rightOf :: Board -> Point -> Col
 rightOf b (x,y) = listArray (0,13-x) [b ! (x, y) | x <- [x+1..14]]
 
 boardToList :: Board -> [Square]
-boardToList = foldr (:) []
+boardToList (Board b) = A.elems b
 
-emptyBoard :: Board -> Bool
-emptyBoard = all emptySquare . boardToList
-
-getWordsAt :: Board -> Point -> (Maybe [Square], Maybe [Square])
-getWordsAt b p = (getWordAt b p Horizontal, getWordAt b p Vertical)
+isBoardEmpty :: Board -> Bool
+isBoardEmpty = all emptySquare . boardToList
 
 {- a simple representation of an empty Scrabble board -}
 boardBonuses :: [(Point, Bonus)]
@@ -179,28 +197,31 @@ afterByOrientation :: Orientation -> Board -> Point -> Row
    vertically or horizontally -}
 afterByOrientation = catOrientation rightOf below
 
-getWordsTouchingPoint :: Point -> Board -> [[Square]]
-getWordsTouchingPoint p b = Maybe.catMaybes [mh,mv] where
-  (mh,mv) = getWordsAt b p
-
-getWordsTouchingSquare :: Square -> Board -> [[Square]]
-getWordsTouchingSquare s = getWordsTouchingPoint (squarePos s)
-
--- | get the word at the giving position, by orientation, if one exists
-getWordAt :: Board -> Point -> Orientation -> Maybe [Square]
-getWordAt b p o = tile (b ! p) >>= f where
-  beforeHere = reverse . taker . reverse . elems $ beforeByOrientation o b p
-  afterHere  = taker . elems $ afterByOrientation o b p
-  taker      = takeWhile taken
-  word       = beforeHere ++ [b ! p] ++ afterHere
-  -- no scrabble word can be of length 1.
-  f _        = if length word > 1 then Just word else Nothing
+-- |
+wordsAtPoints ::
+    [Point]      -- ^ all the points a player placed tiles in this turn
+  -> Board       -- ^ the board (with those tiles on it)
+  -> Set [Square]
+wordsAtPoints pts b =
+  Set.fromList . concat $ getWordsTouchingPoint <$> pts where
+  getWordsTouchingPoint p = Maybe.catMaybes [mh,mv] where
+    (mh,mv) = (getWordAt p Horizontal, getWordAt p Vertical)
+  -- | get the word at the giving position, by orientation, if one exists
+  -- TODO: this is really inefficient.
+  getWordAt :: Point -> Orientation -> Maybe [Square]
+  getWordAt p o = tile (b ! p) >>= f where
+    beforeHere = reverse . taker . reverse . A.elems $ beforeByOrientation o b p
+    afterHere  = taker . A.elems $ afterByOrientation o b p
+    taker      = takeWhile taken
+    word       = beforeHere ++ [b ! p] ++ afterHere
+    -- no scrabble word can be of length 1.
+    f _        = if length word > 1 then Just word else Nothing
 
 -- | all the empty positions on the board
 --   that are have a neighbor with a tile in them
 emptyConnectedPositions :: Board -> [Square]
 emptyConnectedPositions b =
-  filter legalSquare $ foldr (:) [] b where
+  filter legalSquare $ elems b where
     -- is it legal to put a tile in this square?
     -- if its filled, it's obviously not legal
     legalSquare s | taken s = False
@@ -211,9 +232,9 @@ emptyConnectedPositions b =
 neighbors :: Board -> Point -> [Square]
 neighbors b p = [b ! (x,y) | (x,y) <- neighborsP p, inbounds p]
 
--- | returns True if a point is in the space ((0,0),(14,14))
+-- | returns True if a point is within board bounds
 inbounds :: Point -> Bool
 inbounds (x,y) = f x && f y where f i = i >= 0 && i <= 14
 
-printBoard :: Board -> Bool -> IO ()
-printBoard b showBonuses = putStrLn $ showBoard b showBonuses
+printBoard :: Bool -> Board -> IO ()
+printBoard showBonuses = putStrLn . showBoard showBonuses

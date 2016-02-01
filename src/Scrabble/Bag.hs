@@ -1,34 +1,43 @@
+{-# LANGUAGE DeriveGeneric, DeriveAnyClass #-}
+
 -- | Tile and Bag representation
 module Scrabble.Bag (
-  Bag
+  Bag(..)
  ,Points
  ,Rack
  ,Score
  ,Tile(..)
  ,HasLetter(..)
+ ,bagSize
  ,countLettersInBag
  ,fromLetter
  ,newBag
  ,newShuffledBag
  ,orderedBag
+ ,orderedTiles
  ,pointsInBag
  ,simpleWordPoints
  ,tileFromChar
 ) where
 
+import Data.Aeson (ToJSON, FromJSON)
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
 import Data.Maybe (fromJust)
+import GHC.Generics
 import Scrabble.Dictionary
 import System.Random.Shuffle
 import Prelude hiding (Word)
 
-type Rack = [Tile]
+type Rack   = [Tile]
 type Points = Int
 type Score  = Int
-type Bag = [Tile]
 
-data Tile = Tile { _tileLetter :: Letter, score :: Int } deriving (Eq,Ord)
+data Tile = Tile { tileLetter :: Letter, score :: Int }
+  deriving (Eq, Ord, Generic, ToJSON, FromJSON)
+
+data Bag = Bag { bagTiles :: [Tile] }
+  deriving (Eq, Ord, Generic, ToJSON, FromJSON, Show)
 
 instance HasLetter Tile where
   letter (Tile l _) = l
@@ -49,7 +58,14 @@ newBag :: IO Bag
 newBag = newShuffledBag
 
 newShuffledBag :: IO Bag
-newShuffledBag = shuffleM orderedBag
+newShuffledBag = Bag <$> shuffleM orderedTiles
+
+orderedBag :: Bag
+orderedBag = Bag $ orderedTiles
+
+orderedTiles :: [Tile]
+orderedTiles = concat $ f <$> distribution where
+  f (l,n) = fmap mkTile $ replicate n l
 
 distribution :: [(Letter,Int)]
 distribution = [
@@ -59,12 +75,8 @@ distribution = [
   (P,2),(Q,1),(R,6),(S,4),(T,6),
   (U,4),(V,2),(W,2),(X,1),(Y,2),(Z,1), (Blank, 2)]
 
-orderedBag :: Bag
-orderedBag = concat $ f <$> distribution where
-  f (l,n) = fmap mkTile $ replicate n l
-
 countLettersInBag :: Letter -> Bag -> Int
-countLettersInBag l b = length (filter (==l) $ map letter b)
+countLettersInBag l (Bag b) = length (filter (==l) $ map letter b)
 
 points :: Map Letter Points
 points = Map.fromList [
@@ -76,8 +88,11 @@ points = Map.fromList [
   (Z,10), (Blank, 0)]
 
 pointsInBag :: Bag -> Int
-pointsInBag b = sum $ fmap score b where
+pointsInBag (Bag b) = sum $ fmap score b
 
 simpleWordPoints :: Word -> Points
 simpleWordPoints = sum . fmap f where
   f l = fromJust $ Map.lookup l points
+
+bagSize :: Bag -> Int
+bagSize (Bag b) = length b

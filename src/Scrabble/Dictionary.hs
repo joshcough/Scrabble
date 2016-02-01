@@ -1,4 +1,5 @@
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE DeriveGeneric, DeriveAnyClass #-}
 
 -- | Letter and Dictionary representation
 module Scrabble.Dictionary (
@@ -15,6 +16,7 @@ module Scrabble.Dictionary (
  ,toString
 ) where
 
+import Data.Aeson (ToJSON, FromJSON)
 import Data.Char (toUpper)
 import qualified Data.Maybe as Maybe
 import Data.Map (Map)
@@ -22,13 +24,14 @@ import qualified Data.Map as Map
 import Data.Set (Set)
 import qualified Data.Set as Set
 import Data.Tuple (swap)
+import GHC.Generics
 import Prelude hiding (Word)
 import System.IO.Unsafe
 
 data Letter =
   A | B | C | D | E | F | G | H | I | J | K | L | M |
   N | O | P | Q | R | S | T | U | V | W | X | Y | Z | Blank
-  deriving (Enum, Eq, Ord)
+  deriving (Enum, Eq, Ord, Generic, ToJSON, FromJSON)
 
 instance Show Letter where
   show l = [toChar l]

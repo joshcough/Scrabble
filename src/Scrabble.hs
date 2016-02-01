@@ -32,7 +32,7 @@ import Scrabble.ReplHelpers
 start :: [Player] -> IO ()
 start players = do
   g <- newGame players
-  printGameBoard g True
+  printGameBoard True g
   gameLoop g
 
 gameLoop ::  Game -> IO ()
@@ -50,7 +50,7 @@ singleTurn g =
 
 humanTurn :: Bool -> Game -> IO (Maybe Game)
 humanTurn b g = do
-  when b $ printGameBoard g True
+  when b $ printGameBoard True g
   putStrLn $ "Turn for: " ++ show (currentPlayer g)
   putStrLn "Enter command (or type help)"
   command <- getLine
@@ -73,7 +73,7 @@ applyRes g = ((\(io, g') -> io >> return g') . f g) where
   f g (Print (QueryResult words)) = (putStrLn $ show words, Just g)
   f g (Print PrintHelp)           = (putStrLn help,         Just g)
   f g (Print (PrintScores scrs))  = (putStrLn $ show scrs,  Just g)
-  f g (Print (PrintBoard b brd))  = (printBoard brd b,      Just g)
+  f g (Print (PrintBoard b brd))  = (printBoard b brd,      Just g)
 
 gameOver :: Game -> IO ()
 gameOver g = putStrLn ("Game Over!\n" ++ show g)

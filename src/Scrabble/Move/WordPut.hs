@@ -1,10 +1,13 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE DeriveGeneric, DeriveAnyClass #-}
 
 -- | Code to represent putting tiles on the board.
 module Scrabble.Move.WordPut where
 
+import Data.Aeson (ToJSON, FromJSON)
 import qualified Data.Maybe as Maybe
+import GHC.Generics
 import Prelude hiding (Word)
 import Scrabble.Bag
 import Scrabble.Board
@@ -15,7 +18,7 @@ import Scrabble.Position
 data TilePut =
    LetterTilePut Tile   Point -- ^ This tile has a letter on it
  | BlankTilePut  Letter Point -- ^ The blank tile was played, and the letter that the player intends use.
-  deriving Eq
+ deriving (Eq, Generic, ToJSON, FromJSON)
 
 -- TODO: when are these shown? show the position be shown too?
 instance Show TilePut where
@@ -35,16 +38,17 @@ tilePutPoint (LetterTilePut _ p) = p
 tilePutPoint (BlankTilePut  _ p) = p
 
 {- A complete representation of placing a word on the board. -}
-data WordPut = WordPut { tiles :: [TilePut] } deriving Show
+data WordPut = WordPut { wordPutTiles :: [TilePut] }
+  deriving (Eq, Generic, ToJSON, FromJSON, Show)
 
 -- | Make a WordPut from all the given data
 -- some error handling isn't happening here and this code is pretty bad
 -- TODO: explain how the string translates to Tiles.
-makeWordPut :: String      ->
-               Orientation ->
-               Point       ->
-               [Char]      ->
-               Either String WordPut
+makeWordPut :: String
+           ->  Orientation
+           ->  Point
+           ->  [Char]
+           ->  Either String WordPut
 makeWordPut w o p blanks = WordPut <$> putTils where
 
   -- TODO: this code sucks...what is it even doing?

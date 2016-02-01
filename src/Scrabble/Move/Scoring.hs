@@ -9,7 +9,6 @@ import qualified Data.Set as Set
 import Prelude hiding (Word)
 import Scrabble.Bag
 import Scrabble.Board
-import Scrabble.Move.MoveHelpers
 
 type Scorer = [Square] -> Board -> Score
 
@@ -24,28 +23,28 @@ calculateTurnScore ::
     [Square] -- ^ all the squares a player placed tiles in this turn
   -> Board   -- ^ the board (with those tiles on it)
   -> Score
-calculateTurnScore sqrs nextBoard = totalScore where
-  totalScore = foldl f 0 s + bingoBonus
-  s = Set.toList $ wordsPlayedInTurn sqrs nextBoard
-  f acc w = scoreWord w (Set.fromList sqrs) + acc
+calculateTurnScore sqrs board = totalScore where
+  totalScore = sum wordScores + bingoBonus
+  wordScores = scoreWord (Set.fromList sqrs) <$> words
+  words      = Set.toList $ wordsAtPoints (squarePos <$> sqrs) board
   bingoBonus = if length sqrs == 7 then 50 else 0
 
--- |
-scoreWord :: {- calculate the score for a single word -}
-    [Square]    -- ^ one of the words played this turn and the one we are getting the score for
-  -> Set Square -- ^ the set of squares played in this turn
+-- | calculate the score for a single word
+scoreWord ::
+     Set Square -- ^ the set of squares played in this turn
+  -> [Square]   -- ^ one of the words played this turn and the one we are getting the score for
   -> Score
-scoreWord word playedSquares =
+scoreWord playedSquares word =
   base * wordMultiplier * centerMultiplier where
 
-  -- score all the letters
-  base = foldl (\s l -> scoreLetter l playedSquares + s) 0 word
+  {- score all the letters -}
+  base = sum $ scoreLetter <$> word
 
   {- the score for a single letter (including its multiplier) -}
-  scoreLetter :: Square -> Set Square -> Score
-  scoreLetter s@(Square (Just t) bonus _) playedSquares =
+  scoreLetter :: Square -> Score
+  scoreLetter s@(Square (Just t) bonus _) =
     if Set.member s playedSquares then letterBonus t bonus else score t
-  scoreLetter _ _ = 0
+  scoreLetter _ = 0
 
   {- determine the word multipliers for this word
     (based on using any 2W or 3W tiles -}
