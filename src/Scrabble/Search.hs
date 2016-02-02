@@ -1,30 +1,30 @@
 -- | Code combinators searching through a dictionary
-module Scrabble.Search (
-  Search
- ,all
- ,and
- ,Scrabble.Search.any
- ,cheat
- ,containsAll
- ,containsAny
- ,containsNone
- ,containsOnly
- ,containsLetterAtPos
- ,dictionary
- ,dictionaryUnsafe
- ,endsWith
- ,looksLike
- ,matchAll
- ,matchAny
- ,matchNone
- ,none
- ,or
- ,regex
- ,runSearch
- ,searchWordBagForPowersetSorted
- ,startsWith
- ,testSearch
- ,wordBagContainsWord
+module Scrabble.Search
+  (
+    Search
+  , all
+  , and
+  , Scrabble.Search.any
+  , cheat
+  , containsAll
+  , containsAny
+  , containsNone
+  , containsOnly
+  , containsLetterAtPos
+  , dictionary
+  , dictionaryUnsafe
+  , endsWith
+  , matchAll
+  , matchAny
+  , matchNone
+  , none
+  , or
+  , regex
+  , runSearch
+  , searchWordBagForPowersetSorted
+  , startsWith
+  , testSearch
+  , wordBagContainsWord
 ) where
 
 import Control.Monad ((<=<))
@@ -42,29 +42,31 @@ type Search = String -> Bool
 
 ------ Single String search functions ------
 
-{- Search for _all_ of the letters in the first string (s1).
-   If a character appears more than once in s1, it must
-   appear more than once in s2.
-   More accurately:
-     If a character appears n times in s1,
-     it must appear n' times in s2 where n' >= n
- -}
+-- | Search for _all_ of the letters in the first string (s1).
+--   If a character appears more than once in s1, it must
+--   appear more than once in s2.
+--   More accurately:
+--     If a character appears n times in s1,
+--     it must appear n' times in s2 where n' >= n
 containsAll :: String -> Search
 containsAll s1 s2 = fst $ foldl' f (True, ups s2) (ups s1) where
   f (b,s) c = if elem c s then (b, delete c s) else (False,s)
 
+-- | Finds all words containing any of the given characters.
 containsAny :: String -> Search
 containsAny = contains' List.any . ups where
   contains' :: ((Char -> Bool) -> [Char] -> Bool) -> String -> Search
   contains' f t w = f (\c -> elem c (ups w)) (ups t)
 
--- TODO: what are the semantics of contains only?
--- csu.foldRight(true) { (c,acc) => acc && wu.exists(_ == c) }
--- ABCABCABC `containsOnly` ABC => true
+-- | Finds all words that contain only the given characters.
+--   TODO: what are the semantics of containsOnly?
+--   ABCABCABC `containsOnly` ABC   => true
+--   ABCABCABC `containsOnly` ABCD  => false
 containsOnly :: String -> Search
 containsOnly t w = foldl f True (ups t) where
   f acc c = acc && elem c (ups w)
 
+-- | Finds all words that contain none of the given characters.
 containsNone :: String -> Search
 containsNone t = not . containsAny t
 
@@ -77,9 +79,6 @@ endsWith s w = startsWith (reverse s) (reverse w)
 
 startsWith :: String -> Search
 startsWith s w = take (length s) w == s
-
-looksLike :: String -> Search
-looksLike p w = error "todo"
 
 regex :: String -> Search
 regex r w = error "todo"

@@ -1,24 +1,25 @@
 {-# LANGUAGE DeriveGeneric, DeriveAnyClass #-}
 
 -- | Tile and Bag representation
-module Scrabble.Bag (
-  Bag(..)
- ,Points
- ,Rack
- ,Score
- ,Tile(..)
- ,HasLetter(..)
- ,bagSize
- ,countLettersInBag
- ,fromLetter
- ,newBag
- ,newShuffledBag
- ,orderedBag
- ,orderedTiles
- ,pointsInBag
- ,simpleWordPoints
- ,tileFromChar
-) where
+module Scrabble.Bag
+  (
+    Bag(..)
+  , Points
+  , Rack
+  , Score
+  , Tile(..)
+  , HasLetter(..)
+  , bagSize
+  , countLettersInBag
+  , fromLetter
+  , newBag
+  , newShuffledBag
+  , orderedBag
+  , orderedTiles
+  , pointsInBag
+  , simpleWordPoints
+  , tileFromChar
+  ) where
 
 import Data.Aeson (ToJSON, FromJSON)
 import Data.Map.Strict (Map)

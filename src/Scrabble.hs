@@ -58,7 +58,7 @@ humanTurn b g = do
  where handleErr g s = putStrLn s >> humanTurn False g
 
 aiTurn :: Game -> Game
-aiTurn g = error "todo: aiTurn"
+aiTurn _ = error "todo: aiTurn"
 
 help :: [Char]
 help = "help unimplemented"

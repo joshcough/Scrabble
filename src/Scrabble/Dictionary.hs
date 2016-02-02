@@ -2,19 +2,20 @@
 {-# LANGUAGE DeriveGeneric, DeriveAnyClass #-}
 
 -- | Letter and Dictionary representation
-module Scrabble.Dictionary (
-  Word
- ,Dict
- ,Letter(..)
- ,HasLetter(..)
- ,dictContainsWord
- ,dictionary
- ,dictionaryUnsafe
- ,fromChar
- ,wordFromString
- ,toChar
- ,toString
-) where
+module Scrabble.Dictionary
+  (
+    Word
+  , Dict
+  , Letter(..)
+  , HasLetter(..)
+  , dictContainsWord
+  , dictionary
+  , dictionaryUnsafe
+  , fromChar
+  , wordFromString
+  , toChar
+  , toString
+  ) where
 
 import Data.Aeson (ToJSON, FromJSON)
 import Data.Char (toUpper)

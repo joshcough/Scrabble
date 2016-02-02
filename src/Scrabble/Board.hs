@@ -3,27 +3,28 @@
 {-# LANGUAGE DeriveGeneric, DeriveAnyClass #-}
 
 -- | Board representation
-module Scrabble.Board (
-  Board
- ,Bonus(..)
- ,Orientation(..)
- ,Square(..)
- ,(!)
- ,catOrientation
- ,centerPosition
- ,debugSquare
- ,elemAt
- ,emptySquare
- ,isBoardEmpty
- ,neighbors
- ,newBoard
- ,printBoard
- ,putTiles
- ,showBoard
- ,taken
- ,toWord
- ,wordsAtPoints
-) where
+module Scrabble.Board
+  (
+    Board
+  , Bonus(..)
+  , Orientation(..)
+  , Square(..)
+  , (!)
+  , foldOrientation
+  , centerPosition
+  , debugSquare
+  , elemAt
+  , emptySquare
+  , isBoardEmpty
+  , neighbors
+  , newBoard
+  , printBoard
+  , putTiles
+  , showBoard
+  , taken
+  , toWord
+  , wordsAtPoints
+  ) where
 
 import Data.Aeson (ToJSON, FromJSON, toJSON, parseJSON)
 import qualified Data.Aeson as J
@@ -83,9 +84,9 @@ toWord sqrs = letter <$> Maybe.catMaybes (tile <$> sqrs)
 data Orientation = Horizontal | Vertical
   deriving (Eq, Ord, Generic, ToJSON, FromJSON, Show)
 
-catOrientation :: a -> a -> Orientation -> a
-catOrientation l _ Horizontal = l
-catOrientation _ r Vertical   = r
+foldOrientation :: a -> a -> Orientation -> a
+foldOrientation l _ Horizontal = l
+foldOrientation _ r Vertical   = r
 
 data Board = Board {
   contents :: (Array (Int, Int) Square)
@@ -191,11 +192,11 @@ centerPosition = (7, 7)
 {- all the tiles 'before' a position in a matrix,
    vertically or horizontally -}
 beforeByOrientation :: Orientation -> Board -> Point -> Row
-beforeByOrientation = catOrientation leftOf above
+beforeByOrientation = foldOrientation leftOf above
 afterByOrientation :: Orientation -> Board -> Point -> Row
 {- all the tiles 'after' a position in a matrix,
    vertically or horizontally -}
-afterByOrientation = catOrientation rightOf below
+afterByOrientation = foldOrientation rightOf below
 
 -- |
 wordsAtPoints ::

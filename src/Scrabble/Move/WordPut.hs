@@ -54,7 +54,7 @@ makeWordPut w o p blanks = WordPut <$> putTils where
   -- TODO: this code sucks...what is it even doing?
   coords :: [(Int,Int)]
   coords = reverse . fst $ foldl f ([],p) w where
-    f (acc,p) c = (p:acc, catOrientation rightOfP belowP o p)
+    f (acc,p) c = (p:acc, foldOrientation rightOfP belowP o p)
 
   putTils :: Either String [TilePut]
   putTils = Maybe.catMaybes <$> (sequence $ zipWith f w (zip coords [0..])) where

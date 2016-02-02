@@ -69,3 +69,6 @@ boardRoundTripJSON s = case parse f s of
     Error err -> putStrLn err
     Success b -> printBoard True b
   where f s = parseJSON . toJSON . fst $ now' s
+
+unsafeNewGame :: [Player] -> Game
+unsafeNewGame = unsafePerformIO . newGame
