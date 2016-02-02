@@ -33,7 +33,6 @@ data PrimSearchExp =
   AnyOf  [Char]     |
   AllOf  [Char]     |
   Only   [Char]     |
-  LooksLike String  |
   Regex Regex
   deriving (Show)
 
@@ -91,8 +90,7 @@ searchKeyWords = Map.fromList [
  ,("anyOf"     ,AnyOf)
  ,("allOf"     ,AllOf)
  ,("only"      ,Only)
- ,("regex"     ,Regex)
- ,("looksLike" ,LooksLike) ]
+ ,("regex"     ,Regex) ]
 
 instance FromSExpr PrimSearchExp where
   fromSExpr exp@(List l) = f l where
@@ -120,5 +118,4 @@ primToSearch (NoneOf     ls)  = containsNone ls
 primToSearch (AnyOf      ls)  = containsAny  ls
 primToSearch (AllOf      ls)  = containsAll  ls
 primToSearch (Only       ls)  = containsOnly ls
-primToSearch (LooksLike  pat) = looksLike $ show pat
 primToSearch (Regex r)        = regex r
