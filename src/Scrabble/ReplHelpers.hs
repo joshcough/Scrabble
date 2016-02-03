@@ -58,7 +58,7 @@ testSearchR = do
   Bag bag <- newShuffledBag
   let rack = take 7 bag
   words   <- testSearch (toString $ letter <$> rack)
-  return (rack, fromJust . wordFromString <$> words)
+  return (Rack rack, fromJust . wordFromString <$> words)
 
 showScores :: Game -> IO ()
 showScores g = putStrLn . show $ getScores g
@@ -70,5 +70,8 @@ boardRoundTripJSON s = case parse f s of
     Success b -> printBoard True b
   where f s = parseJSON . toJSON . fst $ now' s
 
-unsafeNewGame :: [Player] -> Game
+unsafeNewGame :: [Int -> Player] -> Game
 unsafeNewGame = unsafePerformIO . newGame
+
+unsafeNewBag :: Bag
+unsafeNewBag = unsafePerformIO newBag

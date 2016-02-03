@@ -5,6 +5,7 @@ module Scrabble.BagTests where
 import Data.Monoid (mempty)
 import Data.List
 import Scrabble
+import Scrabble.ScrabbleArbitrary
 import Test.Framework (testGroup)
 import Test.Framework.Providers.HUnit
 import Test.Framework.Providers.QuickCheck2 (testProperty)
@@ -22,6 +23,11 @@ case_blanks_in_bag      = countLettersInBag Blank bag @?= 2
 case_letters_in_bag     = bagSize bag @?= 100
 case_count_shuffled_bag = do { b <- newShuffledBag; bagSize b @?= 100 }
 case_total_points       = do { b <- newShuffledBag; pointsInBag b @?= 187 }
-case_word_points        = simpleWordPoints [X,Y,Z] @?= 22
+
+prop_rack_round_trip_json :: Rack -> Bool
+prop_rack_round_trip_json = roundTripJSON
+
+prop_bag_round_trip_json :: Bag -> Bool
+prop_bag_round_trip_json = roundTripJSON
 
 tests = $testGroupGenerator

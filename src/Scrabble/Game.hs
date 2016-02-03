@@ -9,7 +9,9 @@ module Scrabble.Game
   , Name
   , Player(..)
   , PlayerType(..)
+  , Turn(..)
   , ai
+  , applyWord
   , applyWordPut
   , currentPlayer
   , getScores
@@ -31,6 +33,7 @@ import Scrabble.Bag
 import Scrabble.Board
 import Scrabble.Dictionary
 import Scrabble.Move.Move
+import Scrabble.Position (Point)
 
 type Name = String
 
@@ -40,19 +43,20 @@ data Player = Player {
  , playerName  :: Name
  , playerRack  :: Rack
  , playerScore :: Score
+ , playerId    :: Int
 } deriving (Eq, Generic, ToJSON, FromJSON)
 
 instance Show Player where
-  show (Player _ n t s) =
-    concat ["[", n, " rack: ", show t, " score: ", show s, "]"]
+  show (Player _ n t s pid) = concat [
+    "[", n, " rack: ", show t, " score: ", show s, "id: ", show pid, "]"]
 
-newPlayer :: (Name, PlayerType) -> Player
-newPlayer (name, typ) = Player typ name [] 0
+newPlayer :: (Name, PlayerType) -> Int -> Player
+newPlayer (name, typ) = Player typ name newRack 0
 
-human :: Name -> Player
+human :: Name -> Int -> Player
 human name = newPlayer (name, Human)
 
-ai :: Name -> Player
+ai :: Name -> Int -> Player
 ai name = newPlayer (name, AI)
 
 -- | take tiles from the bag and give them to the player
@@ -67,8 +71,9 @@ fillPlayerRack p b = (p', b', removed) where
 --   the bag with tiles removed
 --   the tiles that got removed from the bag
 fillRack :: Rack -> Bag -> (Rack, Bag, [Tile])
-fillRack r (Bag b) = (r ++ take n b, Bag $ drop n b, take n b) where
-  n  = 7 - length r
+fillRack (Rack r) (Bag b) =
+  (Rack $ r ++ take n b, Bag $ drop n b, take n b) where
+    n  = 7 - length r
 
 isHuman :: Player -> Bool
 isHuman p = playerType p == Human
@@ -88,12 +93,31 @@ Redo:
 -}
 
 data Turn = Turn {
-   turnPlayer        :: Player  -- ^ The player that made the move.
+   turnPlayerId      :: Int     -- ^ The id of the player that made the move.
  , turnWordPut       :: WordPut -- ^ all the tiles laid down.
  , turnPointsScored  :: Points  -- ^ points score in turn.
  , turnRackRemainder :: Rack    -- ^ not yet refilled.
  , turnTilesTaken    :: [Tile]  -- ^ tiles taken from the bag to fill the rack.
-} deriving (Eq, Generic, ToJSON, FromJSON)
+} deriving (Eq, Generic, Show)
+
+-- | don't serialize the dictionary
+instance ToJSON Turn where
+  toJSON t = object [
+    "playerId"          .= turnPlayerId      t,
+    "tilesPlayed"       .= turnWordPut       t,
+    "points"            .= turnPointsScored  t,
+    "rackRemainder"     .= turnRackRemainder t,
+    "tilesTakenFromBag" .= (tilesToJSON $ turnTilesTaken t) ]
+
+instance FromJSON Turn where
+  parseJSON = withObject "turn" $ \o -> do
+    turnPlayerId      <- o .: "playerId"
+    turnWordPut       <- o .: "tilesPlayed"
+    turnPointsScored  <- o .: "points"
+    turnRackRemainder <- o .: "rackRemainder"
+    turnTilesTaken'   <- o .: "tilesTakenFromBag"
+    turnTilesTaken    <- tilesFromJSON "Turn tiles" ("invalid tile in turn: " ++) id turnTilesTaken'
+    return Turn{..}
 
 -- adding this, but not implementing just yet. -JC 2/2/16
 data Exchange = Exchange {
@@ -129,12 +153,13 @@ instance FromJSON Game where
     gameTurns   <- o .: "gameTurns"
     return Game{..}
 
-newGame :: [Player] -> IO Game
+newGame :: [Int -> Player] -> IO Game
 newGame ps = do
+  let players = (\(f,i) -> f i) <$> zip ps [0..]
   bag  <- newBag
   dict <- Scrabble.Dictionary.dictionary
-  let (players,bag') = fillRacks ps bag
-  return $ Game (reverse players) newBoard bag' dict [] where
+  let (players',bag') = fillRacks players bag
+  return $ Game (reverse players') newBoard bag' dict [] where
   fillRacks :: [Player] -> Bag -> ([Player], Bag)
   fillRacks ps bag = foldl f ([], bag) ps where
     f (ps,b) p = (p':ps,b') where
@@ -160,7 +185,7 @@ isGameOver (Game _ _ _ _ _) = False -- TODO!
 
 getScores :: Game -> [(Name, Score)]
 getScores g = getNameAndScore <$> gamePlayers g where
-  getNameAndScore (Player _ n _ s) = (n, s)
+  getNameAndScore (Player _ n _ s _) = (n, s)
 
 -- | Put a WordPut on the game's board by first creating the move
 -- and then simply calling applyMove
@@ -168,19 +193,28 @@ applyWordPut :: Game -> WordPut -> Either String Game
 applyWordPut g@(Game (p:_) board _ dict _) wp =
   applyMove g <$> createMove board (playerRack p) wp dict
 
+-- | Add a word to the board
+applyWord :: String
+         ->  Orientation
+         ->  Point
+         ->  [Char]
+         ->  Game
+         ->  Either String Game
+applyWord s o p blanks g = makeWordPut s o p blanks >>= applyWordPut g
+
 -- | applyMove does all of the following
 -- * fills the rack of the player that made the move
 -- * updates the score for that player
 -- * moves the that player to the end, bringing up the next player.
 -- * adds turn to the game's turn list.
 applyMove :: Game -> Move -> Game
-applyMove g@(Game (p:ps) _ bag d ts) m@(Move wp pts emptyRack newBoard) =
+applyMove (Game (p:ps) _ bag d ts) (Move wp pts emptyRack newBoard) =
   Game (ps++[p']) newBoard bag' d (turn : ts) where
     -- freshly filled rack, with tiles removed from bag
     (filledRack,bag', tilesRemoved) = fillRack emptyRack bag
     -- update that player by adding the score for the turn
     p' = p { playerRack = filledRack, playerScore = playerScore p + pts }
-    turn = Turn p wp pts emptyRack tilesRemoved
+    turn = Turn (playerId p) wp pts emptyRack tilesRemoved
 
 -- | print the board contained in the Game
 printGameBoard :: Bool -> Game -> IO ()

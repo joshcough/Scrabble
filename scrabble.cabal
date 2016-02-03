@@ -25,6 +25,9 @@ library
     Scrabble
     Scrabble.Bag
     Scrabble.Board
+    Scrabble.Commands.AST
+    Scrabble.Commands.Interpreter
+    Scrabble.Commands.SExpr
     Scrabble.Dictionary
     Scrabble.Game
     Scrabble.Move.Move
@@ -34,13 +37,12 @@ library
     Scrabble.Position
     Scrabble.ReplHelpers
     Scrabble.Search
-    Scrabble.Commands.AST
-    Scrabble.Commands.Interpreter
-    Scrabble.Commands.SExpr
+    Scrabble.Square
+    Scrabble.Tile
   other-modules:
   build-depends:
-    base >= 4.7 && < 5
-   ,aeson
+    base  >= 4.7 && < 5
+   ,aeson >= 0.9.0.1
    ,array
    ,bytestring
    ,containers
@@ -48,6 +50,7 @@ library
    ,primitive
    ,random-shuffle
    ,semigroups
+   ,text
    ,transformers
    ,trifecta
    ,unordered-containers
@@ -71,14 +74,15 @@ test-suite tests
     Scrabble.GameTests
     Scrabble.ScrabbleTests
     Scrabble.SearchTests
+    Scrabble.TileTests
     TestHelpers
 
   if !flag(tests)
     buildable: False
   else
     build-depends:
-      base >= 4.7 && < 5
-     ,aeson
+      base  >= 4.7 && < 5
+     ,aeson >= 0.9.0.1
      ,checkers
      ,containers
      ,directory

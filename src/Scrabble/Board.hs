@@ -5,29 +5,23 @@
 -- | Board representation
 module Scrabble.Board
   (
-    Board
-  , Bonus(..)
+    module Scrabble.Square
+  , Board
   , Orientation(..)
-  , Square(..)
   , (!)
   , foldOrientation
   , centerPosition
-  , debugSquare
   , elemAt
-  , emptySquare
   , isBoardEmpty
   , neighbors
   , newBoard
   , printBoard
   , putTiles
   , showBoard
-  , taken
-  , toWord
   , wordsAtPoints
   ) where
 
-import Data.Aeson (ToJSON, FromJSON, toJSON, parseJSON)
-import qualified Data.Aeson as J
+import Data.Aeson (ToJSON, FromJSON, toJSON, parseJSON, withArray)
 import Data.Array (Array, listArray)
 import qualified Data.Array as A
 import Data.List (intercalate)
@@ -37,49 +31,8 @@ import qualified Data.Set as Set
 import qualified Data.Vector as V
 import GHC.Generics
 import Scrabble.Bag
-import Scrabble.Dictionary
 import Scrabble.Position
-
-data Bonus  = W3 | W2 | L3 | L2 | Star | NoBonus
-  deriving (Eq, Ord, Generic, ToJSON, FromJSON)
-
-instance Show Bonus where
-  show W3      = "3W"
-  show W2      = "2W"
-  show L3      = "3L"
-  show L2      = "2L"
-  show Star    = " *"
-  show NoBonus = "  "
-
-data Square = Square {
-  tile      :: Maybe Tile,
-  bonus     :: Bonus,
-  squarePos :: Point
-} deriving (Eq, Ord, Generic, ToJSON, FromJSON)
-
-instance Show Square where
-  show = showSquare True
-
-emptySquare :: Square -> Bool
-emptySquare (Square Nothing _ _) = True
-emptySquare _                    = False
-
-taken :: Square -> Bool
-taken = not . emptySquare
-
-showSquare :: Bool -> Square -> String
-showSquare printBonus (Square mt b _) =
-  maybe (if printBonus then show b else "  ") (\t -> ' ' : show (letter t)) mt
-
-debugSquare :: Square -> String
-debugSquare (Square mt b p) = concat
-  ["Square {tile:", show mt, ", bonus:", show b, ", pos:", show p]
-
-debugSquareList :: [Square] -> String
-debugSquareList ss = show $ debugSquare <$> ss
-
-toWord :: [Square] -> [Letter]
-toWord sqrs = letter <$> Maybe.catMaybes (tile <$> sqrs)
+import Scrabble.Square
 
 data Orientation = Horizontal | Vertical
   deriving (Eq, Ord, Generic, ToJSON, FromJSON, Show)
@@ -93,11 +46,12 @@ data Board = Board {
 } deriving (Eq, Ord, Generic)
 
 instance ToJSON Board where
-  toJSON (Board b) = toJSON . filter f $ A.assocs b where
+  toJSON (Board b) = toJSON . fmap g . filter f $ A.assocs b where
     f (_,s) = Maybe.isJust $ tile s
+    g (p,s) = (p,tile s)
 
 instance FromJSON Board where
-  parseJSON = J.withArray "Board" $ \arr ->
+  parseJSON = withArray "Board" $ \arr ->
     Board . (newBoard //) <$> mapM parseJSON (V.toList arr)
 
 type Row = Array Int Square

@@ -40,14 +40,14 @@ createMove' :: Validator -- ^
            ->  WordPut   -- ^
            ->  Dict      -- ^
            ->  Either String Move
-createMove' validate b rack wp dict = if valid then go else errMsg where
+createMove' validate b (Rack rack) wp dict = if valid then go else errMsg where
   errMsg        = Left "error: rack missing input letters"
   rackLetters   = fmap letter rack
   valid         = containsAll (toString putLetters) (toString rackLetters)
   putLetters    = letter <$> wordPutTiles wp
   rackRemainder = fmap fromLetter $ foldl' (flip delete) rackLetters putLetters
   go = do (newBoard, score) <- wordPut validate b wp dict
-          return $ Move wp score rackRemainder newBoard
+          return $ Move wp score (Rack rackRemainder) newBoard
 
 -- | Attempt to lay tiles on the board.
 --   Validate the entire move.

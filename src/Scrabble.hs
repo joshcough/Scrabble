@@ -12,6 +12,8 @@ module Scrabble (
  ,module Scrabble.Move.Move
  ,module Scrabble.Position
  ,module Scrabble.ReplHelpers
+ ,module Scrabble.Square
+ ,module Scrabble.Tile
  ,start
 ) where
 
@@ -28,8 +30,10 @@ import Scrabble.Game
 import Scrabble.Move.Move
 import Scrabble.Position
 import Scrabble.ReplHelpers
+import Scrabble.Square
+import Scrabble.Tile
 
-start :: [Player] -> IO ()
+start :: [Int -> Player] -> IO ()
 start players = do
   g <- newGame players
   printGameBoard True g

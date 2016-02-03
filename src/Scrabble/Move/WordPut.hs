@@ -5,20 +5,21 @@
 -- | Code to represent putting tiles on the board.
 module Scrabble.Move.WordPut where
 
-import Data.Aeson (ToJSON, FromJSON)
+import Data.Aeson (ToJSON, FromJSON, toJSON, parseJSON, withArray)
 import qualified Data.Maybe as Maybe
+import qualified Data.Vector as V
+import Data.Aeson.Types (Parser)
 import GHC.Generics
 import Prelude hiding (Word)
 import Scrabble.Bag
 import Scrabble.Board
-import Scrabble.Dictionary
 import Scrabble.Position
 
 -- | Represents a single tile being put on the board
 data TilePut =
    LetterTilePut Tile   Point -- ^ This tile has a letter on it
  | BlankTilePut  Letter Point -- ^ The blank tile was played, and the letter that the player intends use.
- deriving (Eq, Generic, ToJSON, FromJSON)
+ deriving (Eq, Generic)
 
 -- TODO: when are these shown? show the position be shown too?
 instance Show TilePut where
@@ -28,6 +29,20 @@ instance Show TilePut where
 instance HasLetter TilePut where
   letter (LetterTilePut t _) = letter t
   letter (BlankTilePut  l _) = l
+
+instance ToJSON TilePut where
+  toJSON (LetterTilePut t p) = toJSON (p, letter t, score t)
+  toJSON (BlankTilePut  l p) = toJSON (p, l, 0 :: Int)
+
+instance FromJSON TilePut where
+  parseJSON = withArray "TilePut" $ \arr ->
+    let [ps,ls,ss] = V.toList arr
+    in do point  <- parseJSON ps :: Parser Point
+          letter <- parseJSON ls :: Parser Letter
+          score  <- parseJSON ss :: Parser Int
+          return $  if score == 0
+                    then BlankTilePut letter point
+                    else LetterTilePut (fromLetter letter) point
 
 asTile :: TilePut -> Tile
 asTile (LetterTilePut t _) = t

@@ -29,4 +29,4 @@ eq_reflexive :: Eq a => a -> Bool
 eq_reflexive x = x == x
 
 roundTripJSON :: (FromJSON a, ToJSON a, Eq a, Show a) => a -> Bool
-roundTripJSON a = fromJSON (toJSON a) == Success a
+roundTripJSON a = fromJSON (toJSON a) == Success a && (eitherDecode $ encode a) == Right a

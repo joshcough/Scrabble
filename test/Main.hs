@@ -16,6 +16,7 @@ import qualified Scrabble.BoardTests    as BoardTests
 import qualified Scrabble.GameTests     as GameTests
 import qualified Scrabble.ScrabbleTests as ScrabbleTests
 import qualified Scrabble.SearchTests   as SearchTests
+import qualified Scrabble.TileTests     as TileTests
 
 --For a complete example, see: http://bit.ly/1G5MIoq
 --also: https://hackage.haskell.org/package/test-framework-th
@@ -27,4 +28,9 @@ main = do
   }
 
 allTests =
-  [BagTests.tests, BoardTests.tests, GameTests.tests,ScrabbleTests.tests, SearchTests.tests]
+  [ BagTests.tests
+  , BoardTests.tests
+  , GameTests.tests
+  , ScrabbleTests.tests
+  , SearchTests.tests
+  , TileTests.tests ]
