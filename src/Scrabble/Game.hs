@@ -27,12 +27,16 @@ module Scrabble.Game
 import Data.Aeson
 import Data.Char (toUpper)
 import Data.List (intersperse)
+import Data.List.NonEmpty(NonEmpty((:|)), (<|))
+import qualified Data.List.NonEmpty as NE
 import Data.Maybe (fromJust)
 import GHC.Generics
 import Scrabble.Bag
 import Scrabble.Board
 import Scrabble.Dictionary
 import Scrabble.Move.Move
+import qualified Scrabble.NonEmpty as SNE
+import Scrabble.NonEmpty ()
 import Scrabble.Position (Point)
 
 type Name = String
@@ -129,11 +133,11 @@ data Exchange = Exchange {
 } deriving (Eq, Generic, ToJSON, FromJSON)
 
 data Game = Game {
-   gamePlayers :: [Player] -- ^ The players in this game.
- , gameBoard   :: Board    -- ^ The board, possibly with tiles on it.
- , gameBag     :: Bag      -- ^ The bag containing all the remaining tiles.
- , gameDict    :: Dict     -- ^ The official Scrabble English dictionary.
- , gameTurns   :: [Turn]   -- ^ All the turns played in this game.
+   gamePlayers :: NonEmpty Player -- ^ The players in this game.
+ , gameBoard   :: Board           -- ^ The board, possibly with tiles on it.
+ , gameBag     :: Bag             -- ^ The bag containing all the remaining tiles.
+ , gameDict    :: Dict            -- ^ The official Scrabble English dictionary.
+ , gameTurns   :: [Turn]          -- ^ All the turns played in this game.
 } deriving (Eq, Generic)
 
 -- | don't serialize the dictionary
@@ -153,19 +157,17 @@ instance FromJSON Game where
     gameTurns   <- o .: "gameTurns"
     return Game{..}
 
-newGame :: [Int -> Player] -> IO Game
+newGame :: NonEmpty (Int -> Player) -> IO Game
 newGame ps = do
-  let players = (\(f,i) -> f i) <$> zip ps [0..]
+  let players = (\(f,i) -> f i) <$> NE.zip ps (NE.fromList [0..])
   bag  <- newBag
   dict <- Scrabble.Dictionary.dictionary
-  let (players',bag') = fillRacks players bag
-  return $ Game (reverse players') newBoard bag' dict [] where
-  fillRacks :: [Player] -> Bag -> ([Player], Bag)
-  fillRacks ps bag = foldl f ([], bag) ps where
-    f (ps,b) p = (p':ps,b') where
-      (p',b',_) = fillPlayerRack p b
-
---deriving instance Eq b => Eq (Game (b Square))
+  let (players',bag') = filledRacks players bag
+  return $ Game (NE.reverse players') newBoard bag' dict [] where
+  filledRacks :: NonEmpty Player -> Bag -> (NonEmpty Player, Bag)
+  filledRacks ps bag = SNE.foldl f g ps where
+    f (acc,b) a = let (p',b',_) = fillPlayerRack a b in (p' <| acc, b')
+    g a = let (p',b',_) = fillPlayerRack a bag in (p':|[], b')
 
 instance Show Game where
   show (Game ps brd bag _ turns) = concat $ intersperse ", "
@@ -174,23 +176,23 @@ instance Show Game where
       turns' = "nr turns:" ++ show (length turns)
 
 currentPlayer :: Game -> Player
-currentPlayer = head . gamePlayers
+currentPlayer = NE.head . gamePlayers
 
 nextPlayer :: Game -> Game
-nextPlayer g@(Game (p:ps) _ _ _ _) = g { gamePlayers = ps++[p] }
+nextPlayer g@(Game (p:|(p2:ps)) _ _ _ _) = g { gamePlayers = p2:|(ps++[p]) }
 nextPlayer g = g
 
 isGameOver :: Game -> Bool
 isGameOver (Game _ _ _ _ _) = False -- TODO!
 
-getScores :: Game -> [(Name, Score)]
+getScores :: Game -> NonEmpty (Name, Score)
 getScores g = getNameAndScore <$> gamePlayers g where
   getNameAndScore (Player _ n _ s _) = (n, s)
 
 -- | Put a WordPut on the game's board by first creating the move
 -- and then simply calling applyMove
 applyWordPut :: Game -> WordPut -> Either String Game
-applyWordPut g@(Game (p:_) board _ dict _) wp =
+applyWordPut g@(Game (p:|_) board _ dict _) wp =
   applyMove g <$> createMove board (playerRack p) wp dict
 
 -- | Add a word to the board
@@ -208,8 +210,8 @@ applyWord s o p blanks g = makeWordPut s o p blanks >>= applyWordPut g
 -- * moves the that player to the end, bringing up the next player.
 -- * adds turn to the game's turn list.
 applyMove :: Game -> Move -> Game
-applyMove (Game (p:ps) _ bag d ts) (Move wp pts emptyRack newBoard) =
-  Game (ps++[p']) newBoard bag' d (turn : ts) where
+applyMove (Game (p:|ps) _ bag d ts) (Move wp pts emptyRack newBoard) =
+  Game (NE.fromList $ ps++[p']) newBoard bag' d (turn : ts) where
     -- freshly filled rack, with tiles removed from bag
     (filledRack,bag', tilesRemoved) = fillRack emptyRack bag
     -- update that player by adding the score for the turn

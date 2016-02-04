@@ -19,6 +19,7 @@ module Scrabble (
 
 import Control.Exception (catch, SomeException)
 import Control.Monad (when)
+import Data.List.NonEmpty (NonEmpty((:|)))
 import Prelude hiding (Word)
 import Scrabble.Bag
 import Scrabble.Board
@@ -34,10 +35,11 @@ import Scrabble.Square
 import Scrabble.Tile
 
 start :: [Int -> Player] -> IO ()
-start players = do
-  g <- newGame players
+start (p:ps) = do
+  g <- newGame (p:|ps)
   printGameBoard True g
   gameLoop g
+start _ = putStrLn "Error: Game must have at least one player."
 
 gameLoop ::  Game -> IO ()
 gameLoop g | isGameOver g = gameOver g

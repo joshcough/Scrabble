@@ -5,32 +5,21 @@ module Scrabble.Bag
   (
     module Scrabble.Tile
   , Bag(..)
-  , Points
   , Rack(..)
-  , Score
   , Tile(..)
   , HasLetter(..)
   , bagSize
   , countLettersInBag
-  , fromLetter
   , newBag
   , newRack
   , newShuffledBag
   , orderedBag
   , orderedTiles
   , pointsInBag
-  , simpleWordPoints
-  , tileFromChar
-  , tilesFromJSON
-  , tilesToJSON
   ) where
 
-import Data.Aeson (ToJSON, FromJSON, Value(..), toJSON, parseJSON, withText)
-import Data.Aeson.Types (Parser)
-import Data.Map.Strict (Map)
-import qualified Data.Map.Strict as Map
+import Data.Aeson (ToJSON, FromJSON, toJSON, parseJSON)
 import Data.Maybe (fromJust, listToMaybe)
-import Data.Text (pack, unpack)
 import GHC.Generics
 import Scrabble.Dictionary
 import Scrabble.Tile

@@ -4,10 +4,14 @@
 module Scrabble.ScrabbleArbitrary where
 
 import Control.Applicative
+import qualified Data.List.NonEmpty as NE
 import Data.Map
 import Test.QuickCheck
 import Scrabble
 import TestHelpers
+
+instance Arbitrary a => Arbitrary (NE.NonEmpty a) where
+  arbitrary = NE.fromList <$> listOf1 arbitrary
 
 instance Arbitrary PlayerType where
   arbitrary = oneof $ return <$> [ Human, AI ]
@@ -43,11 +47,11 @@ instance Arbitrary WordPut where
 -- strictly speaking this doesn't work because the turns aren't
 -- applied to the board...but it's good to have for json testing
 instance Arbitrary Game where
-  arbitrary = Game <$> listOf1 arbitrary -- players
-                   <*> pure newBoard     -- board
-                   <*> arbitrary         -- bag (shuffled)
-                   <*> pure dict         -- always the same bag
-                   <*> arbitrary         -- arbitrary turns...
+  arbitrary = Game <$> arbitrary     -- players
+                   <*> pure newBoard -- board
+                   <*> arbitrary     -- bag (shuffled)
+                   <*> pure dict     -- always the same bag
+                   <*> arbitrary     -- arbitrary turns...
 
 instance Arbitrary Turn where
   arbitrary = Turn <$> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary

@@ -7,6 +7,7 @@ module Scrabble.ReplHelpers where
 import Data.Aeson
 import Data.Aeson.Types
 import Data.Maybe (fromJust)
+import Data.List.NonEmpty (NonEmpty((:|)))
 import Prelude hiding (Word)
 import Scrabble.Bag
 import Scrabble.Board
@@ -70,8 +71,9 @@ boardRoundTripJSON s = case parse f s of
     Success b -> printBoard True b
   where f s = parseJSON . toJSON . fst $ now' s
 
-unsafeNewGame :: [Int -> Player] -> Game
-unsafeNewGame = unsafePerformIO . newGame
+unsafeNewGame :: [(Int -> Player)] -> Game
+unsafeNewGame (p:ps) = unsafePerformIO $ newGame (p:|ps)
+unsafeNewGame _ = error "Error: Game must have at least one player."
 
 unsafeNewBag :: Bag
 unsafeNewBag = unsafePerformIO newBag

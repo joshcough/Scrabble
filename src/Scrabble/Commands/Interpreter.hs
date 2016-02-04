@@ -4,10 +4,10 @@
 module Scrabble.Commands.Interpreter where
 
 import Data.List (sort)
+import Data.List.NonEmpty (NonEmpty)
 import qualified Data.Set as Set
 import Scrabble.Bag
 import Scrabble.Board
-import Scrabble.Dictionary
 import Scrabble.Commands.AST
 import qualified Scrabble.Commands.SExpr as S
 import Scrabble.Game
@@ -20,7 +20,7 @@ data PrintCommand =
     QueryResult [(Word, Points)]
   | PrintHelp
   | PrintBoard Bool Board
-  | PrintScores [(Name,Score)]
+  | PrintScores (NonEmpty (Name,Score))
 
 data CommandResult =
     TurnComplete Game

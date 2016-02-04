@@ -34,6 +34,7 @@ library
     Scrabble.Move.Scoring
     Scrabble.Move.Validation
     Scrabble.Move.WordPut
+    Scrabble.NonEmpty
     Scrabble.Position
     Scrabble.ReplHelpers
     Scrabble.Search
@@ -49,6 +50,7 @@ library
    ,parsers
    ,primitive
    ,random-shuffle
+   ,regex-compat
    ,semigroups
    ,text
    ,transformers
@@ -91,6 +93,7 @@ test-suite tests
      ,HUnit
      ,QuickCheck
      ,quickcheck-instances
+     ,semigroups
      ,test-framework
      ,test-framework-hunit
      ,test-framework-quickcheck2

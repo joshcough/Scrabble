@@ -5,6 +5,7 @@ module Scrabble.GameTests (tests) where
 import Data.Aeson
 import Data.Monoid (mempty)
 import Data.List
+import Data.List.NonEmpty (fromList)
 import Scrabble
 import Scrabble.ScrabbleArbitrary
 import Test.Framework (testGroup)
@@ -18,8 +19,8 @@ import TestHelpers
 
 -- Game Unit Tests
 case_players_have_full_racks_at_the_start_of_a_new_game = do
-  g <- newGame [human "Josh", human "Jimbo"]
-  (length . rackTiles . playerRack <$> gamePlayers g) @?= [7,7]
+  g <- newGame $ fromList [human "Josh", human "Jimbo"]
+  (length . rackTiles . playerRack <$> gamePlayers g) @?= fromList [7,7]
 
 prop_game_eq_reflexive :: Game -> Bool
 prop_game_eq_reflexive = eq_reflexive

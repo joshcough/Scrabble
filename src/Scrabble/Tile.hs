@@ -26,7 +26,6 @@ import Data.Maybe (fromJust, listToMaybe)
 import Data.Text (pack, unpack)
 import GHC.Generics
 import Scrabble.Dictionary
-import System.Random.Shuffle
 import Prelude hiding (Word)
 
 import Debug.Trace
