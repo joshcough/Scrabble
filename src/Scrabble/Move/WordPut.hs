@@ -9,6 +9,8 @@ import Data.Aeson (ToJSON, FromJSON, toJSON, parseJSON, withArray)
 import qualified Data.Maybe as Maybe
 import qualified Data.Vector as V
 import Data.Aeson.Types (Parser)
+import Data.Map (Map)
+import qualified Data.Map as Map
 import GHC.Generics
 import Prelude hiding (Word)
 import Scrabble.Bag
@@ -57,27 +59,41 @@ data WordPut = WordPut { wordPutTiles :: [TilePut] }
   deriving (Eq, Generic, ToJSON, FromJSON, Show)
 
 -- | Make a WordPut from all the given data
--- some error handling isn't happening here and this code is pretty bad
--- TODO: explain how the string translates to Tiles.
+-- Letters A-Z are mapped to their natural points
+--   if there is a tile already on the board at that point
+--   then this will fail when it is put on the board
+-- '@' means use the letter already on the board at the point
+--   if there isn't a tile on the board at that point
+--   then this will fail when it is put on the board
+-- '_' means use the blank tile, but this requires that
+--   the player specifies which letter to use for the blank
+--   this is what the blanks argument is for. each _ is mapped
+--   to a letter in the blanks list, in the order that makes sense.
+--   for example if given, "HE_L_" and ['L','O'], then
+--   the first blank is mapped to L, and the second to O.
 makeWordPut :: String
            ->  Orientation
            ->  Point
            ->  [Char]
            ->  Either String WordPut
 makeWordPut w o p blanks = WordPut <$> putTils where
+  -- get the coordinates for each letter
+  points :: [Point]
+  points = reverse . fst $ foldl f ([],p) w where
+    f (acc,p) _ = (p:acc, foldOrientation rightOfP belowP o p)
 
-  -- TODO: this code sucks...what is it even doing?
-  coords :: [(Int,Int)]
-  coords = reverse . fst $ foldl f ([],p) w where
-    f (acc,p) c = (p:acc, foldOrientation rightOfP belowP o p)
+  -- map each _ (blank tile) to the letter it will represent
+  blankIndices :: Map Point Int
+  blankIndices = Map.fromList $
+    zip (fst <$> filter (('_' ==) . snd) (zip points w)) [0..]
 
   putTils :: Either String [TilePut]
-  putTils = Maybe.catMaybes <$> (sequence $ zipWith f w (zip coords [0..])) where
-    f :: Char -> ((Int,Int),Int) -> Either String (Maybe TilePut)
-    f '@' _     = Right Nothing
-    f '_' (p,i) = plt (blanks !! i) p
-    f  c  (p,_) = plt c p
-    -- TODO: why is this function called plt? also, add comment.
-    plt :: Char -> Point -> Either String (Maybe TilePut)
-    plt c p     = Just <$> (LetterTilePut <$> maybe (err c) Right (tileFromChar c) <*> pure p)
+  putTils = Maybe.catMaybes <$> (sequence $ zipWith f w points) where
+    f :: Char -> Point -> Either String (Maybe TilePut)
+    f '@' _ = Right Nothing
+    f '_' p = ltp (blanks !! m) p where
+      m = Maybe.fromMaybe (error "programming error") (Map.lookup p blankIndices)
+    f  c  p = ltp c p
+    ltp c p     = Just <$>
+      (LetterTilePut <$> maybe (err c) Right (tileFromChar c) <*> pure p)
     err c       = Left $ "invalid character: " ++ [c]
