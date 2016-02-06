@@ -29,7 +29,6 @@ import Data.Char (toUpper)
 import Data.List (intersperse)
 import Data.List.NonEmpty(NonEmpty((:|)), (<|))
 import qualified Data.List.NonEmpty as NE
-import Data.Maybe (fromJust)
 import GHC.Generics
 import Scrabble.Bag
 import Scrabble.Board.Board
@@ -229,21 +228,25 @@ putManyWords ::
   -> Board
   -> Dict
   -> Either String (Board,[Score])
-putManyWords validate words b dict = go (b,[]) wordPuts where
+putManyWords validate words b dict = wordPuts >>= go (b,[]) where
+  -- put all the words on the board
   go :: (Board, [Score]) -> [WordPut] -> Either String (Board, [Score])
   go (b,ss) pws = foldl f (Right (b,ss)) pws where
     f acc wp = do
-      (b,scores) <- acc
-      (b',score) <- wordPut validate b wp dict
+      (b, scores) <- acc
+      (b',score)  <- wordPut validate b wp dict
       return (b',scores++[score])
 
-  wordPuts :: [WordPut]
-  wordPuts =  (\(s,o,p) -> toWordPut s o p) <$> words where
-    toWordPut :: String -> Orientation -> Point -> WordPut
-    toWordPut w o (x,y) = WordPut putTils where
-      coordinates :: [Point]
-      coordinates = reverse . fst $ foldl f ([],(x,y)) w where
-        f (acc,p) c = (p:acc, afterByOrientationP o p)
-      putTils :: [TilePut]
-      putTils = zipWith f w coordinates where
-        f c xy = LetterTilePut (fromJust $ tileFromChar (toUpper c)) xy
+  -- create the wordput objects that will get put on the board
+  wordPuts :: Either String [WordPut]
+  wordPuts = sequence $ (\(s,o,p) -> toWordPut s o p) <$> words
+
+  -- create a single wordput
+  toWordPut :: String -> Orientation -> Point -> Either String WordPut
+  toWordPut w o p = WordPut <$> tiles where
+    tiles :: Either String [TilePut]
+    tiles = sequence $ zipWith f w (p : allAfterByOrientationP o p) where
+      f :: Char -> Point -> Either String TilePut
+      f c p = LetterTilePut <$> tileFromCharEither (toUpper c) <*> pure p
+
+

@@ -70,6 +70,7 @@ data WordPut = WordPut { wordPutTiles :: [TilePut] }
 --   to a letter in the blanks list, in the order that makes sense.
 --   for example if given, "HE_L_" and ['L','O'], then
 --   the first blank is mapped to L, and the second to O.
+-- TODO: this is basically the same as putManyWords in Game... so what gives?
 makeWordPut :: String
            ->  Orientation
            ->  Point
@@ -94,6 +95,4 @@ makeWordPut w o p blanks = WordPut <$> putTils where
       ix <- Map.lookup p blankIndices
       ls <- wordFromString blanks
       return $ BlankTilePut (ls!!ix) p
-    f  c  p = Just <$> (
-      LetterTilePut <$> maybe (err c) Right (tileFromChar c) <*> pure p)
-    err c       = Left $ "invalid character: " ++ [c]
+    f  c  p = Just <$> (LetterTilePut <$> tileFromCharEither c <*> pure p)

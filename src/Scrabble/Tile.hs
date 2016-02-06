@@ -13,6 +13,7 @@ module Scrabble.Tile
   , points
   , simpleWordPoints
   , tileFromChar
+  , tileFromCharEither
   , tilesFromJSON
   , tilesToJSON
   , tilesToString
@@ -78,6 +79,10 @@ fromLetter = mkTile
 
 tileFromChar :: Char -> Maybe Tile
 tileFromChar c = mkTile <$> fromChar c
+
+tileFromCharEither :: Char -> Either String Tile
+tileFromCharEither c =
+  maybe (Left $ "invalid character: " ++ [c]) Right (tileFromChar c)
 
 points :: Map Letter Points
 points = Map.fromList [
