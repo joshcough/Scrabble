@@ -7,11 +7,15 @@
 module Scrabble.NonEmpty (Scrabble.NonEmpty.foldl) where
 
 import Data.Aeson
-import Data.List.NonEmpty(NonEmpty((:|)))
+import Data.List.NonEmpty(NonEmpty((:|)), toList, fromList)
 import qualified Data.List.NonEmpty as NE
+import qualified Data.Vector as V
 
-deriving instance ToJSON a => ToJSON (NonEmpty a)
-deriving instance FromJSON a => FromJSON (NonEmpty a)
+instance ToJSON a => ToJSON (NonEmpty a) where
+  toJSON = toJSON . toList
+
+instance FromJSON a => FromJSON (NonEmpty a) where
+  parseJSON v = fromList <$> parseJSON v
 
 -- | fold, but get the initial state by applying a function
 -- to the head of the nel
