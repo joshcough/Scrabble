@@ -22,6 +22,7 @@ case_players_have_full_racks_at_the_start_of_a_new_game = do
   g <- newGame $ fromList [human "Josh", human "Jimbo"]
   (length . rackTiles . playerRack <$> gamePlayers g) @?= fromList [7,7]
 
+-- TODO ======> profile these! they are really slow.
 prop_game_eq_reflexive :: Game -> Bool
 prop_game_eq_reflexive = eq_reflexive
 

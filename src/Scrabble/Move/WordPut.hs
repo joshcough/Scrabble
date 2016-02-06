@@ -14,8 +14,7 @@ import qualified Data.Map as Map
 import GHC.Generics
 import Prelude hiding (Word)
 import Scrabble.Bag
-import Scrabble.Board
-import Scrabble.Position
+import Scrabble.Board.Board
 
 -- | Represents a single tile being put on the board
 data TilePut =
@@ -91,9 +90,10 @@ makeWordPut w o p blanks = WordPut <$> putTils where
   putTils = Maybe.catMaybes <$> (sequence $ zipWith f w points) where
     f :: Char -> Point -> Either String (Maybe TilePut)
     f '@' _ = Right Nothing
-    f '_' p = ltp (blanks !! m) p where
-      m = Maybe.fromMaybe (error "programming error") (Map.lookup p blankIndices)
-    f  c  p = ltp c p
-    ltp c p     = Just <$>
-      (LetterTilePut <$> maybe (err c) Right (tileFromChar c) <*> pure p)
+    f '_' p = Right $ do
+      ix <- Map.lookup p blankIndices
+      ls <- wordFromString blanks
+      return $ BlankTilePut (ls!!ix) p
+    f  c  p = Just <$> (
+      LetterTilePut <$> maybe (err c) Right (tileFromChar c) <*> pure p)
     err c       = Left $ "invalid character: " ++ [c]

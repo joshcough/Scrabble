@@ -22,24 +22,33 @@ library
   ghc-options: -Wall -fno-warn-name-shadowing
   -- default-extensions: OverloadedStrings
   exposed-modules:
+    -- general game modules
     Scrabble
     Scrabble.Bag
-    Scrabble.Board
+    Scrabble.Dictionary
+    Scrabble.Game
+    Scrabble.NonEmpty
+    Scrabble.ReplHelpers
+    Scrabble.Search
+    Scrabble.Tile
+
+    -- board modules
+    Scrabble.Board.Board
+    Scrabble.Board.Orientation
+    Scrabble.Board.Point
+    Scrabble.Board.Square
+
+    -- command language modules
     Scrabble.Commands.AST
     Scrabble.Commands.Interpreter
     Scrabble.Commands.SExpr
-    Scrabble.Dictionary
-    Scrabble.Game
+
+    -- move modules
     Scrabble.Move.Move
     Scrabble.Move.Scoring
     Scrabble.Move.Validation
     Scrabble.Move.WordPut
-    Scrabble.NonEmpty
-    Scrabble.Position
-    Scrabble.ReplHelpers
-    Scrabble.Search
-    Scrabble.Square
-    Scrabble.Tile
+
   other-modules:
   build-depends:
     base  >= 4.7 && < 5
@@ -74,6 +83,7 @@ test-suite tests
     Scrabble.BagTests
     Scrabble.BoardTests
     Scrabble.GameTests
+    Scrabble.Move.WordPutTests
     Scrabble.ScrabbleTests
     Scrabble.SearchTests
     Scrabble.TileTests

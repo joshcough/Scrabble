@@ -10,10 +10,11 @@ import Data.Maybe (fromJust)
 import Data.List.NonEmpty (NonEmpty((:|)))
 import Prelude hiding (Word)
 import Scrabble.Bag
-import Scrabble.Board
+import Scrabble.Board.Board
 import Scrabble.Dictionary
 import Scrabble.Game
 import Scrabble.Move.Move
+import Scrabble.Board.Point
 import Scrabble.Search
 import System.IO.Unsafe
 
@@ -34,19 +35,19 @@ nowNoValidation' s = quickPutNoValidation [(s, Horizontal, (7, 7))]
 printBS :: (Board,[Score]) -> IO ()
 printBS (b, scores) = printBoard True b >> putStrLn (show scores)
 
-quickPut :: [(String, Orientation, (Int, Int))] -> (Board,[Score])
+quickPut :: [(String, Orientation, Point)] -> (Board,[Score])
 quickPut = quickPut' standardValidation
 
 -- | put a word on new board board and return the board and score
 --   but don't do any validation on the word, so that you can put
 --   non-words on the board like "erwaeirawer" for testing other things
-quickPutNoValidation :: [(String, Orientation, (Int, Int))] -> (Board,[Score])
+quickPutNoValidation :: [(String, Orientation, Point)] -> (Board,[Score])
 quickPutNoValidation = quickPut' noValidation
 
 {- test putting some words on a brand new board -}
 quickPut' ::
      Validator
-  -> [(String, Orientation, (Int, Int))]
+  -> [(String, Orientation, Point)]
   -> (Board,[Score])
 quickPut' validate words = unsafePerformIO $ do
   dict <- Scrabble.Dictionary.dictionary

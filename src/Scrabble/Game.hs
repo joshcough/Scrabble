@@ -32,12 +32,11 @@ import qualified Data.List.NonEmpty as NE
 import Data.Maybe (fromJust)
 import GHC.Generics
 import Scrabble.Bag
-import Scrabble.Board
+import Scrabble.Board.Board
 import Scrabble.Dictionary
 import Scrabble.Move.Move
 import qualified Scrabble.NonEmpty as SNE
 import Scrabble.NonEmpty ()
-import Scrabble.Position (Point)
 
 type Name = String
 
@@ -226,7 +225,7 @@ printGameBoard b = printBoard b . gameBoard
 -- TODO: return all errors: Either [String] (Board,[Score])
 putManyWords ::
      Validator
-  -> [(String, Orientation, (Int, Int))]
+  -> [(String, Orientation, Point)]
   -> Board
   -> Dict
   -> Either String (Board,[Score])
@@ -240,13 +239,11 @@ putManyWords validate words b dict = go (b,[]) wordPuts where
 
   wordPuts :: [WordPut]
   wordPuts =  (\(s,o,p) -> toWordPut s o p) <$> words where
-    toWordPut :: String -> Orientation -> (Int, Int) -> WordPut
+    toWordPut :: String -> Orientation -> Point -> WordPut
     toWordPut w o (x,y) = WordPut putTils where
-      coordinates :: [(Int,Int)]
+      coordinates :: [Point]
       coordinates = reverse . fst $ foldl f ([],(x,y)) w where
-        f (acc,(x,y)) c = ((x,y):acc, adder (x,y))
-        adder :: (Int, Int) -> (Int, Int)
-        adder = foldOrientation (\(x,y) -> (x+1,y)) (\(x,y) -> (x,y+1)) o
+        f (acc,p) c = (p:acc, afterByOrientationP o p)
       putTils :: [TilePut]
       putTils = zipWith f w coordinates where
         f c xy = LetterTilePut (fromJust $ tileFromChar (toUpper c)) xy

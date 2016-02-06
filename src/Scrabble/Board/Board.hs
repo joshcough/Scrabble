@@ -3,13 +3,15 @@
 {-# LANGUAGE DeriveGeneric, DeriveAnyClass #-}
 
 -- | Board representation
-module Scrabble.Board
+module Scrabble.Board.Board
   (
-    module Scrabble.Square
+    module Scrabble.Board.Orientation
+  , module Scrabble.Board.Point
+  , module Scrabble.Board.Square
   , Board
-  , Orientation(..)
   , (!)
-  , foldOrientation
+  , afterByOrientation
+  , beforeByOrientation
   , centerPosition
   , elemAt
   , isBoardEmpty
@@ -31,18 +33,12 @@ import qualified Data.Set as Set
 import qualified Data.Vector as V
 import GHC.Generics
 import Scrabble.Bag
-import Scrabble.Position
-import Scrabble.Square
-
-data Orientation = Horizontal | Vertical
-  deriving (Eq, Ord, Generic, ToJSON, FromJSON, Show)
-
-foldOrientation :: a -> a -> Orientation -> a
-foldOrientation l _ Horizontal = l
-foldOrientation _ r Vertical   = r
+import Scrabble.Board.Orientation
+import Scrabble.Board.Point
+import Scrabble.Board.Square
 
 data Board = Board {
-  contents :: (Array (Int, Int) Square)
+  contents :: (Array Point Square)
 } deriving (Eq, Ord, Generic)
 
 instance ToJSON Board where
@@ -57,13 +53,13 @@ instance FromJSON Board where
 type Row = Array Int Square
 type Col = Array Int Square
 
-boardBounds :: ((Int, Int), (Int, Int))
+boardBounds :: (Point, Point)
 boardBounds = ((0,0), (14,14))
 
 infixl 9  !, //
-(!) :: Board -> (Int, Int) -> Square
+(!) :: Board -> Point -> Square
 (Board b) ! p = b A.! p
-(//) :: Board -> [((Int, Int), Square)] -> Array (Int, Int) Square
+(//) :: Board -> [(Point, Square)] -> Array Point Square
 (Board b) // p = b A.// p
 elems :: Board -> [Square]
 elems (Board b) = A.elems b
@@ -143,13 +139,11 @@ boardBonuses = zip [(x,y) | x <- [0..14], y <- [0..14]] (concat [
 centerPosition :: Point
 centerPosition = (7, 7)
 
-{- all the tiles 'before' a position in a matrix,
-   vertically or horizontally -}
+-- | all the tiles 'before' a position in a matrix, vertically or horizontally
 beforeByOrientation :: Orientation -> Board -> Point -> Row
 beforeByOrientation = foldOrientation leftOf above
+-- | all the tiles 'after' a position in a matrix, vertically or horizontally
 afterByOrientation :: Orientation -> Board -> Point -> Row
-{- all the tiles 'after' a position in a matrix,
-   vertically or horizontally -}
 afterByOrientation = foldOrientation rightOf below
 
 -- |
@@ -185,7 +179,7 @@ emptyConnectedPositions b =
 
 -- | all the neighbors of a particular square (left,right,up,down)
 neighbors :: Board -> Point -> [Square]
-neighbors b p = [b ! (x,y) | (x,y) <- neighborsP p, inbounds p]
+neighbors b p = [b ! (x,y) | (x,y) <- neighbors4P p, inbounds p]
 
 -- | returns True if a point is within board bounds
 inbounds :: Point -> Bool

@@ -1,9 +1,13 @@
+{-# LANGUAGE DeriveGeneric, DeriveAnyClass #-}
+
 -- | AST for player input (and parsing)
 module Scrabble.Commands.AST where
 
+import Data.Aeson (ToJSON, FromJSON)
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
-import Scrabble.Board
+import GHC.Generics
+import Scrabble.Board.Board
 import Scrabble.Move.WordPut
 import Scrabble.Search
 import Scrabble.Commands.SExpr
@@ -16,14 +20,14 @@ data ScrabbleExp =
   Skip              |
   Quit              |
   ShowExp ShowExp -- TODO rename to ShowBoard or something
-  deriving (Show)
+  deriving (Generic, FromJSON, ToJSON, Show)
 
 data SearchExp =
   MatchAll  [SearchExp] |
   MatchAny  [SearchExp] |
   MatchNone [SearchExp] |
   Prim PrimSearchExp
-  deriving (Show)
+  deriving  (Generic, FromJSON, ToJSON, Show)
 
 data PrimSearchExp =
   StartsWith String |
@@ -34,10 +38,10 @@ data PrimSearchExp =
   AllOf  [Char]     |
   Only   [Char]     |
   Regex Regex
-  deriving (Show)
+  deriving  (Generic, FromJSON, ToJSON, Show)
 
 data ShowExp = ShowBoard Bool | ShowScores | ShowHelp
-  deriving Show
+  deriving  (Generic, FromJSON, ToJSON, Show)
 
 instance FromSExpr ScrabbleExp where
   fromSExpr (AtomSym "skip") = return Skip
@@ -66,7 +70,7 @@ parsePlace l = parsePlace' l where
   parsePlace' bad = parseError_ "bad placement" (List bad)
   f w o p b = do
     o' <- fromSExpr o
-    p' <- fromSExpr p :: Either String (Int, Int)
+    p' <- fromSExpr p :: Either String Point
     Place <$> makeWordPut w o' p' b
 
 instance FromSExpr Orientation where

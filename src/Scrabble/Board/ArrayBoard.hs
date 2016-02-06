@@ -7,7 +7,7 @@
 {-# LANGUAGE DeriveTraversable #-}
 
 {-
-module Scrabble.ArrayBoard where
+module Scrabble.Board.ArrayBoard where
 
 import Data.Array
 import Data.List (cycle)

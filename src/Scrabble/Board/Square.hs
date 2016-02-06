@@ -1,7 +1,7 @@
 {-# LANGUAGE DeriveGeneric, DeriveAnyClass #-}
 
 -- | Square representation
-module Scrabble.Square
+module Scrabble.Board.Square
   (
     Bonus(..)
   , Square(..)
@@ -16,7 +16,7 @@ import Data.Aeson (ToJSON, FromJSON)
 import qualified Data.Maybe as Maybe
 import GHC.Generics
 import Scrabble.Bag
-import Scrabble.Position
+import Scrabble.Board.Point
 
 data Bonus  = W3 | W2 | L3 | L2 | Star | NoBonus
   deriving (Eq, Ord, Generic, ToJSON, FromJSON)

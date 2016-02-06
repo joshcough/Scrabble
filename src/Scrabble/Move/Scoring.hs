@@ -8,7 +8,7 @@ import Data.Set (Set)
 import qualified Data.Set as Set
 import Prelude hiding (Word)
 import Scrabble.Bag
-import Scrabble.Board
+import Scrabble.Board.Board
 
 type Scorer = [Square] -> Board -> Score
 

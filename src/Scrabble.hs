@@ -3,16 +3,16 @@
 -- | Main entry point
 module Scrabble (
   module Scrabble.Bag
- ,module Scrabble.Board
+ ,module Scrabble.Board.Board
  ,module Scrabble.Commands.AST
  ,module Scrabble.Commands.Interpreter
  ,module Scrabble.Commands.SExpr
  ,module Scrabble.Dictionary
  ,module Scrabble.Game
  ,module Scrabble.Move.Move
- ,module Scrabble.Position
+ ,module Scrabble.Board.Point
  ,module Scrabble.ReplHelpers
- ,module Scrabble.Square
+ ,module Scrabble.Board.Square
  ,module Scrabble.Tile
  ,start
 ) where
@@ -22,16 +22,16 @@ import Control.Monad (when)
 import Data.List.NonEmpty (NonEmpty((:|)))
 import Prelude hiding (Word)
 import Scrabble.Bag
-import Scrabble.Board
+import Scrabble.Board.Board
+import Scrabble.Board.Point
 import Scrabble.Commands.AST
 import Scrabble.Commands.Interpreter
 import Scrabble.Commands.SExpr
 import Scrabble.Dictionary
 import Scrabble.Game
 import Scrabble.Move.Move
-import Scrabble.Position
 import Scrabble.ReplHelpers
-import Scrabble.Square
+import Scrabble.Board.Square
 import Scrabble.Tile
 
 start :: [Int -> Player] -> IO ()

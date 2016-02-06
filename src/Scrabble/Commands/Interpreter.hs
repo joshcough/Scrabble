@@ -7,7 +7,7 @@ import Data.List (sort)
 import Data.List.NonEmpty (NonEmpty)
 import qualified Data.Set as Set
 import Scrabble.Bag
-import Scrabble.Board
+import Scrabble.Board.Board
 import Scrabble.Commands.AST
 import qualified Scrabble.Commands.SExpr as S
 import Scrabble.Game

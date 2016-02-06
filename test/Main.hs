@@ -11,12 +11,13 @@ import Test.HUnit
 import Test.QuickCheck
 
 import Scrabble
-import qualified Scrabble.BagTests      as BagTests
-import qualified Scrabble.BoardTests    as BoardTests
-import qualified Scrabble.GameTests     as GameTests
-import qualified Scrabble.ScrabbleTests as ScrabbleTests
-import qualified Scrabble.SearchTests   as SearchTests
-import qualified Scrabble.TileTests     as TileTests
+import qualified Scrabble.BagTests          as BagTests
+import qualified Scrabble.BoardTests        as BoardTests
+import qualified Scrabble.GameTests         as GameTests
+import qualified Scrabble.Move.WordPutTests as WordPutTests
+import qualified Scrabble.ScrabbleTests     as ScrabbleTests
+import qualified Scrabble.SearchTests       as SearchTests
+import qualified Scrabble.TileTests         as TileTests
 
 --For a complete example, see: http://bit.ly/1G5MIoq
 --also: https://hackage.haskell.org/package/test-framework-th
@@ -33,4 +34,5 @@ allTests =
   , GameTests.tests
   , ScrabbleTests.tests
   , SearchTests.tests
-  , TileTests.tests ]
+  , TileTests.tests
+  , WordPutTests.tests ]

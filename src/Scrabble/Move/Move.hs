@@ -10,7 +10,7 @@ module Scrabble.Move.Move (
 import Data.List (delete, foldl')
 import Prelude hiding (Word)
 import Scrabble.Bag
-import Scrabble.Board
+import Scrabble.Board.Board
 import Scrabble.Move.Scoring
 import Scrabble.Move.Validation
 import Scrabble.Move.WordPut

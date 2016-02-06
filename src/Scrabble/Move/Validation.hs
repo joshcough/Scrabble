@@ -6,7 +6,7 @@ module Scrabble.Move.Validation where
 import Data.List (intersperse, partition)
 import qualified Data.Set as Set
 import Prelude hiding (Word)
-import Scrabble.Board
+import Scrabble.Board.Board
 import Scrabble.Dictionary
 import Scrabble.Move.WordPut
 

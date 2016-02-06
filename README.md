@@ -66,24 +66,27 @@ Place the word 'rest' vertically at position (7,7). You can only place things in
 $ tree src
 .
 ├── Scrabble
-│   ├── Bag.hs             -- Tile and Bag representation
-│   ├── Board.hs           -- Board representation
-│   ├── Commands           -- Code for inputting game commands
-│   │   ├── AST.hs         -- AST for player input (and parsing)
-│   │   ├── Interpreter.hs -- Interpreter for player input
-│   │   └── SExpr.hs       -- Generic sexpr parser
-│   ├── Dictionary.hs      -- Letter and Dictionary representation
-│   ├── Game.hs            -- Player and Game state representation
-│   ├── ListBoard.hs       -- A list based representation of the board
-│   ├── Matrix.hs          -- Generic matrix code used to represent the board
-│   ├── Move               -- Making a move, validation, scoring, etc
-│   │   ├── Move.hs        -- Move representation and functions to make moves
-│   │   ├── Scoring.hs     -- Calculates score for a move
-│   │   ├── Validation.hs  -- Checks to see if a move is valid
-│   │   └── WordPut.hs     -- Representation of tiles put on the board in a turn
-│   ├── Position.hs        -- Simple code to represent (x,y) coordinates
-│   ├── ReplHelpers.hs     -- Some quick testing helper functions for use on the REPL
-│   └── Search.hs          -- Code for searching the dictionary
-└── Scrabble.hs            -- Main entry point
+│   ├── Bag.hs              -- Tile and Bag representation
+│   ├── Board               -- Scrabble board related code
+│   │   ├── Board.hs        -- Board representation and functions
+│   │   ├── Orientation.hs  -- Horizontal and Vertical functions and data
+│   │   ├── Point.hs        -- Simple code to work with (x,y) coordinates
+│   │   └── Square.hs       -- Squares on the board
+│   ├── Commands            -- Code for inputting game commands
+│   │   ├── AST.hs          -- AST for player input (and parsing)
+│   │   ├── Interpreter.hs  -- Interpreter for player input
+│   │   └── SExpr.hs        -- Generic sexpr parser
+│   ├── Dictionary.hs       -- Letter and Dictionary representation
+│   ├── Game.hs             -- Player and Game state representation
+│   ├── Move                -- Making a move, validation, scoring, etc
+│   │   ├── Move.hs         -- Move representation and functions to make moves
+│   │   ├── Scoring.hs      -- Calculates score for a move
+│   │   ├── Validation.hs   -- Checks to see if a move is valid
+│   │   └── WordPut.hs      -- Representation of tiles put on the board in a turn
+│   ├── NonEmpty.hs         -- Helper functions for NEL
+│   ├── ReplHelpers.hs      -- Some quick testing helper functions for use on the REPL
+│   └── Search.hs           -- Code for searching the dictionary
+│   └── Tile.hs             -- Tile representation
+└── Scrabble.hs
 ```
 
