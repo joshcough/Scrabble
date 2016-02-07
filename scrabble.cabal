@@ -78,6 +78,7 @@ test-suite tests
   type:           exitcode-stdio-1.0
   main-is:        test/Main.hs
   hs-source-dirs: . test
+  ghc-options: -Wall -fno-warn-name-shadowing
   other-modules:
     Scrabble.ScrabbleArbitrary
     Scrabble.BagTests
@@ -109,3 +110,20 @@ test-suite tests
      ,test-framework-quickcheck2
      ,test-framework-th
      ,scrabble
+
+-- configuration for an executable
+executable snap-server
+  default-language: Haskell2010
+  hs-source-dirs: snap
+  ghc-options: -Wall -fno-warn-name-shadowing
+  main-is: Main.hs
+  build-depends:
+    base  >= 4.7 && < 5
+   ,aeson
+   ,bytestring
+   ,monads-tf
+   ,safe
+   ,scrabble
+   ,semigroups
+   ,snap-core
+   ,snap-server
