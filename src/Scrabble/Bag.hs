@@ -19,7 +19,6 @@ module Scrabble.Bag
   ) where
 
 import Data.Aeson (ToJSON, FromJSON, toJSON, parseJSON)
-import Data.Maybe (fromJust, listToMaybe)
 import GHC.Generics
 import Scrabble.Dictionary
 import Scrabble.Tile

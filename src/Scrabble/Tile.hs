@@ -29,8 +29,6 @@ import GHC.Generics
 import Scrabble.Dictionary
 import Prelude hiding (Word)
 
-import Debug.Trace
-
 type Points = Int
 type Score  = Int
 

@@ -33,10 +33,12 @@ import Control.Monad (filterM)
 import Data.Char (toUpper)
 import Data.List (delete, sort, permutations)
 import qualified Data.List as List
+import Data.Maybe (isJust)
 import Data.Set (Set)
 import qualified Data.Set as Set
 import Prelude hiding (or, and, all)
 import System.IO.Unsafe
+import Text.Regex
 
 type Search = String -> Bool
 
@@ -81,7 +83,7 @@ startsWith :: String -> Search
 startsWith s w = take (length s) w == s
 
 regex :: String -> Search
-regex r w = error "todo"
+regex r = isJust . matchRegex (mkRegex r)
 
 ups :: String -> String
 ups = List.sort . fmap toUpper

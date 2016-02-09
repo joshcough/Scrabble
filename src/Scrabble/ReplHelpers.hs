@@ -14,7 +14,6 @@ import Scrabble.Board.Board
 import Scrabble.Dictionary
 import Scrabble.Game
 import Scrabble.Move.Move
-import Scrabble.Board.Point
 import Scrabble.Search
 import System.IO.Unsafe
 

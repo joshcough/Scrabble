@@ -8,8 +8,6 @@ module Scrabble.NonEmpty (Scrabble.NonEmpty.foldl) where
 
 import Data.Aeson
 import Data.List.NonEmpty(NonEmpty((:|)), toList, fromList)
-import qualified Data.List.NonEmpty as NE
-import qualified Data.Vector as V
 
 instance ToJSON a => ToJSON (NonEmpty a) where
   toJSON = toJSON . toList
