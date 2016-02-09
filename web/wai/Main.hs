@@ -31,8 +31,8 @@ socketsApp ref = websocketsOr defaultConnectionOptions wsApp defaultApp where
   wsApp pending_conn = do
     i <- readIORef ref
     case i of
-      0 -> connect pending_conn ref 1
-      1 -> connect pending_conn ref 2
+      0 -> connect connection1 pending_conn ref 1
+      1 -> connect connection2 pending_conn ref 2
       _ -> rejectRequest pending_conn "too many players"
 
 -- | This is a simple app that just serves up some html and javascript
@@ -49,13 +49,12 @@ defaultApp request respond = go where
   notFound path = Wai.responseLBS  status404 [("Content-Type", "text/plain")] (LB.append "404 - Not Found: " (LB.fromStrict path))
 
 -- | Connect to an incoming websocket request, set up communication with it in general.
-connect :: Show a => PendingConnection -> IORef a -> a -> IO ()
-connect pending_conn ref i = go where
+connect :: Show a => MVar Connection -> PendingConnection -> IORef a -> a -> IO ()
+connect convar pending_conn ref i = go where
   go = do
     conn <- acceptRequest pending_conn
     writeIORef ref i
-    putMVar connection1 conn
-    sendTextData conn ((B.append "you are player " $ B.pack (show i)) :: B.ByteString)
+    putMVar convar conn
     forkPingThread conn 30
     talk conn
   talk :: Network.WebSockets.Connection -> IO ()
@@ -73,12 +72,8 @@ connection2 = unsafePerformIO newEmptyMVar
 
 gameThread :: IO ThreadId
 gameThread = forkIO $ do
-  putStrLn "game thread started"
   c1 <- readMVar connection1
-  putStrLn "read conn 1, sleeping then saying hi"
   threadDelay 2000000
-  sendTextData c1 ("Hello, client1" :: B.ByteString)
   c2 <- readMVar connection2
-  putStrLn "read conn 2"
   sendTextData c1 ("game started!! you are player 1" :: B.ByteString)
   sendTextData c2 ("game started!! you are player 2" :: B.ByteString)
