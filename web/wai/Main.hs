@@ -32,7 +32,7 @@ socketsApp ref = websocketsOr defaultConnectionOptions wsApp defaultApp where
     i <- readIORef ref
     case i of
       0 -> connect pending_conn ref 1
-      1 -> connect pending_conn ref 1
+      1 -> connect pending_conn ref 2
       _ -> rejectRequest pending_conn "too many players"
 
 -- | This is a simple app that just serves up some html and javascript
