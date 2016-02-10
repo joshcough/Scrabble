@@ -7,18 +7,21 @@ import Control.Monad (forever)
 import Control.Monad.Trans
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Lazy as LB
+import Data.Aeson (eitherDecode, encode)
 import Data.IORef
+import qualified Data.List.NonEmpty as NE
 import Network.HTTP.Types
 import qualified Network.Wai as Wai
 import Network.Wai.Handler.Warp
 import Network.Wai.Handler.WebSockets
 import Network.WebSockets
+import Scrabble
 import System.IO.Unsafe
 
 -- | Run the web app
 main :: IO ()
 main = do
-  _ <- liftIO gameThread
+  _ <- liftIO gameStartThread
   r <- liftIO $ newIORef 0
   run 8000 (socketsApp r)
 
@@ -44,23 +47,18 @@ defaultApp request respond = go where
       "/"        -> plainIndex
       "/game.js" -> gameJS
       bad        -> notFound bad
-  plainIndex    = Wai.responseFile status200 [(hContentType, "text/html")] "web/wai/index.html" Nothing
-  gameJS        = Wai.responseFile status200 [(hContentType, "text/javascript")] "web/wai/game.js" Nothing
+  plainIndex    = Wai.responseFile status200 [(hContentType, "text/html")]       "web/wai-server/index.html" Nothing
+  gameJS        = Wai.responseFile status200 [(hContentType, "text/javascript")] "web/wai-server/game.js" Nothing
   notFound path = Wai.responseLBS  status404 [("Content-Type", "text/plain")] (LB.append "404 - Not Found: " (LB.fromStrict path))
 
--- | Connect to an incoming websocket request, set up communication with it in general.
+-- | Connect with the incoming websocket request, set up communication with it in general.
 connect :: Show a => MVar Connection -> PendingConnection -> IORef a -> a -> IO ()
-connect convar pending_conn ref i = go where
-  go = do
-    conn <- acceptRequest pending_conn
-    writeIORef ref i
-    putMVar convar conn
-    forkPingThread conn 30
-    talk conn
-  talk :: Network.WebSockets.Connection -> IO ()
-  talk conn = forever $ do
-    msg <- receiveData conn
-    sendTextData conn (msg :: B.ByteString)
+connect convar pending_conn ref i = do
+  conn <- acceptRequest pending_conn
+  writeIORef ref i
+  putMVar convar conn
+  forkPingThread conn 30
+  forever $ receiveMove conn -- listen for moves, forever.
 
 {-# NOINLINE connection1 #-}
 connection1 :: MVar Connection
@@ -70,10 +68,40 @@ connection1 = unsafePerformIO newEmptyMVar
 connection2 :: MVar Connection
 connection2 = unsafePerformIO newEmptyMVar
 
-gameThread :: IO ThreadId
-gameThread = forkIO $ do
+-- | wait for two players to connect
+--   then send them their player names, and the new game.
+gameStartThread :: IO ThreadId
+gameStartThread = forkIO $ do
   c1 <- readMVar connection1
-  threadDelay 2000000
   c2 <- readMVar connection2
-  sendTextData c1 ("game started!! you are player 1" :: B.ByteString)
-  sendTextData c2 ("game started!! you are player 2" :: B.ByteString)
+  g  <- newGame $ NE.fromList [human "player1", human "player2"]
+  sendTextData c1 ("player1" :: LB.ByteString)
+  sendTextData c2 ("player2" :: LB.ByteString)
+  updateBothClients g
+
+-- | send an updated game state to both clients.
+updateBothClients :: Game -> IO ()
+updateBothClients g = do
+  c1 <- readMVar connection1
+  c2 <- readMVar connection2
+  let json = encode g
+  sendTextData c1 json
+  sendTextData c2 json
+  return ()
+
+-- | receive a move (and game) from a player, and attempt to apply it
+--   if it isn't the players turn, or the move results in an error,
+--   then send the error message back on the connection
+--   if it succeeds, send the new game state to both players
+-- TODO: check if it is the players turn.
+receiveMove :: Connection -> IO ()
+receiveMove conn = do
+  gameAndMove <- receiveData conn
+  case decodeGameAndMove gameAndMove of
+    Right g     -> updateBothClients g
+    Left errMsg -> sendTextData conn (B.pack errMsg)
+
+decodeGameAndMove :: LB.ByteString -> Either String Game
+decodeGameAndMove gameAndMove = do
+  (g,m) <- eitherDecode (gameAndMove :: LB.ByteString)
+  applyWordPut g m
