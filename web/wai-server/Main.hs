@@ -62,6 +62,8 @@ socketsApp ref = websocketsOr defaultConnectionOptions wsApp defaultApp where
     writeIORef ref i
     -- as soon as we connect, they must send their name.
     name <- receiveData conn :: IO B.ByteString
+    -- send them back an id
+    sendTextData conn (B.pack $ show i)
     putMVar convar (name, conn)
     forkPingThread conn 30
     forever $ receiveMove name conn -- listen for moves, forever.
