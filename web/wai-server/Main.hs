@@ -56,7 +56,7 @@ socketsApp ref = websocketsOr defaultConnectionOptions wsApp defaultApp where
     notFound path = Wai.responseLBS  status404 [("Content-Type", "text/plain")] (LB.append "404 - Not Found: " path)
 
   -- | Connect with the incoming websocket request, set up communication with it in general.
-  connect :: Show a => MVar (PlayerName, Connection) -> PendingConnection -> IORef a -> a -> IO ()
+  connect :: MVar (PlayerName, Connection) -> PendingConnection -> IORef Int -> Int -> IO ()
   connect convar pending_conn ref i = do
     conn <- acceptRequest pending_conn
     writeIORef ref i
@@ -66,7 +66,7 @@ socketsApp ref = websocketsOr defaultConnectionOptions wsApp defaultApp where
     sendTextData conn (B.pack $ show i)
     putMVar convar (name, conn)
     forkPingThread conn 30
-    forever $ receiveMove (read $ show i :: Int) conn -- listen for moves, forever.
+    forever $ receiveMove i conn -- listen for moves, forever.
 
   -- | receive a move (and game) from a player, and attempt to apply it
   --   if it isn't the players turn, or the move results in an error,
