@@ -56,7 +56,7 @@ socketsApp ref = websocketsOr defaultConnectionOptions wsApp defaultApp where
     notFound path = Wai.responseLBS  status404 [("Content-Type", "text/plain")] (LB.append "404 - Not Found: " path)
 
   -- | Connect with the incoming websocket request, set up communication with it in general.
-  connect :: Show a => MVar (PlayerName, Connection) -> PendingConnection -> IORef a -> a -> IO ()
+  connect :: MVar (PlayerName, Connection) -> PendingConnection -> IORef Int -> Int -> IO ()
   connect convar pending_conn ref i = do
     conn <- acceptRequest pending_conn
     writeIORef ref i
@@ -66,15 +66,15 @@ socketsApp ref = websocketsOr defaultConnectionOptions wsApp defaultApp where
     sendTextData conn (B.pack $ show i)
     putMVar convar (name, conn)
     forkPingThread conn 30
-    forever $ receiveMove name conn -- listen for moves, forever.
+    forever $ receiveMove i conn -- listen for moves, forever.
 
   -- | receive a move (and game) from a player, and attempt to apply it
   --   if it isn't the players turn, or the move results in an error,
   --   then send the error message back on the connection
   --   if it succeeds, send the new game state to both players
   -- TODO: check if it is the players turn.
-  receiveMove :: B.ByteString -> Connection -> IO ()
-  receiveMove pName conn = go where
+  receiveMove :: Int -> Connection -> IO ()
+  receiveMove pid conn = go where
     go = do
       gameAndMove <- receiveData conn
       case decodeGameAndMove gameAndMove of
@@ -83,7 +83,7 @@ socketsApp ref = websocketsOr defaultConnectionOptions wsApp defaultApp where
     decodeGameAndMove :: B.ByteString -> Either String Game
     decodeGameAndMove gameAndMove = do
       (g,m) <- eitherDecode $ LB.fromStrict gameAndMove
-      if (playerName . NE.head $ gamePlayers g) == B.unpack pName
+      if (playerId . NE.head $ gamePlayers g) == pid
       then Right () else Left "Not your turn"
       applyWordPut g m
 
