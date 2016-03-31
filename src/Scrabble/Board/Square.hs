@@ -33,7 +33,7 @@ data Square = Square {
   tile      :: Maybe Tile,
   bonus     :: Bonus,
   squarePos :: Point
-} deriving (Eq, Ord, Generic, ToJSON, FromJSON)
+} deriving (Eq, Ord, Generic)
 
 instance Show Square where
   show = showSquare True

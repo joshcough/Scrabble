@@ -39,7 +39,7 @@ import Scrabble.Board.Square
 
 data Board = Board {
   contents :: (Array Point Square)
-} deriving (Eq, Ord, Generic)
+} deriving (Eq, Ord, Generic, Show)
 
 instance ToJSON Board where
   toJSON (Board b) = toJSON . fmap g . filter f $ A.assocs b where
@@ -48,7 +48,9 @@ instance ToJSON Board where
 
 instance FromJSON Board where
   parseJSON = withArray "Board" $ \arr ->
-    Board . (newBoard //) <$> mapM parseJSON (V.toList arr)
+    Board . (newBoard //) . fmap rebuildSquare <$> mapM parseJSON (V.toList arr)
+    where rebuildSquare (p,t) =
+            (p, Square (Just t) (maybe NoBonus id $ lookup p boardBonuses) p )
 
 type Row = Array Int Square
 type Col = Array Int Square
