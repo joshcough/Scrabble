@@ -33,24 +33,24 @@ import qualified Data.Set as Set
 import qualified Data.Vector as V
 import GHC.Generics
 import Scrabble.Bag
+import Data.Bifunctor (second)
 import Scrabble.Board.Orientation
 import Scrabble.Board.Point
 import Scrabble.Board.Square
 
 data Board = Board {
   contents :: (Array Point Square)
-} deriving (Eq, Ord, Generic, Show)
+} deriving (Eq, Ord, Generic)
 
 instance ToJSON Board where
-  toJSON (Board b) = toJSON . fmap g . filter f $ A.assocs b where
-    f (_,s) = Maybe.isJust $ tile s
-    g (p,s) = (p,tile s)
+  toJSON (Board b) =
+      toJSON . fmap (second tile) . filter (taken . snd) $ A.assocs b
+
 
 instance FromJSON Board where
   parseJSON = withArray "Board" $ \arr ->
-    Board . (newBoard //) . fmap rebuildSquare <$> mapM parseJSON (V.toList arr)
-    where rebuildSquare (p,t) =
-            (p, Square (Just t) (maybe NoBonus id $ lookup p boardBonuses) p )
+    putTiles newBoard <$> mapM parseJSON (V.toList arr)
+
 
 type Row = Array Int Square
 type Col = Array Int Square
