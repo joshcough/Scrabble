@@ -25,30 +25,33 @@ module Scrabble.Board.Board
 
 import Data.Aeson (ToJSON, FromJSON, toJSON, parseJSON, withArray)
 import Data.Array (Array, listArray)
-import qualified Data.Array as A
 import Data.List (intercalate)
-import qualified Data.Maybe as Maybe
 import Data.Set (Set)
-import qualified Data.Set as Set
-import qualified Data.Vector as V
 import GHC.Generics
 import Scrabble.Bag
+import Data.Bifunctor (second)
 import Scrabble.Board.Orientation
 import Scrabble.Board.Point
 import Scrabble.Board.Square
+
+import qualified Data.Array  as A
+import qualified Data.Maybe  as Maybe
+import qualified Data.Set    as Set
+import qualified Data.Vector as V
 
 data Board = Board {
   contents :: (Array Point Square)
 } deriving (Eq, Ord, Generic)
 
 instance ToJSON Board where
-  toJSON (Board b) = toJSON . fmap g . filter f $ A.assocs b where
-    f (_,s) = Maybe.isJust $ tile s
-    g (p,s) = (p,tile s)
+  toJSON (Board b) =
+      toJSON . fmap (second tile) . filter (taken . snd) $ A.assocs b
+
 
 instance FromJSON Board where
   parseJSON = withArray "Board" $ \arr ->
-    Board . (newBoard //) <$> mapM parseJSON (V.toList arr)
+    putTiles newBoard <$> mapM parseJSON (V.toList arr)
+
 
 type Row = Array Int Square
 type Col = Array Int Square
