@@ -25,18 +25,19 @@ module Scrabble.Board.Board
 
 import Data.Aeson (ToJSON, FromJSON, toJSON, parseJSON, withArray)
 import Data.Array (Array, listArray)
-import qualified Data.Array as A
 import Data.List (intercalate)
-import qualified Data.Maybe as Maybe
 import Data.Set (Set)
-import qualified Data.Set as Set
-import qualified Data.Vector as V
 import GHC.Generics
 import Scrabble.Bag
 import Data.Bifunctor (second)
 import Scrabble.Board.Orientation
 import Scrabble.Board.Point
 import Scrabble.Board.Square
+
+import qualified Data.Array  as A
+import qualified Data.Maybe  as Maybe
+import qualified Data.Set    as Set
+import qualified Data.Vector as V
 
 data Board = Board {
   contents :: (Array Point Square)
