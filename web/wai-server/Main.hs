@@ -73,13 +73,17 @@ socketsApp ref = websocketsOr defaultConnectionOptions wsApp defaultApp where
 --   decode the message and check if it's the player's turn
 --   propagating error message along the way
 --   then match on the MessageType and handle each message appropriately
+--   if the client just wants a ValidityCheck, apply the move but only
+--   return whether it applied sucessfully or not
+--   if the client wants an ActualMove, then apply the move and return
+--   the updated game state or an error
 
 receiveMessage :: Int -> Connection -> IO ()
 receiveMessage pid conn = do
     messageData <- receiveData conn
     case decodeAndCheckTurn messageData of
         Right (Message ActualMove g m) ->
-            case applyWordPut g m of --apply the move, update both clients
+            case applyWordPut g m of 
                 Right newGame -> updateBothClients newGame
                 Left errMsg -> sendTextData conn (B.pack errMsg)
         Right (Message ValidityCheck g m) ->
