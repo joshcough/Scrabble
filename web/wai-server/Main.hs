@@ -85,7 +85,7 @@ receiveMessage pid conn = do
         Right (Message ActualMove g m) ->
             case applyWordPut g m of
                 Right newGame -> updateBothClients newGame
-                Left errMsg -> sendTextData conn (B.pack errMsg)
+                Left errMsg   -> sendTextData conn (B.pack errMsg)
         Right (Message ValidityCheck g m) ->
             sendTextData conn $ encode $
                 either (const True) (const False) (applyWordPut g m)
