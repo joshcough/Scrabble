@@ -17,6 +17,7 @@ import Network.Wai.Handler.WebSockets
 import Network.WebSockets
 import Scrabble
 import System.IO.Unsafe
+import ClientMessage
 
 type PlayerName = B.ByteString
 
@@ -66,26 +67,35 @@ socketsApp ref = websocketsOr defaultConnectionOptions wsApp defaultApp where
     sendTextData conn (B.pack $ show i)
     putMVar convar (name, conn)
     forkPingThread conn 30
-    forever $ receiveMove i conn -- listen for moves, forever.
+    forever $ receiveMessage i conn -- listen for moves, forever.
 
-  -- | receive a move (and game) from a player, and attempt to apply it
-  --   if it isn't the players turn, or the move results in an error,
-  --   then send the error message back on the connection
-  --   if it succeeds, send the new game state to both players
-  -- TODO: check if it is the players turn.
-  receiveMove :: Int -> Connection -> IO ()
-  receiveMove pid conn = go where
-    go = do
-      gameAndMove <- receiveData conn
-      case decodeGameAndMove gameAndMove of
-        Right g     -> updateBothClients g
+-- | recieve a message from the client.
+--   decode the message and check if it's the player's turn
+--   propagating error message along the way
+--   then match on the MessageType and handle each message appropriately
+
+receiveMessage :: Int -> Connection -> IO ()
+receiveMessage pid conn = do
+    messageData <- receiveData conn
+    case decodeAndCheckTurn messageData of
+        Right (Message ActualMove g m) ->
+            case applyWordPut g m of --apply the move, update both clients
+                Right newGame -> updateBothClients newGame
+                Left errMsg -> sendTextData conn (B.pack errMsg)
+        Right (Message ValidityCheck g m) ->
+            sendTextData conn $ encode $
+                either (const True) (const False) (applyWordPut g m)
+
+
         Left errMsg -> sendTextData conn (B.pack errMsg)
-    decodeGameAndMove :: B.ByteString -> Either String Game
-    decodeGameAndMove gameAndMove = do
-      (g,m) <- eitherDecode $ LB.fromStrict gameAndMove
-      if (playerId . NE.head $ gamePlayers g) == pid
-      then Right () else Left "Not your turn"
-      applyWordPut g m
+    where
+        decodeAndCheckTurn :: B.ByteString -> Either String ClientMessage
+        decodeAndCheckTurn m = do
+            msg@(Message _ g _) <- eitherDecode $ LB.fromStrict m
+            if (playerId . NE.head $ gamePlayers g) == pid
+            then Right msg
+            else Left "Not your turn"
+
 
 -- | send an updated game state to both clients.
 updateBothClients :: Game -> IO ()
