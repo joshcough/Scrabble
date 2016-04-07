@@ -83,14 +83,12 @@ receiveMessage pid conn = do
     messageData <- receiveData conn
     case decodeAndCheckTurn messageData of
         Right (Message ActualMove g m) ->
-            case applyWordPut g m of 
+            case applyWordPut g m of
                 Right newGame -> updateBothClients newGame
                 Left errMsg -> sendTextData conn (B.pack errMsg)
         Right (Message ValidityCheck g m) ->
             sendTextData conn $ encode $
                 either (const True) (const False) (applyWordPut g m)
-
-
         Left errMsg -> sendTextData conn (B.pack errMsg)
     where
         decodeAndCheckTurn :: B.ByteString -> Either String ClientMessage
