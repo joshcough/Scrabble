@@ -88,13 +88,14 @@ receiveMessage pid conn = do
                 Left errMsg   -> sendTextData conn (B.pack errMsg)
         Right (Message ValidityCheck g m) ->
             sendTextData conn $ encode $
-                either (const True) (const False) (applyWordPut g m)
+                either (const False) (const True) (applyWordPut g m)
         Left errMsg -> sendTextData conn (B.pack errMsg)
     where
         decodeAndCheckTurn :: B.ByteString -> Either String ClientMessage
         decodeAndCheckTurn m = do
             msg@(Message _ g _) <- eitherDecode $ LB.fromStrict m
-            if (playerId . NE.head $ gamePlayers g) == pid
+            -- thread ids (`pid` in this function) are one ahead of the client side player id
+            if (playerId . NE.head $ gamePlayers g) + 1  ==  pid
             then Right msg
             else Left "Not your turn"
 

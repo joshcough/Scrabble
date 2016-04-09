@@ -8,7 +8,7 @@ import GHC.Generics
 
 
 data MessageType = ValidityCheck | ActualMove
-    deriving (Show, Eq, Generic, FromJSON)
+    deriving (Show, Eq, Generic, ToJSON, FromJSON)
 
 data ClientMessage = Message MessageType Game WordPut
-    deriving (Eq, Generic, FromJSON)
+    deriving (Eq, Generic, ToJSON, FromJSON)
