@@ -14,7 +14,7 @@ import Scrabble.Board.Board
 import Scrabble.Move.Scoring
 import Scrabble.Move.Validation
 import Scrabble.Move.WordPut
-import Scrabble.Search (containsAll)
+import Scrabble.Search (containsAllWithBlanks, countBlanksUsed)
 
 -- |
 data Move = Move {
@@ -42,9 +42,13 @@ createMove' :: Validator -- ^
 createMove' validate b (Rack rack) wp dict = if valid then go else errMsg where
   errMsg        = Left "error: rack missing input letters"
   rackLetters   = fmap letter rack
-  valid         = containsAll (toString putLetters) (toString rackLetters)
+  valid         = containsAllWithBlanks (toString putLetters) (toString rackLetters)
+  blanksUsed    = countBlanksUsed (toString putLetters) (toString rackLetters)
   putLetters    = letter <$> wordPutTiles wp
-  rackRemainder = fmap fromLetter $ foldl' (flip delete) rackLetters putLetters
+  rackRemainder = fmap fromLetter $
+                  applyNTimes blanksUsed (delete Blank) $
+                  foldl' (flip delete) rackLetters putLetters
+  applyNTimes n f = foldr (.) id (replicate n f)
   go = do (newBoard, score) <- wordPut validate b wp dict
           return $ Move wp score (Rack rackRemainder) newBoard
 

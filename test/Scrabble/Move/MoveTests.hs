@@ -12,10 +12,10 @@ import Scrabble.Bag
 
 
 case_create_move =
-    let rack = Rack    [ Tile O 3, Tile P 5, Tile T 3 ]
-        wp   = WordPut [ LetterTilePut (Tile T 3) (7,7)
-                       , LetterTilePut (Tile O 3) (7,8)
-                       , LetterTilePut (Tile P 5) (7,9)
+    let rack = Rack    [ fromLetter O, fromLetter P, fromLetter T ]
+        wp   = WordPut [ LetterTilePut (fromLetter T) (7,7)
+                       , LetterTilePut (fromLetter O) (7,8)
+                       , LetterTilePut (fromLetter P) (7,9)
                        ]
         expected = do
             (board',score) <- wordPut standardValidation newBoard wp dict
@@ -23,11 +23,39 @@ case_create_move =
 
     in createMove newBoard rack wp dict @?= expected
 
-case_create_move_with_blank =
-    let rack = Rack    [ Tile O 3, Tile P 5, Tile Blank 0]
+
+case_create_move_single_blank =
+    let rack = Rack    [ fromLetter O, fromLetter P, fromLetter Blank]
         wp   = WordPut [ BlankTilePut T (7,7)
-                       , LetterTilePut (Tile O 3) (7,8)
-                       , LetterTilePut (Tile P 5) (7,9)
+                       , LetterTilePut (fromLetter O) (7,8)
+                       , LetterTilePut (fromLetter P) (7,9)
+                       ]
+        expected = do
+            (board',score) <- wordPut standardValidation newBoard wp dict
+            return $ Move wp score (Rack []) board'
+
+    in createMove newBoard rack wp dict @?= expected
+
+
+case_create_move_many_blanks =
+    let rack = Rack    [ fromLetter Blank, fromLetter O, fromLetter P,  fromLetter Blank]
+        wp   = WordPut [ BlankTilePut T (7,7)
+                       , LetterTilePut (fromLetter O) (7,8)
+                       , LetterTilePut (fromLetter P) (7,9)
+                       ]
+        expected = do
+            (board',score) <- wordPut standardValidation newBoard wp dict
+            return $ Move wp score (Rack [fromLetter Blank]) board'
+
+    in createMove newBoard rack wp dict @?= expected
+
+
+case_create_move_all_blanks =
+    let rack = Rack    [ fromLetter Blank, fromLetter O, fromLetter P,  fromLetter Blank]
+        wp   = WordPut [ BlankTilePut T (7,7)
+                       , LetterTilePut (fromLetter O) (7,8)
+                       , LetterTilePut (fromLetter P) (7,9)
+                       , BlankTilePut S (7,10)
                        ]
         expected = do
             (board',score) <- wordPut standardValidation newBoard wp dict
