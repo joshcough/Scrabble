@@ -41,24 +41,36 @@ createMove' :: Validator -- ^
            ->  Either String Move
 createMove' validate b (Rack rack) wp dict = if valid then go else errMsg where
   errMsg        = Left "error: rack missing input letters"
-  rackLetters   = fmap letter rack
-  valid         = containsAllWithBlanks (toString putLetters) (toString rackLetters)
-  putLetters    = letter <$> wordPutTiles wp
-  -- applyNTimes n f = foldr (.) id (replicate n f)
+  rackLetters   = toString (fmap letter rack)
+  valid         = containsAllWithBlanks putLetters rackLetters
+  putLetters    = toString (letter <$> wordPutTiles wp)
   go = do (newBoard, score) <- wordPut validate b wp dict
           return $ Move wp score (rackRemainder (Rack rack) wp) newBoard
 
-rackRemainder :: Rack -> WordPut -> Rack
-rackRemainder r wp = Rack $ error "rack tiles // word put tiles, accounting for blanks"
 
-
--- | Like the above, but if it encounters a character in in s1 not in
---   s2, it deletes a blank and tries again before returning false
+-- | Like containsAll from Scrabble.Search, but if it encounters a character
+--   in s1 not in s2, it deletes a blank and tries again before returning false
 containsAllWithBlanks :: String -> Search
 containsAllWithBlanks s1 s2 = fst $ foldl' f (True, ups s2) (ups s1) where
   f (b,s) c = if elem c s then (b, delete c s)
               else if elem '_' s then (b, delete '_' s)
               else (False, s)
+
+
+-- | Similar to containsAllwithBlanks, but it leaves the rack and wordPut contex
+--   to simplify the iteration.
+rackRemainder :: Rack -> WordPut -> Rack
+rackRemainder (Rack r) (WordPut tps) = Rack $ foldl' f r tps
+    where
+    f :: [Tile] -> TilePut -> [Tile]
+    f r tp = if elem (letter tp) rackLetters || elem Blank rackLetters
+           then delete offendingTile r
+           else r
+             where
+               rackLetters = map letter r
+               offendingTile = case tp of
+                                 LetterTilePut t _ -> t
+                                 BlankTilePut  _ _ -> mkTile Blank
 
 
 -- | Attempt to lay tiles on the board.
