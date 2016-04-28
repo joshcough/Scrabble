@@ -12,11 +12,8 @@ import Scrabble.Bag
 
 
 case_create_move =
-    let rack = Rack    [ fromLetter O, fromLetter P, fromLetter T ]
-        wp   = WordPut [ LetterTilePut (fromLetter T) (7,7)
-                       , LetterTilePut (fromLetter O) (7,8)
-                       , LetterTilePut (fromLetter P) (7,9)
-                       ]
+    let rack       = Rack [fromLetter O, fromLetter P, fromLetter T ]
+        (Right wp) = makeWordPut "TOP" Vertical (7,7) []
         expected = do
             (board',score) <- wordPut standardValidation newBoard wp dict
             return $ Move wp score (Rack []) board'
@@ -25,11 +22,8 @@ case_create_move =
 
 
 case_create_move_single_blank =
-    let rack = Rack    [ fromLetter O, fromLetter P, fromLetter Blank]
-        wp   = WordPut [ BlankTilePut T (7,7)
-                       , LetterTilePut (fromLetter O) (7,8)
-                       , LetterTilePut (fromLetter P) (7,9)
-                       ]
+    let rack       = Rack [ fromLetter O, fromLetter P, fromLetter Blank]
+        (Right wp) = makeWordPut "TOP" Vertical (7,7) []
         expected = do
             (board',score) <- wordPut standardValidation newBoard wp dict
             return $ Move wp score (Rack []) board'
@@ -38,11 +32,8 @@ case_create_move_single_blank =
 
 
 case_create_move_many_blanks =
-    let rack = Rack    [ fromLetter Blank, fromLetter O, fromLetter P,  fromLetter Blank]
-        wp   = WordPut [ BlankTilePut T (7,7)
-                       , LetterTilePut (fromLetter O) (7,8)
-                       , LetterTilePut (fromLetter P) (7,9)
-                       ]
+    let rack       = Rack [ fromLetter Blank, fromLetter O, fromLetter P,  fromLetter Blank]
+        (Right wp) = makeWordPut "_OP" Vertical (7,7) ['T']
         expected = do
             (board',score) <- wordPut standardValidation newBoard wp dict
             return $ Move wp score (Rack [fromLetter Blank]) board'
@@ -51,12 +42,9 @@ case_create_move_many_blanks =
 
 
 case_create_move_all_blanks =
-    let rack = Rack    [ fromLetter Blank, fromLetter O, fromLetter P,  fromLetter Blank]
-        wp   = WordPut [ BlankTilePut T (7,7)
-                       , LetterTilePut (fromLetter O) (7,8)
-                       , LetterTilePut (fromLetter P) (7,9)
-                       , BlankTilePut S (7,10)
-                       ]
+    let rack       = Rack [ fromLetter Blank, fromLetter O, fromLetter P,  fromLetter Blank]
+        (Right wp) = makeWordPut "_OP_" Vertical (7,7) ['T', 'S']
+
         expected = do
             (board',score) <- wordPut standardValidation newBoard wp dict
             return $ Move wp score (Rack []) board'

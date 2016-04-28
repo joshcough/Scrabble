@@ -7,12 +7,10 @@ module Scrabble.Search
   , Scrabble.Search.any
   , cheat
   , containsAll
-  , containsAllWithBlanks
   , containsAny
   , containsNone
   , containsOnly
   , containsLetterAtPos
-  , countBlanksUsed
   , dictionary
   , dictionaryUnsafe
   , endsWith
@@ -26,6 +24,7 @@ module Scrabble.Search
   , searchWordBagForPowersetSorted
   , startsWith
   , testSearch
+  , ups
   , wordBagContainsWord
 ) where
 
@@ -55,22 +54,6 @@ type Search = String -> Bool
 containsAll :: String -> Search
 containsAll s1 s2 = fst $ foldl' f (True, ups s2) (ups s1) where
   f (b,s) c = if elem c s then (b, delete c s) else (False,s)
-
--- | Like the above, but if it encounters a character in in s1 not in
---   s2, it deletes a blank and tries again before returning false
-containsAllWithBlanks :: String -> Search
-containsAllWithBlanks s1 s2 = fst $ foldl' f (True, ups s2) (ups s1) where
-    f (b,s) c = if elem c s then (b, delete c s)
-                else if elem '_' s then (b, delete '_' s)
-                else (False, s)
-
-
-countBlanksUsed :: String -> String -> Int
-countBlanksUsed s1 s2 = fst $ foldl' f (0, ups s2) (ups s1) where
-    f (count,s) c = if elem c s then (count , delete c s)
-                else if elem '_' s then (count + 1, delete '_' s)
-                else (count, s)
-
 
 -- | Finds all words containing any of the given characters.
 containsAny :: String -> Search

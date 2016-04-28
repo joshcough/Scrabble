@@ -14,7 +14,7 @@ import Scrabble.Board.Board
 import Scrabble.Move.Scoring
 import Scrabble.Move.Validation
 import Scrabble.Move.WordPut
-import Scrabble.Search (containsAllWithBlanks, countBlanksUsed)
+import Scrabble.Search (Search, ups)
 
 -- |
 data Move = Move {
@@ -43,14 +43,23 @@ createMove' validate b (Rack rack) wp dict = if valid then go else errMsg where
   errMsg        = Left "error: rack missing input letters"
   rackLetters   = fmap letter rack
   valid         = containsAllWithBlanks (toString putLetters) (toString rackLetters)
-  blanksUsed    = countBlanksUsed (toString putLetters) (toString rackLetters)
   putLetters    = letter <$> wordPutTiles wp
-  rackRemainder = fmap fromLetter $
-                  applyNTimes blanksUsed (delete Blank) $
-                  foldl' (flip delete) rackLetters putLetters
-  applyNTimes n f = foldr (.) id (replicate n f)
+  -- applyNTimes n f = foldr (.) id (replicate n f)
   go = do (newBoard, score) <- wordPut validate b wp dict
-          return $ Move wp score (Rack rackRemainder) newBoard
+          return $ Move wp score (rackRemainder (Rack rack) wp) newBoard
+
+rackRemainder :: Rack -> WordPut -> Rack
+rackRemainder r wp = Rack $ error "rack tiles // word put tiles, accounting for blanks"
+
+
+-- | Like the above, but if it encounters a character in in s1 not in
+--   s2, it deletes a blank and tries again before returning false
+containsAllWithBlanks :: String -> Search
+containsAllWithBlanks s1 s2 = fst $ foldl' f (True, ups s2) (ups s1) where
+  f (b,s) c = if elem c s then (b, delete c s)
+              else if elem '_' s then (b, delete '_' s)
+              else (False, s)
+
 
 -- | Attempt to lay tiles on the board.
 --   Validate the entire move.
