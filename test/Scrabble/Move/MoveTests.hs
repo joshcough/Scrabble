@@ -28,16 +28,10 @@ rackRemainderTest initialRackLetters wpString blankChoices expectedLetters =
   in createMove newBoard rack wp dict @?= expected
 
 
-case_create_move = rackRemainderTest [O,P,T] "TOP" [] []
-
-
-case_create_move_single_blank = rackRemainderTest [O,P,Blank] "_OP" ['T'] []
-
-
-case_create_move_many_blanks = rackRemainderTest [Blank, O, P, Blank] "_OP" ['T'] [Blank]
-
-
-case_create_move_all_blanks = rackRemainderTest [Blank, O, P, Blank] "_OP_" ['T','S'] []
+case_create_move              = rackRemainderTest [O,P,T]              "TOP"  []        []
+case_create_move_single_blank = rackRemainderTest [O,P,Blank]          "_OP"  ['T']     []
+case_create_move_many_blanks  = rackRemainderTest [Blank, O, P, Blank] "_OP"  ['T']     [Blank]
+case_create_move_all_blanks   = rackRemainderTest [Blank, O, P, Blank] "_OP_" ['T','S'] []
 
 -- | this makes sure that you can choose letters for your blank that also happen
 --   be in the rack, and we still consume the blank tile and not the letter tile

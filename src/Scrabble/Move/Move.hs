@@ -64,15 +64,10 @@ rackRemainder (Rack r) (WordPut tps) = Rack $ foldl' f r tps
     where
       rackLetters = map letter r
 
-      -- Get the tile associated with a TilePut so you can delete it in f
-      toTile :: TilePut -> Tile
-      toTile (LetterTilePut t _) = t
-      toTile (BlankTilePut _ _)  = fromLetter Blank
-
       f :: [Tile] -> TilePut -> [Tile]
       f remainingTiles tp =
           if elem (letter tp) rackLetters || elem Blank rackLetters
-          then delete (toTile tp) remainingTiles
+          then delete (asBlankTile tp) remainingTiles
           else remainingTiles
 
 
