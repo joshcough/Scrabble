@@ -11,54 +11,37 @@ import Scrabble.Board.Board
 import Scrabble.Bag
 
 
-case_create_move =
-    let rack       = Rack $ map fromLetter [O, P, T]
-        (Right wp) = makeWordPut "TOP" Vertical (7,7) []
-        expected = do
-            (board',score) <- wordPut standardValidation newBoard wp dict
-            return $ Move wp score (Rack []) board'
-
-    in createMove newBoard rack wp dict @?= expected
-
-
-case_create_move_single_blank =
-    let rack       = Rack $ map fromLetter [O, P, Blank]
-        (Right wp) = makeWordPut "_OP" Vertical (7,7) ['T']
-        expected = do
-            (board',score) <- wordPut standardValidation newBoard wp dict
-            return $ Move wp score (Rack []) board'
-
-    in createMove newBoard rack wp dict @?= expected
+-- | Test the state of the rack after a sucessfull move by specifying the initial
+--   letters in the rack, a string describing the move you want to make including
+--   blanks, a list of the characters you want to use as your choices for the blanks
+--   in the order you selected them, and a list of letters that should represent
+--   the expected final state of the rack. If those second two arguments confuse
+--   you, just know that they are the 2nd and 4th arguments to @makeWordPut@
+--   and infer what they do from the behavior of that function
+rackRemainderTest :: [Letter] -> String -> [Char] -> [Letter] -> Assertion
+rackRemainderTest initialRackLetters wpString blankChoices expectedLetters =
+  let rack       = Rack $ map fromLetter initialRackLetters
+      (Right wp) = makeWordPut wpString Vertical (7,7) blankChoices
+      expected   = do
+        (board', score) <- wordPut standardValidation newBoard wp dict
+        return $ Move wp score (Rack $ map fromLetter expectedLetters) board'
+  in createMove newBoard rack wp dict @?= expected
 
 
-case_create_move_many_blanks =
-    let rack       = Rack $ map fromLetter [ Blank, O, P, Blank]
-        (Right wp) = makeWordPut "_OP" Vertical (7,7) ['T']
-        expected = do
-            (board',score) <- wordPut standardValidation newBoard wp dict
-            return $ Move wp score (Rack [fromLetter Blank]) board'
-
-    in createMove newBoard rack wp dict @?= expected
+case_create_move = rackRemainderTest [O,P,T] "TOP" [] []
 
 
-case_create_move_all_blanks =
-    let rack       = Rack $ map fromLetter [Blank, O, P, Blank]
-        (Right wp) = makeWordPut "_OP_" Vertical (7,7) ['T', 'S']
-        expected = do
-            (board',score) <- wordPut standardValidation newBoard wp dict
-            return $ Move wp score (Rack []) board'
+case_create_move_single_blank = rackRemainderTest [O,P,Blank] "_OP" ['T'] []
 
-    in createMove newBoard rack wp dict @?= expected
 
--- this is the case that prompted the algorithm change
-case_uses_blank_not_equivalent_tile =
-    let rack       = Rack $ map fromLetter [Blank, P, O, P, S]
-        (Right wp) = makeWordPut "POP_" Vertical (7,7) ['S']
-        expected = do
-            (board',score) <- wordPut standardValidation newBoard wp dict
-            return $ Move wp score (Rack [fromLetter S]) board'
+case_create_move_many_blanks = rackRemainderTest [Blank, O, P, Blank] "_OP" ['T'] [Blank]
 
-    in createMove newBoard rack wp dict @?= expected
+
+case_create_move_all_blanks = rackRemainderTest [Blank, O, P, Blank] "_OP_" ['T','S'] []
+
+-- | this makes sure that you can choose letters for your blank that also happen
+--   be in the rack, and we still consume the blank tile and not the letter tile
+case_uses_blank_not_equivalent_tile = rackRemainderTest [Blank, O, P, P, S] "POP_" ['S'] [S]
 
 
 -- Orphan, but needed for hunit

@@ -62,15 +62,18 @@ containsAllWithBlanks s1 s2 = fst $ foldl' f (True, ups s2) (ups s1) where
 rackRemainder :: Rack -> WordPut -> Rack
 rackRemainder (Rack r) (WordPut tps) = Rack $ foldl' f r tps
     where
-    f :: [Tile] -> TilePut -> [Tile]
-    f r tp = if elem (letter tp) rackLetters || elem Blank rackLetters
-           then delete offendingTile r
-           else r
-             where
-               rackLetters = map letter r
-               offendingTile = case tp of
-                                 LetterTilePut t _ -> t
-                                 BlankTilePut  _ _ -> mkTile Blank
+      rackLetters = map letter r
+
+      -- Get the tile associated with a TilePut so you can delete it in f
+      toTile :: TilePut -> Tile
+      toTile (LetterTilePut t _) = t
+      toTile (BlankTilePut _ _)  = fromLetter Blank
+
+      f :: [Tile] -> TilePut -> [Tile]
+      f remainingTiles tp =
+          if elem (letter tp) rackLetters || elem Blank rackLetters
+          then delete (toTile tp) remainingTiles
+          else remainingTiles
 
 
 -- | Attempt to lay tiles on the board.
