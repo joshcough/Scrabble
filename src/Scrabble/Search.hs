@@ -24,6 +24,7 @@ module Scrabble.Search
   , searchWordBagForPowersetSorted
   , startsWith
   , testSearch
+  , ups
   , wordBagContainsWord
 ) where
 

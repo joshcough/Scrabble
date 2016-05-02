@@ -18,6 +18,7 @@ import qualified Scrabble.Move.WordPutTests as WordPutTests
 import qualified Scrabble.ScrabbleTests     as ScrabbleTests
 import qualified Scrabble.SearchTests       as SearchTests
 import qualified Scrabble.TileTests         as TileTests
+import qualified Scrabble.Move.MoveTests    as MoveTests
 
 --For a complete example, see: http://bit.ly/1G5MIoq
 --also: https://hackage.haskell.org/package/test-framework-th
@@ -35,4 +36,5 @@ allTests =
   , ScrabbleTests.tests
   , SearchTests.tests
   , TileTests.tests
-  , WordPutTests.tests ]
+  , WordPutTests.tests
+  , MoveTests.tests]

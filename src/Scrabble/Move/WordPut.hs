@@ -49,6 +49,10 @@ asTile :: TilePut -> Tile
 asTile (LetterTilePut t _) = t
 asTile (BlankTilePut  l _) = fromLetter l
 
+asBlankTile :: TilePut -> Tile
+asBlankTile (LetterTilePut t _) = t
+asBlankTile (BlankTilePut _ _)  = fromLetter Blank
+
 tilePutPoint :: TilePut -> Point
 tilePutPoint (LetterTilePut _ p) = p
 tilePutPoint (BlankTilePut  _ p) = p
