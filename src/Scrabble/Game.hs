@@ -51,11 +51,11 @@ data Player = Player {
 } deriving (Eq, Generic, ToJSON, FromJSON)
 
 instance Show Player where
-  show (Player _ n t s pid) = concat [
+  show (Player _ pid n t s) = concat [
     "[", n, " rack: ", show t, " score: ", show s, "id: ", show pid, "]"]
 
 newPlayer :: (Name, PlayerType) -> Int -> Player
-newPlayer (name, typ) = Player typ name newRack 0
+newPlayer (name, typ) = Player typ 0 name newRack
 
 human :: Name -> Int -> Player
 human name = newPlayer (name, Human)
@@ -201,9 +201,10 @@ nextPlayer g = g
 isGameOver :: Game -> Bool
 isGameOver (Game _ _ _ _ _) = False -- TODO!
 
+-- | TODO: use the player id if overlapping names.
 getScores :: Game -> NonEmpty (Name, Score)
 getScores g = getNameAndScore <$> gamePlayers g where
-  getNameAndScore (Player _ n _ s _) = (n, s)
+  getNameAndScore (Player _ _ n _ s) = (n, s)
 
 -- | Put a WordPut on the game's board by first creating the move
 -- and then simply calling applyMove

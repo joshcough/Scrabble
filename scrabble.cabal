@@ -50,9 +50,6 @@ library
       Scrabble.Board.Orientation
       Scrabble.Board.Point
       Scrabble.Board.Square
-      Scrabble.Commands.AST
-      Scrabble.Commands.Interpreter
-      Scrabble.Commands.SExpr
       Scrabble.Dictionary
       Scrabble.Game
       Scrabble.Move.Move

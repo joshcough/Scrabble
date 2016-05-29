@@ -16,15 +16,9 @@ module Scrabble.Board.Orientation
 import Data.Aeson              (ToJSON, FromJSON)
 import GHC.Generics
 import Scrabble.Board.Point
-import Scrabble.Commands.SExpr
 
 data Orientation = Horizontal | Vertical
   deriving (Eq, Ord, Generic, ToJSON, FromJSON, Show)
-
-instance FromSExpr Orientation where
-  fromSExpr (AtomSym "H") = return Horizontal
-  fromSExpr (AtomSym "V") = return Vertical
-  fromSExpr bad = parseError_ "bad orientation" bad
 
 foldOrientation :: a -> a -> Orientation -> a
 foldOrientation l _ Horizontal = l

@@ -30,10 +30,10 @@ instance Arbitrary Bag where
 instance Arbitrary Player where
   arbitrary = Player
                 <$> arbitrary
+                <*> arbitrary -- TODO: this could produce duplicate ids. consider fixing.
                 <*> arbitrary
                 <*> (Rack <$> listOf arbitrary)
                 <*> arbitrary
-                <*> arbitrary -- TODO: the final arbitrary here could mean duplicate ids. fix.
 
 instance Arbitrary TilePut where
   arbitrary = oneof [

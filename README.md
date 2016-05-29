@@ -46,11 +46,7 @@ And then jump up on the repl:
 
 Start a new game:
 
-    *Scrabble> start [human "Josh", human "Stephen", human "Andrew"]
-
-Place the word 'rest' vertically at position (7,7). You can only place things in your rack.
-
-    (place REST V (7 7))
+    *Scrabble> TODO: rewrite me with combinators
 
 ### Test the search engine
 
@@ -72,10 +68,6 @@ $ tree src
 │   │   ├── Orientation.hs  -- Horizontal and Vertical functions and data
 │   │   ├── Point.hs        -- Simple code to work with (x,y) coordinates
 │   │   └── Square.hs       -- Squares on the board
-│   ├── Commands            -- Code for inputting game commands
-│   │   ├── AST.hs          -- AST for player input (and parsing)
-│   │   ├── Interpreter.hs  -- Interpreter for player input
-│   │   └── SExpr.hs        -- Generic sexpr parser
 │   ├── Dictionary.hs       -- Letter and Dictionary representation
 │   ├── Game.hs             -- Player and Game state representation
 │   ├── Move                -- Making a move, validation, scoring, etc
@@ -83,7 +75,6 @@ $ tree src
 │   │   ├── Scoring.hs      -- Calculates score for a move
 │   │   ├── Validation.hs   -- Checks to see if a move is valid
 │   │   └── WordPut.hs      -- Representation of tiles put on the board in a turn
-│   ├── NonEmpty.hs         -- Helper functions for NEL
 │   ├── ReplHelpers.hs      -- Some quick testing helper functions for use on the REPL
 │   └── Search.hs           -- Code for searching the dictionary
 │   └── Tile.hs             -- Tile representation
