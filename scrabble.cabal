@@ -59,7 +59,6 @@ library
       Scrabble.Move.Scoring
       Scrabble.Move.Validation
       Scrabble.Move.WordPut
-      Scrabble.NonEmpty
       Scrabble.ReplHelpers
       Scrabble.Search
       Scrabble.Tile

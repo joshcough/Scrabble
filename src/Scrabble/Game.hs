@@ -33,20 +33,21 @@ import Scrabble.Bag
 import Scrabble.Board.Board
 import Scrabble.Dictionary
 import Scrabble.Move.Move
-import Scrabble.NonEmpty    ()
 
 import qualified Data.List.NonEmpty as NE
-import qualified Scrabble.NonEmpty  as SNE
 
 type Name = String
 
+-- | Players are either human or AI. Unfortunately, dolphins are not supported.
 data PlayerType = Human | AI deriving (Eq, Generic, ToJSON, FromJSON, Show)
+
+-- | A player, human or AI.
 data Player = Player {
-   playerType  :: PlayerType
- , playerName  :: Name
- , playerRack  :: Rack
- , playerScore :: Score
- , playerId    :: Int
+   playerType  :: PlayerType -- ^ The type of player (human or AI)
+ , playerId    :: Int        -- ^ Id necessary in case of duplicate names.
+ , playerName  :: Name       -- ^ Player name
+ , playerRack  :: Rack       -- ^ The players rack (containing tiles)
+ , playerScore :: Score      -- ^ Players current score in the game.
 } deriving (Eq, Generic, ToJSON, FromJSON)
 
 instance Show Player where
@@ -166,9 +167,23 @@ newGame ps = do
   let (players',bag') = filledRacks players bag
   return $ Game (NE.reverse players') newBoard bag' dict [] where
   filledRacks :: NonEmpty Player -> Bag -> (NonEmpty Player, Bag)
-  filledRacks ps bag = SNE.foldl f g ps where
+  filledRacks (p1:|players) bag = foldl f (g p1) players where
     f (acc,b) a = let (p',b',_) = fillPlayerRack a b in (p' <| acc, b')
     g a = let (p',b',_) = fillPlayerRack a bag in (p':|[], b')
+
+-- foldl  :: Foldable t => (b -> a -> b) -> b        -> t a        -> b
+-- foldl1 :: Foldable t => (a -> a -> a) -> t a      -> a
+-- foldl  ::               (b -> a -> b) -> (a -> b) -> NonEmpty a -> b
+-- foldl fbab fab (a:|rest) = Prelude.foldl fbab (fab a) rest
+--
+--
+-- /Users/josh/work/Scrabble/src/Scrabble/Game.hs:167:32:
+--     Couldn't match expected type ‘(NonEmpty Player, Bag)’
+--                 with actual type ‘Player -> (NonEmpty Player, Bag)’
+--     Probable cause: ‘g’ is applied to too few arguments
+--     In the second argument of ‘foldl’, namely ‘g’
+--     In the expression: foldl f g ps
+
 
 instance Show Game where
   show (Game ps brd bag _ turns) = concat $ intersperse ", "

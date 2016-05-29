@@ -15,7 +15,7 @@ addons:
 env:
 - ARGS=""
 #- ARGS="--resolver lts-2"
-- ARGS="--resolver lts-5.1"
+- ARGS="--resolver lts-6.1"
 - ARGS="--resolver lts"
 #- ARGS="--resolver nightly"
 
