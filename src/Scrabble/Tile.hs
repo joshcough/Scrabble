@@ -19,15 +19,16 @@ module Scrabble.Tile
   , tilesToString
   ) where
 
-import Data.Aeson (ToJSON, FromJSON, Value(..), toJSON, parseJSON, withText)
-import Data.Aeson.Types (Parser)
-import Data.Map.Strict (Map)
-import qualified Data.Map.Strict as Map
-import Data.Maybe (fromJust, listToMaybe)
-import Data.Text (pack, unpack)
+import Data.Aeson          (ToJSON, FromJSON, Value(..), toJSON, parseJSON, withText)
+import Data.Aeson.Types    (Parser)
+import Data.Map.Strict     (Map)
+import Data.Maybe          (fromJust, listToMaybe)
+import Data.Text           (pack, unpack)
 import GHC.Generics
 import Scrabble.Dictionary
-import Prelude hiding (Word)
+import Prelude hiding      (Word)
+
+import qualified Data.Map.Strict as Map
 
 type Points = Int
 type Score  = Int

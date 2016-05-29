@@ -5,16 +5,17 @@
 -- | Code to represent putting tiles on the board.
 module Scrabble.Move.WordPut where
 
-import Data.Aeson (ToJSON, FromJSON, toJSON, parseJSON, withArray)
-import qualified Data.Maybe as Maybe
-import qualified Data.Vector as V
-import Data.Aeson.Types (Parser)
-import Data.Map (Map)
-import qualified Data.Map as Map
+import Data.Aeson           (ToJSON, FromJSON, toJSON, parseJSON, withArray)
+import Data.Aeson.Types     (Parser)
+import Data.Map             (Map)
 import GHC.Generics
-import Prelude hiding (Word)
+import Prelude hiding       (Word)
 import Scrabble.Bag
 import Scrabble.Board.Board
+
+import qualified Data.Maybe  as Maybe
+import qualified Data.Map    as Map
+import qualified Data.Vector as V
 
 -- | Represents a single tile being put on the board
 data TilePut =

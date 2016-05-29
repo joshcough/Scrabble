@@ -18,12 +18,12 @@ module Scrabble.Bag
   , pointsInBag
   ) where
 
-import Data.Aeson (ToJSON, FromJSON, toJSON, parseJSON)
+import Data.Aeson            (ToJSON, FromJSON, toJSON, parseJSON)
 import GHC.Generics
 import Scrabble.Dictionary
 import Scrabble.Tile
 import System.Random.Shuffle
-import Prelude hiding (Word)
+import Prelude hiding        (Word)
 
 data Rack = Rack { rackTiles :: [Tile] }
   deriving (Eq, Ord, Generic)

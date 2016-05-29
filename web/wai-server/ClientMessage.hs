@@ -6,7 +6,6 @@ import Data.Aeson
 import Scrabble
 import GHC.Generics
 
-
 data MessageType = ValidityCheck | ActualMove
     deriving (Show, Eq, Generic, FromJSON)
 

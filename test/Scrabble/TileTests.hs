@@ -2,18 +2,15 @@
 
 module Scrabble.TileTests where
 
-import Data.Map.Strict (Map)
-import qualified Data.Map.Strict as Map
-import Scrabble.ScrabbleArbitrary
+import Scrabble.ScrabbleArbitrary()
 import Scrabble.Tile
-import Test.Framework (testGroup)
 import Test.Framework.Providers.HUnit
 import Test.Framework.Providers.QuickCheck2 (testProperty)
 import Test.Framework.TH
-import Test.QuickCheck
-import Test.QuickCheck.Instances.Char
 import Test.HUnit
 import TestHelpers
+
+import qualified Data.Map.Strict as Map
 
 case_tile_equality           = [A .. Z] @?= [A .. Z]
 case_word_points_A_through_Z = simpleWordPoints [A .. Z] @?= 87

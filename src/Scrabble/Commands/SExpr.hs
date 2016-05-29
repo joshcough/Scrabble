@@ -31,15 +31,16 @@ module Scrabble.Commands.SExpr
 import Control.Applicative
 import Control.Monad
 import Data.ByteString.UTF8 as UTF8 hiding (lines)
-import Data.Char (isDigit, isSpace)
-import qualified Data.HashSet as HashSet
+import Data.Char                           (isDigit, isSpace)
 import Data.Int
-import Data.List (intersperse)
+import Data.List                           (intersperse)
 import Text.Parser.Combinators
 import Text.Parser.Token
+import Text.Read                           (readMaybe)
+import Text.Trifecta hiding                (semi)
+
+import qualified Data.HashSet                as HashSet
 import qualified Text.Parser.Token.Highlight as Highlight
-import Text.Read (readMaybe)
-import Text.Trifecta hiding (semi)
 
 data SExpr = AtomSym String | AtomNum Int64 | List [SExpr] deriving (Eq)
 

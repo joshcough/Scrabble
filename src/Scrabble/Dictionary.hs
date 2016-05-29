@@ -17,17 +17,18 @@ module Scrabble.Dictionary
   , toString
   ) where
 
-import Data.Aeson (ToJSON, FromJSON)
-import Data.Char (toUpper)
-import qualified Data.Maybe as Maybe
-import Data.Map (Map)
-import qualified Data.Map as Map
-import Data.Set (Set)
-import qualified Data.Set as Set
-import Data.Tuple (swap)
+import Data.Aeson       (ToJSON, FromJSON)
+import Data.Char        (toUpper)
+import Data.Map         (Map)
+import Data.Set         (Set)
+import Data.Tuple       (swap)
 import GHC.Generics
-import Prelude hiding (Word)
+import Prelude hiding   (Word)
 import System.IO.Unsafe
+
+import qualified Data.Maybe as Maybe
+import qualified Data.Map   as Map
+import qualified Data.Set   as Set
 
 data Letter =
   A | B | C | D | E | F | G | H | I | J | K | L | M |

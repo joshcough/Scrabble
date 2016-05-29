@@ -3,14 +3,15 @@
 -- | AST for player input (and parsing)
 module Scrabble.Commands.AST where
 
-import Data.Aeson (ToJSON, FromJSON)
-import Data.Map.Strict (Map)
-import qualified Data.Map.Strict as Map
+import Data.Aeson              (ToJSON, FromJSON)
+import Data.Map.Strict         (Map)
 import GHC.Generics
 import Scrabble.Board.Board
 import Scrabble.Move.WordPut
 import Scrabble.Search
 import Scrabble.Commands.SExpr
+
+import qualified Data.Map.Strict as Map
 
 type Regex = String
 
@@ -72,11 +73,6 @@ parsePlace l = parsePlace' l where
     o' <- fromSExpr o
     p' <- fromSExpr p :: Either String Point
     Place <$> makeWordPut w o' p' b
-
-instance FromSExpr Orientation where
-  fromSExpr (AtomSym "H") = return Horizontal
-  fromSExpr (AtomSym "V") = return Vertical
-  fromSExpr bad = parseError_ "bad orientation" bad
 
 instance FromSExpr SearchExp where
   fromSExpr = f where

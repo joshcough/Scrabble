@@ -3,21 +3,22 @@
 module Main where
 
 import Control.Concurrent
-import Control.Monad (forever)
+import Control.Monad                  (forever)
 import Control.Monad.Trans
-import qualified Data.ByteString.Char8 as B
-import qualified Data.ByteString.Lazy as LB
-import Data.Aeson (eitherDecode, encode)
+import Data.Aeson                     (eitherDecode, encode)
 import Data.IORef
-import qualified Data.List.NonEmpty as NE
 import Network.HTTP.Types
-import qualified Network.Wai as Wai
 import Network.Wai.Handler.Warp
 import Network.Wai.Handler.WebSockets
 import Network.WebSockets
 import Scrabble
 import System.IO.Unsafe
 import ClientMessage
+
+import qualified Data.ByteString.Char8 as B
+import qualified Data.ByteString.Lazy  as LB
+import qualified Data.List.NonEmpty    as NE
+import qualified Network.Wai           as Wai
 
 type PlayerName = B.ByteString
 

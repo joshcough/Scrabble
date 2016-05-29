@@ -1,18 +1,19 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Main ( main ) where
+module Main (main) where
 
 --------------------------------------------------------------------------------
-import           Control.Concurrent  (forkIO)
-import           Control.Monad       (forever, unless)
-import           Control.Monad.Trans (liftIO)
-import           Network.Socket      (withSocketsDo)
-import           Data.Text           (Text)
+import Control.Concurrent  (forkIO)
+import Control.Monad       (forever, unless)
+import Control.Monad.Trans (liftIO)
+import Network.Socket      (withSocketsDo)
+import Data.Text           (Text)
+
 import qualified Data.Text           as T
 import qualified Data.Text.IO        as T
 import qualified Network.WebSockets  as WS
-
 --------------------------------------------------------------------------------
+
 app :: WS.ClientApp ()
 app conn = do
   putStrLn "Connected!"

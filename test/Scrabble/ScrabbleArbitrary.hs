@@ -3,12 +3,11 @@
 
 module Scrabble.ScrabbleArbitrary where
 
-import Control.Applicative
-import qualified Data.List.NonEmpty as NE
-import Data.Map
-import Test.QuickCheck
 import Scrabble
+import Test.QuickCheck
 import TestHelpers
+
+import qualified Data.List.NonEmpty as NE
 
 instance Arbitrary a => Arbitrary (NE.NonEmpty a) where
   arbitrary = NE.fromList <$> listOf1 arbitrary

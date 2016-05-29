@@ -2,25 +2,25 @@
 
 -- | Main entry point
 module Scrabble (
-  module Scrabble.Bag
- ,module Scrabble.Board.Board
- ,module Scrabble.Commands.AST
- ,module Scrabble.Commands.Interpreter
- ,module Scrabble.Commands.SExpr
- ,module Scrabble.Dictionary
- ,module Scrabble.Game
- ,module Scrabble.Move.Move
- ,module Scrabble.Board.Point
- ,module Scrabble.ReplHelpers
- ,module Scrabble.Board.Square
- ,module Scrabble.Tile
- ,start
+   module Scrabble.Bag
+ , module Scrabble.Board.Board
+ , module Scrabble.Commands.AST
+ , module Scrabble.Commands.Interpreter
+ , module Scrabble.Commands.SExpr
+ , module Scrabble.Dictionary
+ , module Scrabble.Game
+ , module Scrabble.Move.Move
+ , module Scrabble.Board.Point
+ , module Scrabble.ReplHelpers
+ , module Scrabble.Board.Square
+ , module Scrabble.Tile
+ , start
 ) where
 
-import Control.Exception (catch, SomeException)
-import Control.Monad (when)
-import Data.List.NonEmpty (NonEmpty((:|)))
-import Prelude hiding (Word)
+import Control.Exception             (catch, SomeException)
+import Control.Monad                 (when)
+import Data.List.NonEmpty            (NonEmpty((:|)))
+import Prelude                hiding (Word)
 import Scrabble.Bag
 import Scrabble.Board.Board
 import Scrabble.Board.Point
@@ -66,23 +66,22 @@ humanTurn b g = do
 aiTurn :: Game -> Game
 aiTurn _ = error "todo: aiTurn"
 
-help :: [Char]
-help = "help unimplemented"
-
-applyRes :: Game          ->
-            CommandResult ->
-            IO (Maybe Game)
+applyRes :: Game
+         -> CommandResult
+         -> IO (Maybe Game)
 applyRes g = ((\(io, g') -> io >> return g') . f g) where
   f :: Game -> CommandResult -> (IO (), Maybe Game)
   f _  GameOver                   = (pure (),               Nothing)
   f _ (TurnComplete g)            = (pure (),               Just g)
   f g (Print (QueryResult words)) = (putStrLn $ show words, Just g)
-  f g (Print PrintHelp)           = (putStrLn help,         Just g)
+  f g (Print PrintHelp)           = (showHelp,              Just g)
   f g (Print (PrintScores scrs))  = (putStrLn $ show scrs,  Just g)
   f g (Print (PrintBoard b brd))  = (printBoard b brd,      Just g)
 
 gameOver :: Game -> IO ()
 gameOver g = putStrLn ("Game Over!\n" ++ show g)
 
-showHelp :: IO String
-showHelp = error "todo"
+showHelp :: IO ()
+showHelp = putStrLn help where
+  help :: String
+  help = "help unimplemented"

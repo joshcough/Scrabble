@@ -3,12 +3,13 @@
 
 module Scrabble.Move.Scoring where
 
-import Data.List (foldl')
-import Data.Set (Set)
-import qualified Data.Set as Set
-import Prelude hiding (Word)
+import Data.List            (foldl')
+import Data.Set             (Set)
+import Prelude hiding       (Word)
 import Scrabble.Bag
 import Scrabble.Board.Board
+
+import qualified Data.Set as Set
 
 type Scorer = [Square] -> Board -> Score
 

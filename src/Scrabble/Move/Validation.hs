@@ -3,12 +3,13 @@
 
 module Scrabble.Move.Validation where
 
-import Data.List (intersperse, partition)
-import qualified Data.Set as Set
-import Prelude hiding (Word)
+import Data.List             (intersperse, partition)
+import Prelude hiding        (Word)
 import Scrabble.Board.Board
 import Scrabble.Dictionary
 import Scrabble.Move.WordPut
+
+import qualified Data.Set as Set
 
 type Validator =
     [TilePut] -- ^ all the letters put down this turn

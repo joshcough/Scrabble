@@ -1,20 +1,20 @@
 -- |
 module Scrabble.Move.Move (
-  module Scrabble.Move.WordPut
- ,module Scrabble.Move.Validation
- ,Move(..)
- ,createMove
- ,wordPut
+   module Scrabble.Move.WordPut
+ , module Scrabble.Move.Validation
+ , Move(..)
+ , createMove
+ , wordPut
 ) where
 
-import Data.List (delete, foldl')
-import Prelude hiding (Word)
+import Data.List                (delete, foldl')
+import Prelude hiding           (Word)
 import Scrabble.Bag
 import Scrabble.Board.Board
 import Scrabble.Move.Scoring
 import Scrabble.Move.Validation
 import Scrabble.Move.WordPut
-import Scrabble.Search (Search, ups)
+import Scrabble.Search          (Search, ups)
 
 -- |
 data Move = Move {

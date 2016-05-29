@@ -1,21 +1,13 @@
 module Main where
 
-import Data.List
-import Data.Monoid (mempty)
-import Test.Framework (defaultMain, defaultMainWithOpts, testGroup)
-import Test.Framework.Options (TestOptions, TestOptions'(..))
+import Test.Framework                 (defaultMainWithOpts)
+import Test.Framework.Options         (TestOptions, TestOptions'(..))
 import Test.Framework.Runners.Options (RunnerOptions, RunnerOptions'(..))
-import Test.Framework.Providers.HUnit
-import Test.Framework.Providers.QuickCheck2 (testProperty)
-import Test.HUnit
-import Test.QuickCheck
 
-import Scrabble
 import qualified Scrabble.BagTests          as BagTests
 import qualified Scrabble.BoardTests        as BoardTests
 import qualified Scrabble.GameTests         as GameTests
 import qualified Scrabble.Move.WordPutTests as WordPutTests
-import qualified Scrabble.ScrabbleTests     as ScrabbleTests
 import qualified Scrabble.SearchTests       as SearchTests
 import qualified Scrabble.TileTests         as TileTests
 import qualified Scrabble.Move.MoveTests    as MoveTests
@@ -33,7 +25,6 @@ allTests =
   [ BagTests.tests
   , BoardTests.tests
   , GameTests.tests
-  , ScrabbleTests.tests
   , SearchTests.tests
   , TileTests.tests
   , WordPutTests.tests

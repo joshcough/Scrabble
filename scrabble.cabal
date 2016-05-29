@@ -1,156 +1,186 @@
-name:                scrabble
-version:             0.1.0.0
-synopsis:            A playground for teaching FP with Scrabble.
-description:         A playground for teaching FP with Scrabble.
-homepage:            https://github.com/joshcough/Scrabble
-license:             MIT
-license-file:        LICENSE
-author:              Josh Cough
-maintainer:          joshcough@gmail.com
-category:            Demo
-build-type:          Simple
-cabal-version:       >=1.18
+-- This file has been generated from package.yaml by hpack version 0.12.0.
+--
+-- see: https://github.com/sol/hpack
+
+name:           scrabble
+version:        0.1.0.0
+synopsis:       A playground for teaching FP with Scrabble.
+category:       Teaching
+homepage:       https://github.com/joshcough/Scrabble
+bug-reports:    https://github.com/joshcough/Scrabble/issues
+author:         Josh Cough
+maintainer:     joshcough@gmail.com
+license:        MIT
+license-file:   LICENSE
+build-type:     Simple
+cabal-version:  >= 1.10
 
 source-repository head
   type: git
-  location: https://github.com/joshcough/Scrabble.git
+  location: https://github.com/joshcough/Scrabble
 
--- configuration for building a library
 library
-  default-language: Haskell2010
-  hs-source-dirs: src
-  ghc-options: -Wall -fno-warn-name-shadowing
-  -- default-extensions: OverloadedStrings
+  hs-source-dirs:
+      src
+  ghc-options: -Wall -Werror -fno-warn-name-shadowing
+  build-depends:
+      aeson
+    , array
+    , base
+    , bifunctors
+    , bytestring
+    , containers
+    , directory
+    , parsers
+    , primitive
+    , random-shuffle
+    , regex-compat
+    , semigroups
+    , text
+    , transformers
+    , trifecta
+    , unordered-containers
+    , utf8-string
+    , vector
   exposed-modules:
-    -- general game modules
-    Scrabble
-    Scrabble.Bag
-    Scrabble.Dictionary
-    Scrabble.Game
-    Scrabble.NonEmpty
-    Scrabble.ReplHelpers
-    Scrabble.Search
-    Scrabble.Tile
-
-    -- board modules
-    Scrabble.Board.Board
-    Scrabble.Board.Orientation
-    Scrabble.Board.Point
-    Scrabble.Board.Square
-
-    -- command language modules
-    Scrabble.Commands.AST
-    Scrabble.Commands.Interpreter
-    Scrabble.Commands.SExpr
-
-    -- move modules
-    Scrabble.Move.Move
-    Scrabble.Move.Scoring
-    Scrabble.Move.Validation
-    Scrabble.Move.WordPut
-
-  other-modules:
-  build-depends:
-    base  >= 4.7 && < 5
-   ,aeson >= 0.9.0.1
-   ,array
-   ,bifunctors
-   ,bytestring
-   ,containers
-   ,parsers
-   ,primitive
-   ,random-shuffle
-   ,regex-compat
-   ,semigroups
-   ,text
-   ,transformers
-   ,trifecta
-   ,unordered-containers
-   ,utf8-string
-   ,vector
-
--- `cabal install --enable-tests -f-tests` to disable tests suite
-flag tests
-  manual: True
-  default: True
-
-test-suite tests
+      Scrabble
+      Scrabble.Bag
+      Scrabble.Board.ArrayBoard
+      Scrabble.Board.Board
+      Scrabble.Board.Orientation
+      Scrabble.Board.Point
+      Scrabble.Board.Square
+      Scrabble.Commands.AST
+      Scrabble.Commands.Interpreter
+      Scrabble.Commands.SExpr
+      Scrabble.Dictionary
+      Scrabble.Game
+      Scrabble.Move.Move
+      Scrabble.Move.Scoring
+      Scrabble.Move.Validation
+      Scrabble.Move.WordPut
+      Scrabble.NonEmpty
+      Scrabble.ReplHelpers
+      Scrabble.Search
+      Scrabble.Tile
   default-language: Haskell2010
-  type:           exitcode-stdio-1.0
-  main-is:        test/Main.hs
-  hs-source-dirs: . test
-  ghc-options: -Wall -fno-warn-name-shadowing
-  other-modules:
-    Scrabble.ScrabbleArbitrary
-    Scrabble.BagTests
-    Scrabble.BoardTests
-    Scrabble.GameTests
-    Scrabble.Move.WordPutTests
-    Scrabble.Move.MoveTests
-    Scrabble.ScrabbleTests
-    Scrabble.SearchTests
-    Scrabble.TileTests
-    TestHelpers
-
-  if !flag(tests)
-    buildable: False
-  else
-    build-depends:
-      base  >= 4.7 && < 5
-     ,aeson >= 0.9.0.1
-     ,checkers
-     ,containers
-     ,directory
-     ,data-default
-     ,filemanip
-     ,HUnit
-     ,QuickCheck
-     ,quickcheck-instances
-     ,semigroups
-     ,test-framework
-     ,test-framework-hunit
-     ,test-framework-quickcheck2
-     ,test-framework-th
-     ,scrabble
-
-executable wai-server
-  default-language: Haskell2010
-  hs-source-dirs: web/wai-server
-  ghc-options: -Wall -fno-warn-name-shadowing
-  main-is: Main.hs
-  build-depends:
-    base  >= 4.7 && < 5
-   ,aeson
-   ,bytestring
-   ,directory
-   ,http-types
-   ,monads-tf
-   ,safe
-   ,scrabble
-   ,semigroups
-   ,wai
-   ,wai-websockets
-   ,warp
-   ,websockets
 
 executable wai-client
-  default-language: Haskell2010
-  hs-source-dirs: web/client
-  ghc-options: -Wall -fno-warn-name-shadowing
   main-is: Main.hs
+  hs-source-dirs:
+      web/client
+  ghc-options: -Wall -Werror -fno-warn-name-shadowing
   build-depends:
-    base  >= 4.7 && < 5
-   ,aeson
-   ,bytestring
-   ,directory
-   ,http-types
-   ,monads-tf
-   ,network
-   ,safe
-   ,scrabble
-   ,semigroups
-   ,text
-   ,wai
-   ,wai-websockets
-   ,warp
-   ,websockets
+      aeson
+    , array
+    , base
+    , bifunctors
+    , bytestring
+    , containers
+    , directory
+    , parsers
+    , primitive
+    , random-shuffle
+    , regex-compat
+    , semigroups
+    , text
+    , transformers
+    , trifecta
+    , unordered-containers
+    , utf8-string
+    , vector
+    , http-types
+    , monads-tf
+    , network
+    , safe
+    , scrabble
+    , wai
+    , wai-websockets
+    , warp
+    , websockets
+  default-language: Haskell2010
+
+executable wai-server
+  main-is: Main.hs
+  hs-source-dirs:
+      web/wai-server
+  ghc-options: -Wall -Werror -fno-warn-name-shadowing
+  build-depends:
+      aeson
+    , array
+    , base
+    , bifunctors
+    , bytestring
+    , containers
+    , directory
+    , parsers
+    , primitive
+    , random-shuffle
+    , regex-compat
+    , semigroups
+    , text
+    , transformers
+    , trifecta
+    , unordered-containers
+    , utf8-string
+    , vector
+    , http-types
+    , monads-tf
+    , safe
+    , scrabble
+    , wai
+    , wai-websockets
+    , warp
+    , websockets
+  other-modules:
+      ClientMessage
+  default-language: Haskell2010
+
+test-suite tests
+  type: exitcode-stdio-1.0
+  main-is: Main.hs
+  hs-source-dirs:
+      test
+  ghc-options: -Wall -Werror -fno-warn-name-shadowing -Wall -fno-warn-name-shadowing -fno-warn-missing-signatures -fno-warn-orphans
+  cpp-options: -DTEST
+  build-depends:
+      aeson
+    , array
+    , base
+    , bifunctors
+    , bytestring
+    , containers
+    , directory
+    , parsers
+    , primitive
+    , random-shuffle
+    , regex-compat
+    , semigroups
+    , text
+    , transformers
+    , trifecta
+    , unordered-containers
+    , utf8-string
+    , vector
+    , checkers
+    , data-default
+    , filemanip
+    , HUnit
+    , QuickCheck
+    , quickcheck-instances
+    , test-framework
+    , test-framework-hunit
+    , test-framework-quickcheck2
+    , test-framework-th
+    , scrabble
+  other-modules:
+      Scrabble.BagTests
+      Scrabble.BoardTests
+      Scrabble.GameTests
+      Scrabble.Move.MoveTests
+      Scrabble.Move.WordPutTests
+      Scrabble.ScrabbleArbitrary
+      Scrabble.SearchTests
+      Scrabble.TileTests
+      TestHelpers
+  default-language: Haskell2010

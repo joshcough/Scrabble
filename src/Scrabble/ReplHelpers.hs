@@ -6,9 +6,9 @@ module Scrabble.ReplHelpers where
 
 import Data.Aeson
 import Data.Aeson.Types
-import Data.Maybe (fromJust)
-import Data.List.NonEmpty (NonEmpty((:|)))
-import Prelude hiding (Word)
+import Data.Maybe           (fromJust)
+import Data.List.NonEmpty   (NonEmpty((:|)))
+import Prelude hiding       (Word)
 import Scrabble.Bag
 import Scrabble.Board.Board
 import Scrabble.Dictionary

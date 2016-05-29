@@ -1,5 +1,6 @@
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE DeriveGeneric, DeriveAnyClass #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 
 -- | Some helpers for non-empty list that don't exist.
 -- TODO: consider a PR for Aeson for NEL, but maybe there
@@ -7,7 +8,7 @@
 module Scrabble.NonEmpty (Scrabble.NonEmpty.foldl) where
 
 import Data.Aeson
-import Data.List.NonEmpty(NonEmpty((:|)), toList, fromList)
+import Data.List.NonEmpty (NonEmpty((:|)), toList, fromList)
 
 instance ToJSON a => ToJSON (NonEmpty a) where
   toJSON = toJSON . toList

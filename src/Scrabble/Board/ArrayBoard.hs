@@ -6,9 +6,9 @@
 {-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE DeriveTraversable #-}
 
-{-
 module Scrabble.Board.ArrayBoard where
 
+{-
 import Data.Array
 import Data.List (cycle)
 

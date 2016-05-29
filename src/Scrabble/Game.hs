@@ -25,17 +25,18 @@ module Scrabble.Game
   ) where
 
 import Data.Aeson
-import Data.Char (toUpper)
-import Data.List (intersperse)
-import Data.List.NonEmpty(NonEmpty((:|)), (<|))
-import qualified Data.List.NonEmpty as NE
+import Data.Char            (toUpper)
+import Data.List            (intersperse)
+import Data.List.NonEmpty   (NonEmpty((:|)), (<|))
 import GHC.Generics
 import Scrabble.Bag
 import Scrabble.Board.Board
 import Scrabble.Dictionary
 import Scrabble.Move.Move
-import qualified Scrabble.NonEmpty as SNE
-import Scrabble.NonEmpty ()
+import Scrabble.NonEmpty    ()
+
+import qualified Data.List.NonEmpty as NE
+import qualified Scrabble.NonEmpty  as SNE
 
 type Name = String
 
@@ -121,6 +122,7 @@ instance FromJSON Turn where
     turnTilesTaken    <- tilesFromJSON "Turn tiles" ("invalid tile in turn: " ++) id turnTilesTaken'
     return Turn{..}
 
+{-
 -- adding this, but not implementing just yet. -JC 2/2/16
 data Exchange = Exchange {
    exchangePlayer         :: Player -- ^ The player exchanging tiles.
@@ -129,6 +131,7 @@ data Exchange = Exchange {
  , exchangeOldBag         :: Bag    -- ^ The bag before the exchange.
  , exchangeNewBag         :: Bag    -- ^ The newly shuffled bag after the exchange.
 } deriving (Eq, Generic, ToJSON, FromJSON)
+-}
 
 data Game = Game {
    gamePlayers :: NonEmpty Player -- ^ The players in this game.

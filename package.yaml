@@ -1,0 +1,92 @@
+name:                scrabble
+version:             0.1.0.0
+synopsis:            A playground for teaching FP with Scrabble.
+homepage:            https://github.com/joshcough/Scrabble
+license:             MIT
+license-file:        LICENSE
+author:              Josh Cough
+maintainer:          joshcough@gmail.com
+category:            Teaching
+github:              joshcough/Scrabble
+
+ghc-options: -Wall -Werror -fno-warn-name-shadowing
+
+dependencies:
+  - aeson
+  - array
+  - base
+  - bifunctors
+  - bytestring
+  - containers
+  - directory
+  - parsers
+  - primitive
+  - random-shuffle
+  - regex-compat
+  - semigroups
+  - text
+  - transformers
+  - trifecta
+  - unordered-containers
+  - utf8-string
+  - vector
+
+library:
+  source-dirs: src
+
+tests:
+  tests:
+    ghc-options: -Wall -fno-warn-name-shadowing -fno-warn-missing-signatures -fno-warn-orphans
+    cpp-options: -DTEST
+    main: Main.hs
+    source-dirs:
+      - test
+    dependencies:
+      - checkers
+      - data-default
+      - filemanip
+      - HUnit
+      - QuickCheck
+      - quickcheck-instances
+      - test-framework
+      - test-framework-hunit
+      - test-framework-quickcheck2
+      - test-framework-th
+      - scrabble
+
+executables:
+  wai-server:
+    main: Main.hs
+    source-dirs: web/wai-server
+    dependencies:
+      - http-types
+      - monads-tf
+      - safe
+      - scrabble
+      - wai
+      - wai-websockets
+      - warp
+      - websockets
+
+  wai-client:
+    main: Main.hs
+    source-dirs: web/client
+    dependencies:
+      - http-types
+      - monads-tf
+      - network
+      - safe
+      - scrabble
+      - wai
+      - wai-websockets
+      - warp
+      - websockets
+
+#benchmarks:
+#  parser-bench:
+#    source-dirs:
+#      - bench
+#    main: Bench.hs
+#    dependencies:
+#      - scrabble
+#      - criterion

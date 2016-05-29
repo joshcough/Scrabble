@@ -28,18 +28,18 @@ module Scrabble.Search
   , wordBagContainsWord
 ) where
 
-import Control.Monad ((<=<))
-import Data.Foldable hiding (and, or, all)
-import Control.Monad (filterM)
-import Data.Char (toUpper)
-import Data.List (delete, sort, permutations)
-import qualified Data.List as List
-import Data.Maybe (isJust)
-import Data.Set (Set)
-import qualified Data.Set as Set
-import Prelude hiding (or, and, all)
+import Data.Foldable hiding    (and, or, all)
+import Control.Monad           (filterM)
+import Data.Char               (toUpper)
+import Data.List               (delete, sort, permutations)
+import Data.Maybe              (isJust)
+import Data.Set                (Set)
+import Prelude hiding          (or, and, all)
 import System.IO.Unsafe
 import Text.Regex
+
+import qualified Data.List as List
+import qualified Data.Set  as Set
 
 type Search = String -> Bool
 
@@ -97,10 +97,10 @@ or s1 s2 w = s1 w || s2 w
 and :: Search -> Search -> Search
 and s1 s2 w = s1 w && s2 w
 
-combine :: Bool                         ->
-           (Search -> Search -> Search) ->
-           [Search]                     ->
-           Search
+combine :: Bool
+        -> (Search -> Search -> Search)
+        -> [Search]
+        -> Search
 combine b f = foldr f (const b)
 
 any :: [Search] -> Search

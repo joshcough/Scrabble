@@ -3,21 +3,13 @@
 
 module Scrabble.Move.WordPutTests where
 
-import Data.Monoid (mempty)
-import Data.List
 import Scrabble.Board.Board
 import Scrabble.Dictionary
 import Scrabble.Move.WordPut
-import Scrabble.ScrabbleArbitrary
 import Scrabble.Tile
-import Test.Framework (testGroup)
 import Test.Framework.Providers.HUnit
-import Test.Framework.Providers.QuickCheck2 (testProperty)
 import Test.Framework.TH
-import Test.QuickCheck
-import Test.QuickCheck.Instances.Char
 import Test.HUnit
-import TestHelpers
 
 case_use_blank_H      = quickPut_H "HE_LO" [L]     @?= (at (7,7) horz [l H, l E, b L, l L, l O])
 case_use_two_blanks_H = quickPut_H "HE_L_" [L, O]  @?= (at (7,7) horz [l H, l E, b L, l L, b O])

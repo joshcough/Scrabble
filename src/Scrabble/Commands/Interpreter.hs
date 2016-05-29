@@ -3,18 +3,19 @@
 -- | Interpreter for player input
 module Scrabble.Commands.Interpreter where
 
-import Data.List (sort)
-import Data.List.NonEmpty (NonEmpty)
-import qualified Data.Set as Set
+import Data.List             (sort)
+import Data.List.NonEmpty    (NonEmpty)
 import Scrabble.Bag
 import Scrabble.Board.Board
 import Scrabble.Commands.AST
-import qualified Scrabble.Commands.SExpr as S
 import Scrabble.Game
-import Prelude hiding (Word)
+import Prelude hiding        (Word)
+
+import qualified Data.Set                as Set
+import qualified Scrabble.Commands.SExpr as SExpr
 
 interpret :: Game -> String -> Either String CommandResult
-interpret g cmd = S.fromString cmd >>= interpretExp g
+interpret g cmd = SExpr.fromString cmd >>= interpretExp g
 
 data PrintCommand =
     QueryResult [(Word, Points)]
@@ -27,9 +28,9 @@ data CommandResult =
   | Print PrintCommand
   | GameOver
 
-interpretExp :: Game        ->
-                ScrabbleExp ->
-                Either String CommandResult
+interpretExp :: Game
+             -> ScrabbleExp
+             -> Either String CommandResult
 interpretExp g@(Game _ board _ dict _) = f where
   f Skip                    = return . TurnComplete $ nextPlayer g
   f Quit                    = return   GameOver

@@ -12,11 +12,12 @@ module Scrabble.Board.Square
   , toWord
   ) where
 
-import Data.Aeson (ToJSON, FromJSON)
-import qualified Data.Maybe as Maybe
+import Data.Aeson           (ToJSON, FromJSON)
 import GHC.Generics
 import Scrabble.Bag
 import Scrabble.Board.Point
+
+import qualified Data.Maybe as Maybe
 
 data Bonus  = W3 | W2 | L3 | L2 | Star | NoBonus
   deriving (Eq, Ord, Generic, ToJSON, FromJSON)
