@@ -155,35 +155,22 @@ instance FromJSON Game where
     gamePlayers <- o .: "gamePlayers"
     gameBoard   <- o .: "gameBoard"
     gameBag     <- o .: "gameBag"
-    let gameDict = dictionaryUnsafe
+    let gameDict = unsafeReadEnglishDictionary
     gameTurns   <- o .: "gameTurns"
     return Game{..}
 
+-- TODO: Pass in a language.
 newGame :: NonEmpty (Int -> Player) -> IO Game
 newGame ps = do
   let players = (\(f,i) -> f i) <$> NE.zip ps (NE.fromList [0..])
   bag  <- newBag
-  dict <- Scrabble.Dictionary.dictionary
+  dict <- Scrabble.Dictionary.englishDictionary
   let (players',bag') = filledRacks players bag
   return $ Game (NE.reverse players') newBoard bag' dict [] where
   filledRacks :: NonEmpty Player -> Bag -> (NonEmpty Player, Bag)
   filledRacks (p1:|players) bag = foldl f (g p1) players where
     f (acc,b) a = let (p',b',_) = fillPlayerRack a b in (p' <| acc, b')
     g a = let (p',b',_) = fillPlayerRack a bag in (p':|[], b')
-
--- foldl  :: Foldable t => (b -> a -> b) -> b        -> t a        -> b
--- foldl1 :: Foldable t => (a -> a -> a) -> t a      -> a
--- foldl  ::               (b -> a -> b) -> (a -> b) -> NonEmpty a -> b
--- foldl fbab fab (a:|rest) = Prelude.foldl fbab (fab a) rest
---
---
--- /Users/josh/work/Scrabble/src/Scrabble/Game.hs:167:32:
---     Couldn't match expected type ‘(NonEmpty Player, Bag)’
---                 with actual type ‘Player -> (NonEmpty Player, Bag)’
---     Probable cause: ‘g’ is applied to too few arguments
---     In the second argument of ‘foldl’, namely ‘g’
---     In the expression: foldl f g ps
-
 
 instance Show Game where
   show (Game ps brd bag _ turns) = concat $ intersperse ", "

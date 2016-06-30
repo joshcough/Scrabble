@@ -3,13 +3,12 @@ module TestHelpers where
 
 import Data.Aeson
 import Scrabble.Dictionary
-import System.IO.Unsafe
 import Test.Framework                       (testGroup)
 import Test.Framework.Providers.HUnit
 import Test.Framework.Providers.QuickCheck2 (testProperty)
 import Test.HUnit
 
-dict = unsafePerformIO dictionary
+dict = unsafeReadEnglishDictionary
 
 p s t = testProperty (s ++ "_property" ) t
 u s t = testCase     (s ++ "_unit_test") t
@@ -25,4 +24,5 @@ eq_reflexive :: Eq a => a -> Bool
 eq_reflexive x = x == x
 
 roundTripJSON :: (FromJSON a, ToJSON a, Eq a, Show a) => a -> Bool
-roundTripJSON a = fromJSON (toJSON a) == Success a && (eitherDecode $ encode a) == Right a
+roundTripJSON a = fromJSON (toJSON a)       == Success a &&
+                  (eitherDecode $ encode a) == Right a

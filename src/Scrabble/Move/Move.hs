@@ -41,9 +41,9 @@ createMove' :: Validator -- ^
            ->  Either String Move
 createMove' validate b (Rack rack) wp dict = if valid then go else errMsg where
   errMsg        = Left "error: rack missing input letters"
-  rackLetters   = toString (fmap letter rack)
+  rackLetters   = wordToString (letter <$> rack)
   valid         = containsAllWithBlanks putLetters rackLetters
-  putLetters    = toString (letter <$> wordPutTiles wp)
+  putLetters    = wordToString (letter <$> wordPutTiles wp)
   go = do (newBoard, score) <- wordPut validate b wp dict
           return $ Move wp score (rackRemainder (Rack rack) wp) newBoard
 

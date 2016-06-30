@@ -12,7 +12,7 @@ module Scrabble.Search
   , containsOnly
   , containsLetterAtPos
   , dictionary
-  , dictionaryUnsafe
+  , unsafeReadDictionary
   , endsWith
   , matchAll
   , matchAny
@@ -128,8 +128,8 @@ dictionary = do
   d <- readFile "./dict/en.txt"
   return $ Set.fromList (fmap toUpper <$> lines d)
 
-dictionaryUnsafe :: Set String
-dictionaryUnsafe = unsafePerformIO dictionary
+unsafeReadDictionary :: Set String
+unsafeReadDictionary = unsafePerformIO dictionary
 
 -- Run a search on a whole bag of words
 runSearch :: Search -> Set String -> Set String

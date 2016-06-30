@@ -49,7 +49,7 @@ quickPut' ::
   -> [(String, Orientation, Point)]
   -> (Board,[Score])
 quickPut' validate words = unsafePerformIO $ do
-  dict <- Scrabble.Dictionary.dictionary
+  dict <- Scrabble.Dictionary.englishDictionary
   let e = putManyWords validate words newBoard dict
   return $ either (\s -> error $ "quickPut' died with: " ++ s) id e
 
@@ -58,7 +58,7 @@ testSearchR :: IO (Rack, [Word])
 testSearchR = do
   Bag bag <- newShuffledBag
   let rack = take 7 bag
-  words   <- testSearch (toString $ letter <$> rack)
+  words   <- testSearch (wordToString $ letter <$> rack)
   return (Rack rack, fromJust . wordFromString <$> words)
 
 showScores :: Game -> IO ()

@@ -77,7 +77,7 @@ fromLetter :: Letter -> Tile
 fromLetter = mkTile
 
 tileFromChar :: Char -> Maybe Tile
-tileFromChar c = mkTile <$> fromChar c
+tileFromChar c = mkTile <$> letterFromChar c
 
 tileFromCharEither :: Char -> Either String Tile
 tileFromCharEither c =

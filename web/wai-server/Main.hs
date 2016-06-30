@@ -44,7 +44,7 @@ socketsApp ref = websocketsOr defaultConnectionOptions wsApp defaultApp where
       1 -> connect player2 pending_conn ref 2
       _ -> rejectRequest pending_conn "too many players"
 
-  -- | This is a simple app that just serves up some html and javascript
+  -- |
   defaultApp :: Wai.Application
   defaultApp request respond = go where
     go = do
@@ -53,33 +53,47 @@ socketsApp ref = websocketsOr defaultConnectionOptions wsApp defaultApp where
         "/"        -> plainIndex
         "/game.js" -> gameJS
         bad        -> notFound (LB.fromStrict bad)
-    plainIndex    = Wai.responseFile status200 [(hContentType, "text/html")]       "web/wai-server/index.html" Nothing
-    gameJS        = Wai.responseFile status200 [(hContentType, "text/javascript")] "web/wai-server/game.js" Nothing
-    notFound path = Wai.responseLBS  status404 [("Content-Type", "text/plain")] (LB.append "404 - Not Found: " path)
+    plainIndex    = Wai.responseFile status200
+                                     [(hContentType, "text/html")]
+                                     "web/wai-server/index.html"
+                                     Nothing
+    gameJS        = Wai.responseFile status200
+                                     [(hContentType, "text/javascript")]
+                                     "web/wai-server/game.js" Nothing
+    notFound path = Wai.responseLBS  status404
+                                     [("Content-Type", "text/plain")]
+                                     (LB.append "404 - Not Found: " path)
 
-  -- | Connect with the incoming websocket request, set up communication with it in general.
-  connect :: MVar (PlayerName, Connection) -> PendingConnection -> IORef Int -> Int -> IO ()
-  connect convar pending_conn ref i = do
-    conn <- acceptRequest pending_conn
-    writeIORef ref i
-    -- as soon as we connect, they must send their name.
-    name <- receiveData conn :: IO B.ByteString
-    -- send them back an id
-    sendTextData conn (B.pack $ show i)
-    putMVar convar (name, conn)
-    forkPingThread conn 30
-    forever $ receiveMessage i conn -- listen for moves, forever.
+-- | Connect with the incoming websocket request,
+-- set up communication with it in general.
+connect :: MVar (PlayerName, Connection)
+        -> PendingConnection
+        -> IORef Int
+        -> Int
+        -> IO ()
+connect convar pending_conn ref i = do
+  conn <- acceptRequest pending_conn
+  writeIORef ref i
+  -- as soon as we connect, they must send their name.
+  name <- receiveData conn :: IO B.ByteString
+  -- send them back an id
+  sendTextData conn (B.pack $ show i)
+  putMVar convar (name, conn)
+  forkPingThread conn 30
+  forever $ receiveMessage i conn -- listen for moves, forever.
 
--- | recieve a message from the client.
---   decode the message and check if it's the player's turn
---   propagating error message along the way
---   then match on the MessageType and handle each message appropriately
---   if the client just wants a ValidityCheck, apply the move but only
---   return whether it applied sucessfully or not
---   if the client wants an ActualMove, then apply the move and return
---   the updated game state or an error
-
-receiveMessage :: Int -> Connection -> IO ()
+-- | Receive a message from the client.
+--   Decode the message and check if it's the player's turn
+--   propagating error message along the way then match on the
+--   MessageType and handle each message appropriately.
+--   If the client just wants a ValidityCheck
+--     * apply the move but only return whether it
+--       applied successfully or not
+--     * if the client wants an ActualMove, then apply the
+--       move and return the updated game state or an error
+receiveMessage :: Int
+               -> Connection
+               -> IO ()
 receiveMessage pid conn = do
     messageData <- receiveData conn
     case decodeAndCheckTurn messageData of
