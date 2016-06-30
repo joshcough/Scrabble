@@ -8,7 +8,7 @@ module Scrabble.Move.Move (
 ) where
 
 import Data.List                (delete, foldl')
-import Prelude hiding           (Word)
+import Prelude
 import Scrabble.Bag
 import Scrabble.Board.Board
 import Scrabble.Move.Scoring

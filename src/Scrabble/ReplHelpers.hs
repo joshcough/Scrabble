@@ -58,7 +58,7 @@ testSearchR :: IO (Rack, [Word])
 testSearchR = do
   Bag bag <- newShuffledBag
   let rack = take 7 bag
-  words   <- testSearch (wordToString $ letter <$> rack)
+  words   <- testSearch <$> dictionary <*> pure (wordToString $ letter <$> rack)
   return (Rack rack, fromJust . wordFromString <$> words)
 
 showScores :: Game -> IO ()

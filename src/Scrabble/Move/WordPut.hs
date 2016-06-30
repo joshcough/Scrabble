@@ -9,7 +9,7 @@ import Data.Aeson           (ToJSON, FromJSON, toJSON, parseJSON, withArray)
 import Data.Aeson.Types     (Parser)
 import Data.Map             (Map)
 import GHC.Generics
-import Prelude hiding       (Word)
+import Prelude
 import Scrabble.Bag
 import Scrabble.Board.Board
 

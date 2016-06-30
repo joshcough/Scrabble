@@ -5,7 +5,7 @@
 module Scrabble.Dictionary
   (
     Word
-  , Dict(..)
+  , Dict
   , Letter(..)
   , HasLetter(..)
   , dictContainsPrefix
@@ -88,18 +88,17 @@ data Dict = Dict {
 } deriving Eq
 
 instance Show Dict where
-  show (Dict words prefixes) =
-    concat ["(Dict ", nrWords, ", ", nrPrefixes, ")"] where
-      nrWords    = "words: "    ++ show (length words)
-      nrPrefixes = "prefixes: " ++ show (length prefixes)
+  show d = concat ["(Dict ", nrWords, ", ", nrPrefixes, ")"] where
+    nrWords    = "words: "    ++ show (length $ dictWords d)
+    nrPrefixes = "prefixes: " ++ show (length $ dictPrefixes d)
 
 -- | Returns true if the dict contains the given word
 dictContainsWord :: Dict -> Word -> Bool
-dictContainsWord (Dict words _) = flip Set.member words
+dictContainsWord = flip Set.member . dictWords
 
 -- | Returns true if the dict contains the given prefix
 dictContainsPrefix :: Dict -> Word -> Bool
-dictContainsPrefix (Dict _ prefixes) = flip Set.member prefixes
+dictContainsPrefix = flip Set.member . dictPrefixes
 
 -- Reads in a dictionary of Scrabble words from the given file.
 readDictionary :: FilePath -> IO Dict

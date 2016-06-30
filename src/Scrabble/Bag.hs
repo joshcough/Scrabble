@@ -23,7 +23,7 @@ import GHC.Generics
 import Scrabble.Dictionary
 import Scrabble.Tile
 import System.Random.Shuffle
-import Prelude hiding        (Word)
+import Prelude
 
 data Rack = Rack { rackTiles :: [Tile] }
   deriving (Eq, Ord, Generic)

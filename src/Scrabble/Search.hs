@@ -24,6 +24,7 @@ module Scrabble.Search
   , searchWordBagForPowersetSorted
   , startsWith
   , testSearch
+  , testSearchUnsafe
   , ups
   , wordBagContainsWord
 ) where
@@ -159,10 +160,11 @@ permset s = Set.fromList $ concat (permutations <$> powerset s)
 
 {- A quick utility to search the dict
    for all possible words make with the given rack. -}
-testSearch :: [Char] -> IO [String]
-testSearch rack = do
-  d <- dictionary
-  return $ searchWordBagForPowersetSorted d rack
+testSearch :: Set String -> [Char] -> [String]
+testSearch = searchWordBagForPowersetSorted
+
+testSearchUnsafe :: [Char] -> [String]
+testSearchUnsafe = testSearch unsafeReadDictionary
 
 {-
 Dan Doel gave me these to improve search speed

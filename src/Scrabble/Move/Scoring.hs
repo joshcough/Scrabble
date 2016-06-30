@@ -5,7 +5,7 @@ module Scrabble.Move.Scoring where
 
 import Data.List            (foldl')
 import Data.Set             (Set)
-import Prelude hiding       (Word)
+import Prelude
 import Scrabble.Bag
 import Scrabble.Board.Board
 
