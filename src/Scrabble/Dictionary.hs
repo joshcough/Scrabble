@@ -17,6 +17,7 @@ module Scrabble.Dictionary
   , unsafeReadEnglishDictionary
   , wordFromString
   , wordToString
+  , wordPlays
   ) where
 
 import Data.Aeson       (ToJSON, FromJSON)
@@ -118,38 +119,6 @@ readDictionary dict = mkDict <$> readFile dict where
   dictFromLists wordList prefixesLists =
     Dict (Set.fromList wordList) (Set.fromList $ concat prefixesLists)
 
--- | Find all the words in the dictionary that can be made with the given letters.
-findWords :: Dict     -- ^ The dictionary to search
-          -> [Letter] -- ^ The letters to build the words from.
-          -> Set Word
-findWords dict = Set.fromList . concat . findWords' [] where
-  findWords' :: Word -> [Letter] -> [[Word]]
-  findWords' prefix remainingChars = do
-    nextChar <- remainingChars
-    let next  = prefix ++ [nextChar]
-    let recur = concat (findWords' next (delete nextChar remainingChars))
-    return $ case (dictContainsWord dict next, dictContainsPrefix dict next) of
-      -- valid word, and valid prefix   - return word and recur for any more results.
-      (True,  True)  -> next : recur
-      -- valid word, but invalid prefix - just return word, nothing else can be found.
-      (True,  False) -> next : []
-      -- invalid word, but valid prefix - just recur for any more results.
-      (False, True)  -> recur
-      -- not a valid word or prefix     - nothing to return, done with this path.
-      (False, False) -> []
-
--- | Find all the prefixes in the dictionary that can be made with the given letters.
-findPrefixes :: Dict    -- ^ The dictionary to search
-            -> [Letter] -- ^ The letters to build the words from.
-            -> Set Word
-findPrefixes dict = Set.fromList . concat . findPrefixes' [] where
-  findPrefixes' :: [Letter] -> [Letter] -> [[Word]]
-  findPrefixes' prefix remainingChars = do
-    nextChar <- remainingChars
-    let next  = prefix ++ [nextChar]
-    let recur = concat (findPrefixes' next (delete nextChar remainingChars))
-    return $ if dictContainsPrefix dict next then next : recur else []
-
 {- ===== English Dictionary ===== -}
 
 -- English dictionary file path
@@ -163,3 +132,51 @@ englishDictionary = readDictionary englishDictionaryPath
 -- | Read the English dictionary (performing the IO action)
 unsafeReadEnglishDictionary :: Dict
 unsafeReadEnglishDictionary = unsafePerformIO englishDictionary
+
+{- ===== Dictionary Search ===== -}
+
+-- | Find all the words in the dictionary that can be made with the given letters.
+findWords :: Dict     -- ^ The dictionary to search
+          -> [Letter] -- ^ The letters to build the words from.
+          -> Set Word
+findWords d = Set.fromList . f [] where f = search' f dictContainsWord d
+
+-- | Find all the prefixes in the dictionary that can be made with the given letters.
+findPrefixes :: Dict    -- ^ The dictionary to search
+            -> [Letter] -- ^ The letters to build the words from.
+            -> Set Word
+findPrefixes d = Set.fromList . ([]:) . f [] where f = search' f dictContainsPrefix d
+
+-- | Find all the words that can be made with the letters on the board
+--   Returned words are made up of PREFIX + L + SUFFIX, where
+--   PREFIX and SUFFIX come from letters in the hand
+--   and L is a letter on the board.
+wordPlays :: Dict    -- ^ Dictionary to search
+         -> [Letter] -- ^ Letters in hand
+         -> [Letter] -- ^ Letters on board
+         -> Set Word
+wordPlays dict hand board = Set.fromList $ do
+  prefix <- Set.toList $ findPrefixes dict hand
+  letter <- board
+  addSuffixes (prefix++[letter]) (deleteAll prefix hand) where
+    addSuffixes = search' addSuffixes dictContainsWord dict
+
+type SearchFunc = [Letter] -> [Letter] -> [Word]
+type SearchPred = Dict -> Word -> Bool
+
+-- generic recursive dictionary search function.
+search' :: SearchFunc -- ^ Function to continue the search
+        -> SearchPred -- ^ Predicate that indicates if word matches
+        -> Dict       -- ^ The dictionary to search
+        -> [Letter]   -- ^ Prefix that all search results must start with
+        -> [Letter]   -- ^ The letters to append to the prefix to find matches
+        -> [Word]     -- ^ List of words matching
+search' search pred dict prefix rest = match ++ recur prefix rest where
+  match = if pred dict prefix then [prefix] else []
+  recur prefix _    | not $ dictContainsPrefix dict prefix = []
+  recur prefix rest = do l <- rest; search (prefix ++ [l]) (delete l rest)
+
+-- Delete all elements in the first list from the second list.
+deleteAll :: Eq a => [a] -> [a] -> [a]
+deleteAll []     hand = hand
+deleteAll (x:xs) hand = deleteAll xs (delete x hand)

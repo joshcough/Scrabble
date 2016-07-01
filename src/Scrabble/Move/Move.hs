@@ -18,10 +18,10 @@ import Scrabble.Search          (Search, ups)
 
 -- |
 data Move = Move {
-  moveWordPut        :: WordPut -- ^ all the tiles laid down
- ,movePointsScored   :: Points  -- ^ points score in turn
- ,moveRackRemaining  :: Rack    -- ^ not yet refilled
- ,moveBoardAfterMove :: Board   -- ^ the state of the board after the move
+   moveWordPut        :: WordPut -- ^ all the tiles laid down
+ , movePointsScored   :: Points  -- ^ points score in turn
+ , moveRackRemaining  :: Rack    -- ^ not yet refilled
+ , moveBoardAfterMove :: Board   -- ^ the state of the board after the move
 } deriving (Eq)
 
 -- |
