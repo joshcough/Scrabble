@@ -6,9 +6,7 @@ module Scrabble.ReplHelpers where
 
 import Data.Aeson
 import Data.Aeson.Types
-import Data.Maybe           (fromJust)
 import Data.List.NonEmpty   (NonEmpty((:|)))
-import Prelude hiding       (Word)
 import Scrabble.Bag
 import Scrabble.Board.Board
 import Scrabble.Dictionary
@@ -54,12 +52,12 @@ quickPut' validate words = unsafePerformIO $ do
   return $ either (\s -> error $ "quickPut' died with: " ++ s) id e
 
 -- | Search the dictionary with a new random rack
-testSearchR :: IO (Rack, [Word])
+testSearchR :: IO (Rack, [String])
 testSearchR = do
   Bag bag <- newShuffledBag
   let rack = take 7 bag
-  words   <- testSearch <$> dictionary <*> pure (wordToString $ letter <$> rack)
-  return (Rack rack, fromJust . wordFromString <$> words)
+  words   <- testSearch <$> dictionary <*> pure (toChar . letter <$> rack)
+  return (Rack rack, words)
 
 showScores :: Game -> IO ()
 showScores g = putStrLn . show $ getScores g

@@ -4,7 +4,6 @@
 module Scrabble.Move.Validation where
 
 import Data.List             (intersperse, partition)
-import Prelude hiding        (Word)
 import Scrabble.Board.Board
 import Scrabble.Dictionary
 import Scrabble.Move.WordPut
@@ -73,7 +72,6 @@ validateMove move b b' dict = go where
   takenSquares :: [Square]
   takenSquares = square <$> filter (not . available) legals
 
-  words :: [Word]
   words = toWord <$> (Set.toList $ wordsAtPoints pointsPlayedInMove b')
 
   (_, badWords) = partition (dictContainsWord dict) words

@@ -4,13 +4,13 @@
 -- | Letter, Word, and Dictionary representation
 module Scrabble.Dictionary
   (
-    Word
-  , Dict
+    Dict
   , Letter(..)
   , HasLetter(..)
   , dictContainsPrefix
   , dictContainsWord
   , englishDictionary
+  , findPrefixes
   , findWords
   , letterFromChar
   , toChar
@@ -118,15 +118,37 @@ readDictionary dict = mkDict <$> readFile dict where
   dictFromLists wordList prefixesLists =
     Dict (Set.fromList wordList) (Set.fromList $ concat prefixesLists)
 
--- | Find all the words in the dictionary that can
---   be made with the given letters
-findWords :: Dict -> [Letter] -> Set Word
+-- | Find all the words in the dictionary that can be made with the given letters.
+findWords :: Dict     -- ^ The dictionary to search
+          -> [Letter] -- ^ The letters to build the words from.
+          -> Set Word
 findWords dict = Set.fromList . concat . findWords' [] where
   findWords' :: Word -> [Letter] -> [[Word]]
-  findWords' prefix rest = [next c : recur c | c <- rest, lookup (next c)]
-    where next  c = prefix ++ [c]
-          recur c = concat (findWords' (next c) (delete c rest))
-          lookup  = dictContainsPrefix dict
+  findWords' prefix remainingChars = do
+    nextChar <- remainingChars
+    let next  = prefix ++ [nextChar]
+    let recur = concat (findWords' next (delete nextChar remainingChars))
+    return $ case (dictContainsWord dict next, dictContainsPrefix dict next) of
+      -- valid word, and valid prefix   - return word and recur for any more results.
+      (True,  True)  -> next : recur
+      -- valid word, but invalid prefix - just return word, nothing else can be found.
+      (True,  False) -> next : []
+      -- invalid word, but valid prefix - just recur for any more results.
+      (False, True)  -> recur
+      -- not a valid word or prefix     - nothing to return, done with this path.
+      (False, False) -> []
+
+-- | Find all the prefixes in the dictionary that can be made with the given letters.
+findPrefixes :: Dict    -- ^ The dictionary to search
+            -> [Letter] -- ^ The letters to build the words from.
+            -> Set Word
+findPrefixes dict = Set.fromList . concat . findPrefixes' [] where
+  findPrefixes' :: [Letter] -> [Letter] -> [[Word]]
+  findPrefixes' prefix remainingChars = do
+    nextChar <- remainingChars
+    let next  = prefix ++ [nextChar]
+    let recur = concat (findPrefixes' next (delete nextChar remainingChars))
+    return $ if dictContainsPrefix dict next then next : recur else []
 
 {- ===== English Dictionary ===== -}
 

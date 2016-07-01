@@ -26,7 +26,6 @@ import Data.Maybe          (fromJust, listToMaybe)
 import Data.Text           (pack, unpack)
 import GHC.Generics
 import Scrabble.Dictionary
-import Prelude hiding      (Word)
 
 import qualified Data.Map.Strict as Map
 
@@ -92,6 +91,6 @@ points = Map.fromList [
   (U,1),(V,4), (W,4),(X,8),(Y,4),
   (Z,10), (Blank, 0)]
 
-simpleWordPoints :: Word -> Points
+simpleWordPoints :: [Letter] -> Points
 simpleWordPoints = sum . fmap f where
   f l = fromJust $ Map.lookup l points
