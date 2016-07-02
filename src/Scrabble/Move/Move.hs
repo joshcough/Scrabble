@@ -18,26 +18,26 @@ import Scrabble.Search          (Search, ups)
 
 -- |
 data Move = Move {
-   moveWordPut        :: WordPut -- ^ all the tiles laid down
- , movePointsScored   :: Points  -- ^ points score in turn
- , moveRackRemaining  :: Rack    -- ^ not yet refilled
- , moveBoardAfterMove :: Board   -- ^ the state of the board after the move
+   moveWordPut        :: WordPut      -- ^ all the tiles laid down
+ , movePointsScored   :: Points       -- ^ points score in turn
+ , moveRackRemaining  :: Rack         -- ^ not yet refilled
+ , moveBoardAfterMove :: Board Square -- ^ the state of the board after the move
 } deriving (Eq)
 
 -- |
-createMove :: Board   -- ^
-          ->  Rack    -- ^
-          ->  WordPut -- ^
-          ->  Dict    -- ^
+createMove :: Board Square -- ^
+          ->  Rack         -- ^
+          ->  WordPut      -- ^
+          ->  Dict         -- ^
           ->  Either String Move
 createMove = createMove' standardValidation
 
 -- |
-createMove' :: Validator -- ^
-           ->  Board     -- ^
-           ->  Rack      -- ^
-           ->  WordPut   -- ^
-           ->  Dict      -- ^
+createMove' :: Validator    -- ^
+           ->  Board Square -- ^
+           ->  Rack         -- ^
+           ->  WordPut      -- ^
+           ->  Dict         -- ^
            ->  Either String Move
 createMove' validate b (Rack rack) wp dict = if valid then go else errMsg where
   errMsg        = Left "error: rack missing input letters"
@@ -74,11 +74,11 @@ rackRemainder (Rack r) (WordPut tps) = Rack $ foldl' f r tps
 -- | Attempt to lay tiles on the board.
 --   Validate the entire move.
 --   Calculate the score of the move.
-wordPut :: Validator -- ^ validation algo
-       ->  Board     -- ^ the board to put the word on
-       ->  WordPut   -- ^ the word being put on the board
-       ->  Dict      -- ^ the scrabble dictionary
-       ->  Either String (Board, Score)
+wordPut :: Validator    -- ^ validation algo
+       ->  Board Square -- ^ the board to put the word on
+       ->  WordPut      -- ^ the word being put on the board
+       ->  Dict         -- ^ the scrabble dictionary
+       ->  Either String (Board Square, Score)
 wordPut validate b wp dict = do
   squares <- squaresPlayedThisTurn
   let b' = nextBoard $ wordPutTiles wp
@@ -90,6 +90,6 @@ wordPut validate b wp dict = do
     squaresPlayedThisTurn = traverse f (tilePutPoint <$> wordPutTiles wp) where
       f p = maybe (Left $ "out of bounds: " ++ show p) Right $ elemAt b p
     -- actually put all the tiles on the board
-    nextBoard :: [TilePut] -> Board
+    nextBoard :: [TilePut] -> Board Square
     nextBoard ts = putTiles b $ f <$> ts where
       f tp = (tilePutPoint tp, asTile tp)

@@ -15,17 +15,17 @@ case_upper_horizonal = snd (placeHztl "ZOOLOGIC") @?= [40]
 
 {- places the given word vertically starting on
    the center position of a new board -}
-placeVert :: String -> (Board,[Score])
+placeVert :: String -> (Board Square, [Score])
 placeVert word = centered word Vertical
 
 {- places the given word horizontally starting on
    the center position of a new board -}
-placeHztl :: String -> (Board,[Score])
+placeHztl :: String -> (Board Square, [Score])
 placeHztl word = centered word Horizontal
 
 {- places the given word on the center position of a new board
    using the given orientation -}
-centered :: String -> Orientation -> (Board,[Score])
+centered :: String -> Orientation -> (Board Square, [Score])
 centered word orientation = quickPut [(word, orientation, (7,7))]
 
 tests = $testGroupGenerator

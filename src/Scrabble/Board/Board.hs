@@ -1,4 +1,5 @@
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE DeriveGeneric, DeriveAnyClass #-}
 
@@ -46,19 +47,19 @@ import qualified Data.Maybe  as Maybe
 import qualified Data.Set    as Set
 import qualified Data.Vector as V
 
-data Board = Board (Array Point Square)
+data Board a = Board (Array Point a)
   deriving (Eq, Ord, Generic)
 
-instance ToJSON Board where
+instance ToJSON (Board Square) where
   toJSON (Board b) =
       toJSON . fmap (second tile) . filter (taken . snd) $ A.assocs b
 
-instance FromJSON Board where
+instance FromJSON (Board Square) where
   parseJSON = withArray "Board" $ \arr ->
     putTiles newBoard <$> mapM parseJSON (V.toList arr)
 
-type Row = Array Int Square
-type Col = Array Int Square
+type Row a = Array Int a
+type Col a = Array Int a
 
 boardBounds :: (Point, Point)
 boardBounds = ((0,0), (14,14))
@@ -66,26 +67,26 @@ boardBounds = ((0,0), (14,14))
 infixl 9  !, //
 
 -- |
-(!) :: Board -> Point -> Square
+(!) :: Board a -> Point -> a
 (Board b) ! p = b A.! p
 
 -- |
-(//) :: Board -> [(Point, Square)] -> Array Point Square
+(//) :: Board a -> [(Point, a)] -> Array Point a
 (Board b) // p = b A.// p
 
 -- elems :: Board -> [Square]
 -- elems (Board b) = A.elems b
 
-newBoard  :: Board
+newBoard  :: Board Square
 newBoard = Board $ listArray boardBounds (f <$> boardBonuses) where
   f (p,b) = Square Nothing b p
 
-putTiles  :: Board -> [(Point,Tile)] -> Board
+putTiles  :: Board Square -> [(Point,Tile)] -> Board Square
 putTiles b pts = Board $ b // (f <$> pts) where
   f (p,t) = (p, (b ! p) { tile = Just t })
 
 -- | 'show' for Scrabble boards. The Bool is to show square bonuses, or not.
-showBoard :: Bool -> Board -> String
+showBoard :: Bool -> Board Square -> String
 showBoard printBonuses board = top ++ showRows ++ bottom where
   showRows      = intercalate "\n" (showRow <$> (A.elems $ rows board)) ++ "\n"
   showRow     r = "|" ++ concat (fmap showSquare' r)
@@ -95,50 +96,50 @@ showBoard printBonuses board = top ++ showRows ++ bottom where
   line        c = replicate 46 c ++ "\n"
 
 -- | TODO: this Maybe sucks
-elemAt  :: Board -> Point -> Maybe Square
+elemAt  :: Board a -> Point -> Maybe a
 elemAt b p = if inbounds p then Just (b ! p) else Nothing
 
 zeroTo14 :: [Int]
 zeroTo14 = [0..14]
 
 -- | get the row at the given y
-row     :: Board -> Int -> Row
+row     :: Board a -> Int -> Row a
 row b y = listArray (0,14) [b ! (x, y) | x <- zeroTo14]
 
 -- | get the column at the given x
-col     :: Board -> Int -> Col
+col     :: Board a -> Int -> Col a
 col b x = listArray (0,14) [b ! (x, y) | y <- zeroTo14]
 
 -- | get all the rows in the board
-rows    :: Board -> Array Int Row
+rows    :: Board a -> Array Int (Row a)
 rows b = listArray (0,14) [row b y | y <- zeroTo14]
 
 -- | get all the columns in the board
-cols    :: Board -> Array Int Col
+cols    :: Board a -> Array Int (Col a)
 cols b = listArray (0,14) [col b x | x <- zeroTo14]
 
 -- | get all the squares in a column above a point
-above   :: Board -> Point -> Row
+above   :: Board a -> Point -> Row a
 above b (x,y) = listArray (0,y-1) [b ! (x, y) | y <- [0..y-1]]
 
 -- | get all the squares in a column below a point
-below   :: Board -> Point -> Row
+below   :: Board a -> Point -> Row a
 below b (x,y) = listArray (0,13-y) [b ! (x, y) | y <- [y+1..14]]
 
 -- | get all the squares in a row left of a point
-leftOf  :: Board -> Point -> Col
+leftOf  :: Board a -> Point -> Col a
 leftOf b (x,y) = listArray (0,x-1) [b ! (x, y) | x <- [0..x-1]]
 
 -- | get all the squares in a row right of a point
-rightOf :: Board -> Point -> Col
+rightOf :: Board a -> Point -> Col a
 rightOf b (x,y) = listArray (0,13-x) [b ! (x, y) | x <- [x+1..14]]
 
 -- |
-boardToList :: Board -> [Square]
+boardToList :: Board a -> [a]
 boardToList (Board b) = A.elems b
 
 -- |
-isBoardEmpty :: Board -> Bool
+isBoardEmpty :: Board Square -> Bool
 isBoardEmpty = all emptySquare . boardToList
 
 -- | a simple representation of an empty Scrabble board
@@ -165,16 +166,16 @@ centerPosition :: Point
 centerPosition = (7, 7)
 
 -- | all the tiles 'before' a position in a matrix, vertically or horizontally
-beforeByOrientation :: Orientation -> Board -> Point -> Row
+beforeByOrientation :: Orientation -> Board a -> Point -> Row a
 beforeByOrientation = foldOrientation leftOf above
 -- | all the tiles 'after' a position in a matrix, vertically or horizontally
-afterByOrientation :: Orientation -> Board -> Point -> Row
+afterByOrientation :: Orientation -> Board a -> Point -> Row a
 afterByOrientation = foldOrientation rightOf below
 
 -- |
 wordsAtPoints ::
-    [Point]      -- ^ all the points a player placed tiles in this turn
-  -> Board       -- ^ the board (with those tiles on it)
+    [Point]       -- ^ all the points a player placed tiles in this turn
+  -> Board Square -- ^ the board (with those tiles on it)
   -> Set [Square]
 wordsAtPoints pts b =
   Set.fromList . concat $ getWordsTouchingPoint <$> pts where
@@ -194,7 +195,7 @@ wordsAtPoints pts b =
 {-
 -- | all the empty positions on the board
 --   that are have a neighbor with a tile in them
-emptyConnectedPositions :: Board -> [Square]
+emptyConnectedPositions :: Board Square -> [Square]
 emptyConnectedPositions b =
   filter legalSquare $ elems b where
     -- is it legal to put a tile in this square?
@@ -205,27 +206,27 @@ emptyConnectedPositions b =
 -}
 
 -- | all the neighbors of a particular square (left,right,up,down)
-neighbors :: Board -> Point -> [Square]
+neighbors :: Board a -> Point -> [a]
 neighbors b p = [b ! (x,y) | (x,y) <- neighbors4P p, inbounds p]
 
 -- | returns True if a point is within board bounds
 inbounds :: Point -> Bool
 inbounds (x,y) = f x && f y where f i = i >= 0 && i <= 14
 
-printBoard :: Bool -> Board -> IO ()
+printBoard :: Bool -> Board Square -> IO ()
 printBoard showBonuses = putStrLn . showBoard showBonuses
 
 -- | Get all the words on the board, including 1 letter words.
 --   It returns the squares containing the tiles.
-getWords :: Board -> [[Square]]
+getWords :: Board Square -> [[Square]]
 getWords b = rowWords ++ colWords where
   rowWords = concat $ getWordsInRow <$> rows b
   colWords = concat $ getWordsInCol <$> cols b
 
-  getWordsInCol :: Col -> [[Square]]
+  getWordsInCol :: Col Square -> [[Square]]
   getWordsInCol = getWordsInRow
 
-  getWordsInRow :: Row -> [[Square]]
+  getWordsInRow :: Row Square -> [[Square]]
   getWordsInRow = getWordsInList . elems
 
   getWordsInList :: [Square] -> [[Square]]

@@ -11,10 +11,10 @@ import Scrabble.Move.WordPut
 import qualified Data.Set as Set
 
 type Validator =
-    [TilePut] -- ^ all the letters put down this turn
-  -> Board    -- ^ old board
-  -> Board    -- ^ new board
-  -> Dict     -- ^ the dictionary
+    [TilePut]     -- ^ all the letters put down this turn
+  -> Board Square -- ^ old board
+  -> Board Square -- ^ new board
+  -> Dict         -- ^ the dictionary
   -> Either String ()
 
 noValidation :: Validator
@@ -31,10 +31,10 @@ standardValidation = validateMove
 --  5) On every turn after the first, at least one crossword must be formed
 --  6) All words formed must be inside the dictionary
 -- TODO: return all the errors.
-validateMove :: [TilePut] -- ^ all the letters put down this turn
-              -> Board    -- ^ old board
-              -> Board    -- ^ new board
-              -> Dict     -- ^ the dictionary
+validateMove :: [TilePut]     -- ^ all the letters put down this turn
+              -> Board Square -- ^ old board
+              -> Board Square -- ^ new board
+              -> Dict         -- ^ the dictionary
               -> Either String ()
 validateMove move b b' dict = go where
   go =
@@ -90,5 +90,6 @@ data SquareLegality = SquareLegality {
 } deriving Show
 
 
-validateBoard :: Dict -> Board -> Either String ()
-validateBoard dict board = error "todo"
+validateBoard :: Dict -> Board Square -> Either String ()
+-- validateBoard dict board = error "todo"
+validateBoard _ _ = error "todo"

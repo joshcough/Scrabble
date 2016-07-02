@@ -20,32 +20,33 @@ now :: String -> IO ()
 now = printBS . now'
 
 -- | put a word on new board board and return the board and score
-now' :: String -> (Board,[Score])
+now' :: String -> (Board Square, [Score])
 now' s = quickPut [(s, Horizontal, (7, 7))]
 
 nowNoValidation :: String -> IO ()
 nowNoValidation = printBS . nowNoValidation'
 
-nowNoValidation' :: String -> (Board,[Score])
+nowNoValidation' :: String -> (Board Square, [Score])
 nowNoValidation' s = quickPutNoValidation [(s, Horizontal, (7, 7))]
 
-printBS :: (Board,[Score]) -> IO ()
+printBS :: (Board Square,[Score]) -> IO ()
 printBS (b, scores) = printBoard True b >> putStrLn (show scores)
 
-quickPut :: [(String, Orientation, Point)] -> (Board,[Score])
+quickPut :: [(String, Orientation, Point)] -> (Board Square, [Score])
 quickPut = quickPut' standardValidation
 
 -- | put a word on new board board and return the board and score
 --   but don't do any validation on the word, so that you can put
 --   non-words on the board like "erwaeirawer" for testing other things
-quickPutNoValidation :: [(String, Orientation, Point)] -> (Board,[Score])
+quickPutNoValidation :: [(String, Orientation, Point)]
+                     -> (Board Square,[Score])
 quickPutNoValidation = quickPut' noValidation
 
 {- test putting some words on a brand new board -}
 quickPut' ::
      Validator
   -> [(String, Orientation, Point)]
-  -> (Board,[Score])
+  -> (Board Square, [Score])
 quickPut' validate words = unsafePerformIO $ do
   dict <- Scrabble.Dictionary.englishDictionary
   let e = putManyWords validate words newBoard dict

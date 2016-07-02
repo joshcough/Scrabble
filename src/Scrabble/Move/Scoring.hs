@@ -11,7 +11,7 @@ import Scrabble.Board.Board
 
 import qualified Data.Set as Set
 
-type Scorer = [Square] -> Board -> Score
+type Scorer = [Square] -> Board Square -> Score
 
 noScoring :: Scorer
 noScoring _ _ = 0
@@ -21,8 +21,8 @@ standardScoring = calculateTurnScore
 
 -- | Calculate the score for ALL words in a turn
 calculateTurnScore ::
-    [Square] -- ^ all the squares a player placed tiles in this turn
-  -> Board   -- ^ the board (with those tiles on it)
+    [Square]      -- ^ all the squares a player placed tiles in this turn
+  -> Board Square -- ^ the board (with those tiles on it)
   -> Score
 calculateTurnScore sqrs board = totalScore where
   totalScore = sum wordScores + bingoBonus

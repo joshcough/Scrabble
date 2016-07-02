@@ -136,7 +136,7 @@ data Exchange = Exchange {
 
 data Game = Game {
    gamePlayers :: NonEmpty Player -- ^ The players in this game.
- , gameBoard   :: Board           -- ^ The board, possibly with tiles on it.
+ , gameBoard   :: Board Square    -- ^ The board, possibly with tiles on it.
  , gameBag     :: Bag             -- ^ The bag containing all the remaining tiles.
  , gameDict    :: Dict            -- ^ The official Scrabble English dictionary.
  , gameTurns   :: [Turn]          -- ^ All the turns played in this game.
@@ -231,12 +231,14 @@ printGameBoard b = printBoard b . gameBoard
 putManyWords ::
      Validator
   -> [(String, Orientation, Point)]
-  -> Board
+  -> Board Square
   -> Dict
-  -> Either String (Board,[Score])
+  -> Either String (Board Square, [Score])
 putManyWords validate words b dict = wordPuts >>= go (b,[]) where
   -- put all the words on the board
-  go :: (Board, [Score]) -> [WordPut] -> Either String (Board, [Score])
+  go :: (Board Square, [Score])
+     -> [WordPut]
+     -> Either String (Board Square, [Score])
   go (b,ss) pws = foldl f (Right (b,ss)) pws where
     f acc wp = do
       (b, scores) <- acc
