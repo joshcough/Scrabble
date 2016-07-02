@@ -29,6 +29,7 @@ dependencies:
   - trifecta
   - unordered-containers
   - utf8-string
+  - validation
   - vector
 
 library:

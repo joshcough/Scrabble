@@ -16,6 +16,7 @@ module Scrabble.Board.Board
   , col
   , cols
   , elemAt
+  , getWords
   , isBoardEmpty
   , neighbors
   , newBoard
@@ -28,15 +29,17 @@ module Scrabble.Board.Board
   ) where
 
 import Data.Aeson                 (ToJSON, FromJSON, toJSON, parseJSON, withArray)
-import Data.Array                 (Array, listArray)
+import Data.Array                 (Array, listArray, elems)
+import Data.Bifunctor             (second)
 import Data.List                  (intercalate)
 import Data.Set                   (Set)
 import GHC.Generics
 import Scrabble.Bag
-import Data.Bifunctor             (second)
 import Scrabble.Board.Orientation
 import Scrabble.Board.Point
 import Scrabble.Board.Square
+
+import Prelude hiding (Word)
 
 import qualified Data.Array  as A
 import qualified Data.Maybe  as Maybe
@@ -50,11 +53,9 @@ instance ToJSON Board where
   toJSON (Board b) =
       toJSON . fmap (second tile) . filter (taken . snd) $ A.assocs b
 
-
 instance FromJSON Board where
   parseJSON = withArray "Board" $ \arr ->
     putTiles newBoard <$> mapM parseJSON (V.toList arr)
-
 
 type Row = Array Int Square
 type Col = Array Int Square
@@ -97,21 +98,24 @@ showBoard printBonuses board = top ++ showRows ++ bottom where
 elemAt  :: Board -> Point -> Maybe Square
 elemAt b p = if inbounds p then Just (b ! p) else Nothing
 
+zeroTo14 :: [Int]
+zeroTo14 = [0..14]
+
 -- | get the row at the given y
 row     :: Board -> Int -> Row
-row b y = listArray (0,14) [b ! (x, y) | x <- [0..14]]
+row b y = listArray (0,14) [b ! (x, y) | x <- zeroTo14]
 
 -- | get the column at the given x
 col     :: Board -> Int -> Col
-col b x = listArray (0,14) [b ! (x, y) | y <- [0..14]]
+col b x = listArray (0,14) [b ! (x, y) | y <- zeroTo14]
 
 -- | get all the rows in the board
 rows    :: Board -> Array Int Row
-rows b = listArray (0,14) [row b y | y <- [0..14]]
+rows b = listArray (0,14) [row b y | y <- zeroTo14]
 
 -- | get all the columns in the board
 cols    :: Board -> Array Int Col
-cols b = listArray (0,14) [col b x | x <- [0..14]]
+cols b = listArray (0,14) [col b x | x <- zeroTo14]
 
 -- | get all the squares in a column above a point
 above   :: Board -> Point -> Row
@@ -210,3 +214,32 @@ inbounds (x,y) = f x && f y where f i = i >= 0 && i <= 14
 
 printBoard :: Bool -> Board -> IO ()
 printBoard showBonuses = putStrLn . showBoard showBonuses
+
+-- | Get all the words on the board, including 1 letter words.
+--   It returns the squares containing the tiles.
+getWords :: Board -> [[Square]]
+getWords b = rowWords ++ colWords where
+  rowWords = concat $ getWordsInRow <$> rows b
+  colWords = concat $ getWordsInCol <$> cols b
+
+  getWordsInCol :: Col -> [[Square]]
+  getWordsInCol = getWordsInRow
+
+  getWordsInRow :: Row -> [[Square]]
+  getWordsInRow = getWordsInList . elems
+
+  getWordsInList :: [Square] -> [[Square]]
+  getWordsInList [] = []
+  getWordsInList squares = case takeWord squares of
+    (Just w,  [])   -> [w]
+    (Just w,  rest) ->  w : getWordsInList rest
+    (Nothing, [])   -> []
+    (Nothing, rest) -> getWordsInList rest
+
+  takeWord :: [Square] -> (Maybe [Square], [Square])
+  takeWord [] = (Nothing, [])
+  takeWord squares = go where
+    (w,rest) = span (Maybe.isJust . tile) squares
+    go = case length w of
+      0 -> takeWord (drop 1 rest)
+      n -> (Just w, drop n squares)

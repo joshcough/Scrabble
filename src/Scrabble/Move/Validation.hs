@@ -50,6 +50,7 @@ validateMove move b b' dict = go where
       then Left squaresTakenError
     else if not $ null badWords
       then Left $ "Bad words: " ++ show badWords
+    -- else if validateBoard b' then x
     else Right ()
 
   -- so we don't have to calculate it twice
@@ -87,3 +88,7 @@ data SquareLegality = SquareLegality {
  ,connected  :: Bool -- if touching another tile
  ,centerPlay :: Bool -- if square is the center square
 } deriving Show
+
+
+validateBoard :: Dict -> Board -> Either String ()
+validateBoard dict board = error "todo"
